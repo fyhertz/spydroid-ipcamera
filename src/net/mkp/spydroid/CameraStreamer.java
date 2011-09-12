@@ -47,6 +47,7 @@ public class CameraStreamer extends Thread {
 	private final int rtphl = 12; 				// Rtp header length
 	private final int mpeg4HeaderLength = 40; 	// 40 Bytes
 
+	private long oldtime = SystemClock.elapsedRealtime();
 	
 	public CameraStreamer() {
 		
@@ -129,10 +130,9 @@ public class CameraStreamer extends Thread {
 		int naluLength, sum, len;
 		long now = 12000, timestamp = 0;
         
-		// Skip mpeg4 header (all the bytes preceding the mdat atom)
-		//while (buffer[rtphl]==0) fill(rtphl,1);
+		// Skip mpeg4 header (all bytes preceding the mdat atom)
 		fill(rtphl,mpeg4HeaderLength);
-		 
+		
 		while (running) { 
 		 
 			// Read nal unit length (4 bytes) and nal unit header (1 byte)
@@ -141,7 +141,7 @@ public class CameraStreamer extends Thread {
 			
 			//Log.e(SpydroidActivity.LOG_TAG,"- Nal unit length: " + naluLength);
 			
-			rsock.updateTimestamp(SystemClock.elapsedRealtime()*100);
+			rsock.updateTimestamp(SystemClock.elapsedRealtime()*90);
 			
 			sum = 1;
 			
@@ -154,9 +154,9 @@ public class CameraStreamer extends Thread {
 				buffer[rtphl] = buffer[rtphl+4];
 				len = fill(rtphl+1,  naluLength-1  );
 				rsock.markNextPacket();
-				rsock.send(naluLength+rtphl);
+				send(naluLength+rtphl);
 				
-				//Log.e(SpydroidActivity.LOG_TAG,"----- Single NAL unit read:"+len+" header:"+printBuffer(rtphl,rtphl+3));
+				Log.e(SpydroidActivity.LOG_TAG,"----- Single NAL unit read:"+len+" header:"+printBuffer(rtphl,rtphl+3));
 				
 			}
 			// Large nal unit => Split nal unit
@@ -183,7 +183,7 @@ public class CameraStreamer extends Thread {
 						rsock.markNextPacket();
 					}
 						
-					rsock.send(len+rtphl+2);
+					send(len+rtphl+2);
 					
 					// Switch start bit 
 					buffer[rtphl+1] = (byte) (buffer[rtphl+1] & 0x7F); 
@@ -208,7 +208,11 @@ public class CameraStreamer extends Thread {
 		while (sum<length) {
 			try {
 				len = fis.read(buffer, offset+sum, length-sum);
-				if (len<0) Thread.sleep(20);
+				Log.e(SpydroidActivity.LOG_TAG,"Data read: "+fis.available());
+				if (len<0) {
+					Thread.sleep(20);
+					Log.e(SpydroidActivity.LOG_TAG,"Waited for data: "+fis.available()+" new bytes.");
+				}
 				else sum+=len;
 			} catch (IOException e) {
 				stopStream();
@@ -221,6 +225,19 @@ public class CameraStreamer extends Thread {
 		
 		return sum;
 			
+	}
+	
+	private void send(int size) {
+		
+		long now = SystemClock.elapsedRealtime();
+		
+		if (now-oldtime<26)
+			try {
+				Thread.sleep(26-(now-oldtime));
+			} catch (InterruptedException e) {}
+		oldtime = SystemClock.elapsedRealtime();
+		rsock.send(size);
+		
 	}
 	
 	private void cleanSockets() {
