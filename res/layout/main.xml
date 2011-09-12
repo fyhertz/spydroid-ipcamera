@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+	android:id="@+id/mainlayout"
+    android:orientation="vertical"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    
+    >
+    <TextView 
+    	android:gravity="center"
+    	android:layout_width="fill_parent"
+	    android:layout_height="wrap_content"
+    	android:text="This is more a proof of concept of live camera streaming than a real app, it still needs improvement :)\nJust enter your pc ip address and press stream !"
+    	android:layout_weight="3"
+    />
+	<ImageView 
+	    android:layout_width="fill_parent"
+	    android:layout_height="wrap_content"
+	    android:src="@drawable/ic_eye"
+	    android:layout_weight="2"
+	/>
+	<LinearLayout 
+	    android:orientation="horizontal"
+		android:layout_width="fill_parent"
+    	android:layout_height="wrap_content"
+    	android:layout_weight="3"
+    	android:gravity="bottom"
+    	android:padding="30px"
+	>
+		<EditText
+			android:gravity="center_horizontal"
+			android:text="192.168.43.1"
+			android:layout_width="wrap_content"
+    		android:layout_height="wrap_content"
+    		android:layout_weight="9"
+    		android:id="@+id/ip"
+		/>
+		<Button 
+			android:text="Stream !"
+			android:layout_width="wrap_content"
+    		android:layout_height="wrap_content"
+    		android:layout_weight="1"
+    		android:id="@+id/streambutton"
+		/>
+	</LinearLayout>
+</LinearLayout>	
