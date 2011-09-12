@@ -1,7 +1,7 @@
 /*
  * Copyright (C) 2011 GUIGUI Simon fyhertz@gmail.com
  * 
- * This file is part of Spydroid (http://www.sipdroid.org)
+ * This file is part of Spydroid (http://code.google.com/p/spydroid-ipcamera/)
  * 
  * Spydroid is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
