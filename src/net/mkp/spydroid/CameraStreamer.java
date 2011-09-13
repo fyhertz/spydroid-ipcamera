@@ -47,7 +47,8 @@ public class CameraStreamer extends Thread {
 	private final int rtphl = 12; 				// Rtp header length
 	private final int mpeg4HeaderLength = 40; 	// 40 Bytes
 
-	private long oldtime = SystemClock.elapsedRealtime();
+	private long oldtime = SystemClock.elapsedRealtime(), delay = 18;
+	
 	
 	public CameraStreamer() {
 		
@@ -72,7 +73,7 @@ public class CameraStreamer extends Thread {
 			try {
 				join();
 			} catch (InterruptedException e) {
-				Log.e(SpydroidActivity.LOG_TAG, "Main thread interrupted :/");
+				//Log.e(SpydroidActivity.LOG_TAG, "Main thread interrupted :/");
 			}
 		}
 	}
@@ -97,7 +98,7 @@ public class CameraStreamer extends Thread {
 		}
 		
 		try {
-			rsock = new SmallRtpSocket(InetAddress.getByName("192.168.43.195"), 5004, buffer);
+			rsock = new SmallRtpSocket(InetAddress.getByName("192.170.0.1"), 5004, buffer);
 		} catch (IOException e2) {
 			cleanSockets();
 			Log.e(SpydroidActivity.LOG_TAG,"Unknown host");
@@ -107,7 +108,7 @@ public class CameraStreamer extends Thread {
 		mr.setVideoSource(MediaRecorder.VideoSource.CAMERA);
 		mr.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
 		mr.setVideoFrameRate(15);
-		mr.setVideoSize(320, 240);    
+		mr.setVideoSize(640, 480);    
         mr.setVideoEncoder(MediaRecorder.VideoEncoder.H264);
         mr.setPreviewDisplay(holder.getSurface());
 
@@ -156,7 +157,7 @@ public class CameraStreamer extends Thread {
 				rsock.markNextPacket();
 				send(naluLength+rtphl);
 				
-				Log.e(SpydroidActivity.LOG_TAG,"----- Single NAL unit read:"+len+" header:"+printBuffer(rtphl,rtphl+3));
+				//Log.e(SpydroidActivity.LOG_TAG,"----- Single NAL unit read:"+len+" header:"+printBuffer(rtphl,rtphl+3));
 				
 			}
 			// Large nal unit => Split nal unit
@@ -199,25 +200,27 @@ public class CameraStreamer extends Thread {
 		mr.stop();
 		mr.reset();
 		
-	}
+	} 
 
 	private int fill(int offset,int length) {
 		
 		int sum = 0, len = 0;
 		
 		while (sum<length) {
-			try {
+			try { 
 				len = fis.read(buffer, offset+sum, length-sum);
-				Log.e(SpydroidActivity.LOG_TAG,"Data read: "+fis.available());
+				//Log.e(SpydroidActivity.LOG_TAG,"Data read: "+fis.available()+","+len);
+				if (fis.available()==0) {
+				 
+					delay++;
+					Log.e(SpydroidActivity.LOG_TAG,"Inc delay: "+delay);
+					
+				} 
 				if (len<0) {
-					Thread.sleep(20);
-					Log.e(SpydroidActivity.LOG_TAG,"Waited for data: "+fis.available()+" new bytes.");
+					Log.e(SpydroidActivity.LOG_TAG,"Read error");
 				}
 				else sum+=len;
 			} catch (IOException e) {
-				stopStream();
-				return sum;
-			} catch (InterruptedException e) {
 				stopStream();
 				return sum;
 			}
@@ -231,9 +234,9 @@ public class CameraStreamer extends Thread {
 		
 		long now = SystemClock.elapsedRealtime();
 		
-		if (now-oldtime<26)
+		if (now-oldtime<delay)
 			try {
-				Thread.sleep(26-(now-oldtime));
+				Thread.sleep(delay-(now-oldtime));
 			} catch (InterruptedException e) {}
 		oldtime = SystemClock.elapsedRealtime();
 		rsock.send(size);
