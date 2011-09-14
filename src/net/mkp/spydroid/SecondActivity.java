@@ -69,7 +69,7 @@ public class SecondActivity  extends Activity implements SurfaceHolder.Callback 
 	public void surfaceCreated(SurfaceHolder holder) {
 		wl.acquire();
 		try {
-			streamer.setup(holder);
+			streamer.setup(holder,getIntent().getStringExtra("ip"));
 		} catch (IOException e) {
 			// Catch error if any and display message
 		}

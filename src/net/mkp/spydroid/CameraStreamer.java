@@ -47,7 +47,7 @@ public class CameraStreamer extends Thread {
 	private final int rtphl = 12; 				// Rtp header length
 	private final int mpeg4HeaderLength = 40; 	// 40 Bytes
 
-	private long oldtime = SystemClock.elapsedRealtime(), delay = 18;
+	private long oldtime = SystemClock.elapsedRealtime(), delay = 18, oldavailable;
 	
 	
 	public CameraStreamer() {
@@ -78,7 +78,7 @@ public class CameraStreamer extends Thread {
 		}
 	}
 	
-	public void setup(SurfaceHolder holder) throws IOException {
+	public void setup(SurfaceHolder holder, String dest) throws IOException {
 		
 		if (ready) return;
 		
@@ -98,7 +98,7 @@ public class CameraStreamer extends Thread {
 		}
 		
 		try {
-			rsock = new SmallRtpSocket(InetAddress.getByName("192.170.0.1"), 5004, buffer);
+			rsock = new SmallRtpSocket(InetAddress.getByName(dest), 5004, buffer);
 		} catch (IOException e2) {
 			cleanSockets();
 			Log.e(SpydroidActivity.LOG_TAG,"Unknown host");
@@ -107,7 +107,7 @@ public class CameraStreamer extends Thread {
 		
 		mr.setVideoSource(MediaRecorder.VideoSource.CAMERA);
 		mr.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
-		mr.setVideoFrameRate(15);
+		mr.setVideoFrameRate(20);
 		mr.setVideoSize(640, 480);    
         mr.setVideoEncoder(MediaRecorder.VideoEncoder.H264);
         mr.setPreviewDisplay(holder.getSurface());
@@ -169,7 +169,7 @@ public class CameraStreamer extends Thread {
 				//buffer[rtphl] += 0x80;
 				
 				// Set FU-A header
-				buffer[rtphl+1] = (byte) (buffer[rtphl+4] & 0x1F);  // Fu header type
+				buffer[rtphl+1] = (byte) (buffer[rtphl+4] & 0x1F);  // FU header type
 				buffer[rtphl+1] += 0x80; // Start bit
 				
 				 
@@ -204,18 +204,28 @@ public class CameraStreamer extends Thread {
 
 	private int fill(int offset,int length) {
 		
-		int sum = 0, len = 0;
+		int sum = 0, len, available;
 		
 		while (sum<length) {
 			try { 
+				available = fis.available();
 				len = fis.read(buffer, offset+sum, length-sum);
 				//Log.e(SpydroidActivity.LOG_TAG,"Data read: "+fis.available()+","+len);
-				if (fis.available()==0) {
-				 
-					delay++;
-					Log.e(SpydroidActivity.LOG_TAG,"Inc delay: "+delay);
-					
-				} 
+				
+				if (oldavailable<available) {
+					// We don't want fis.available to reach 0 because it provokes choppy streaming (which is logical because it causes fis.read to block the thread periodically).
+					// So here, we increase the delay between two send calls to induce more buffering (and the buffer is basically the fis input stream) 
+					if (oldavailable<10000) {
+						delay++;
+						//Log.e(SpydroidActivity.LOG_TAG,"Inc delay: "+delay);
+					}
+					// But we don't want to much buffering either:
+					else if (oldavailable>10000) {						
+						delay--;
+						//Log.e(SpydroidActivity.LOG_TAG,"Dec delay: "+delay);
+					}
+				}
+				oldavailable = available;
 				if (len<0) {
 					Log.e(SpydroidActivity.LOG_TAG,"Read error");
 				}
