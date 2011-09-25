@@ -22,6 +22,7 @@ package net.mkp.spydroid;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.View;
 import android.view.ViewGroup;
@@ -40,9 +41,12 @@ public class SpydroidActivity extends Activity {
     
     static final public String LOG_TAG = "SPYDROID";
     
+    private SharedPreferences settings;
+    private String ip;
+    
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
- 
+        
         setContentView(R.layout.main);
         topLayout = (ViewGroup) findViewById(R.id.mainlayout);
         startButton = (Button) findViewById(R.id.streambutton);
@@ -50,14 +54,27 @@ public class SpydroidActivity extends Activity {
         {
         	public void onClick(View v) {
         		
+        		ip = ((EditText) findViewById(R.id.ip)).getText().toString();
+        		
+        		SharedPreferences.Editor editor = settings.edit();
+        		editor.putString("IP", ip);
+        	    editor.commit();
+        		
         		Intent intent = new Intent(v.getContext(),SecondActivity.class);
-        		intent.putExtra("ip", ((EditText) findViewById(R.id.ip)).getText().toString() );
+        		intent.putExtra("ip", ip );
         		startActivityForResult(intent, 0);
         		
         	}
         });
         
-        
+    }
+    
+    public void onStart() {
+    	super.onStart();
+    	
+        settings = getSharedPreferences("spydroid-ipcamera-prefs", 0);
+        ip = settings.getString("ip", "192.170.0.1");
+        ((EditText) findViewById(R.id.ip)).setText(ip);
         
     }
     

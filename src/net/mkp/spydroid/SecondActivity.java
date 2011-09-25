@@ -24,6 +24,7 @@ import java.io.IOException;
 
 import android.app.Activity;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.PowerManager;
 import android.view.SurfaceHolder;
@@ -67,19 +68,24 @@ public class SecondActivity  extends Activity implements SurfaceHolder.Callback 
 
 	@Override
 	public void surfaceCreated(SurfaceHolder holder) {
+		
+		String ip = getIntent().getStringExtra("ip");
+		
+	    // Ensures that the screen stays on
 		wl.acquire();
+		
 		try {
-			streamer.setup(holder,getIntent().getStringExtra("ip"));
+			streamer.setup(holder,ip);
 		} catch (IOException e) {
 			// Catch error if any and display message
 		}
-		streamer.startStream();				
+		streamer.start();				
 	}
 
 	@Override
 	public void surfaceDestroyed(SurfaceHolder holder) {
 		 wl.release();
-		 streamer.stopStream();
+		 streamer.stop();
 	}
 	
 }

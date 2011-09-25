@@ -18,14 +18,16 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-package net.mkp.spydroid;
+package net.mkp.spydroid.librtp;
 
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketException;
+import java.util.Random;
 
+import net.mkp.spydroid.SpydroidActivity;
 import android.util.Log;
 
 
@@ -61,7 +63,7 @@ public class SmallRtpSocket {
 		/* Byte 4,5,6,7    ->  Timestamp                         */
 		
 		/* Byte 8,9,10,11  ->  Sync Source Identifier            */
-		setLong(Long.parseLong("3796cb71",16),8,12);
+		setLong((new Random()).nextLong(),8,12);
 		
 		usock = new DatagramSocket();
 		upack = new DatagramPacket(buffer,1,dest,dport);
@@ -102,6 +104,11 @@ public class SmallRtpSocket {
 	public void markNextPacket() {
 		upts = true;
 		buffer[1] += 0x80; // Mark next packet
+	}
+	
+	// Call this only one time !
+	public void markAllPackets() {
+		buffer[1] += 0x80;
 	}
 	
 	private void setLong(long n, int begin, int end) {
