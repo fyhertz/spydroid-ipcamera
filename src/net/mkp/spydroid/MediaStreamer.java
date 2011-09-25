@@ -10,7 +10,7 @@ import android.net.LocalSocketAddress;
 import android.util.Log;
 
 /* 
- *  A MediaRecorder that writes in an OutputStream
+ *  Just a MediaRecorder that writes in an OutputStream
  * 
  */
 

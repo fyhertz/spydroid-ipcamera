@@ -1,12 +1,8 @@
 package net.mkp.spydroid.librtp;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.net.InetAddress;
 import java.net.SocketException;
-
-import net.mkp.spydroid.SpydroidActivity;
-import android.util.Log;
 
 abstract public class AbstractPacketizer extends Thread implements Runnable{
 

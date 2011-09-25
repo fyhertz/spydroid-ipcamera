@@ -13,8 +13,11 @@ import android.util.Log;
  *   
  *   AMR Streaming over RTP
  *   
+ *   
+ *   Must be fed with an InputStream containing raw amr nb
+ *   Stream must begin with 6 bytes long header: "#!AMR.", it will be skipped
+ *   
  */
-
 
 public class AMRNBPacketizer extends AbstractPacketizer {
 	
@@ -32,7 +35,7 @@ public class AMRNBPacketizer extends AbstractPacketizer {
 		// Skip raw amr header
 		fill(rtphl,amrhl);
 		
-		buffer[rtphl] = (byte) 0xF0; // ?
+		buffer[rtphl] = (byte) 0xF0;
 		rsock.markAllPackets();
 		
 		while (running) {

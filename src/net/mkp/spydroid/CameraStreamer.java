@@ -10,6 +10,11 @@ import android.media.MediaRecorder;
 import android.util.Log;
 import android.view.SurfaceHolder;
 
+/*
+ * 
+ * 
+ */
+
 public class CameraStreamer {
 
 	private MediaStreamer sound = null, video = null;
@@ -18,7 +23,7 @@ public class CameraStreamer {
 	
 	public void setup(SurfaceHolder holder, String ip) throws IOException {
 	
-		// SOUND
+		// AUDIO
 		
 		sound = new MediaStreamer();
 		

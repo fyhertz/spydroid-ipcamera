@@ -14,6 +14,10 @@ import android.util.Log;
  *   
  *   H264 Streaming over RTP
  *   
+ *   Must be fed with an InputStream containing raw h.264
+ *   NAL units must be preceded by their length (4 bytes)
+ *   Stream must start with mpeg4 or 3gpp header, it will be skipped
+ *   
  */
 
 public class H264Packetizer extends AbstractPacketizer {
@@ -30,7 +34,6 @@ public class H264Packetizer extends AbstractPacketizer {
 	public void run() {
 		
 		int naluLength, sum, len;
-		long now = 12000, timestamp = 0;
         
 		// Skip mpeg4 header (all bytes preceding the mdat atom)
 		fill(rtphl,mpeg4HeaderLength);
