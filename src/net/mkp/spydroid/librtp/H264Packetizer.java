@@ -131,7 +131,7 @@ public class H264Packetizer extends AbstractPacketizer {
 			try { 
 				available = fis.available();
 				len = fis.read(buffer, offset+sum, length-sum);
-				Log.e(SpydroidActivity.LOG_TAG,"Data read: "+fis.available()+","+len);
+				//Log.e(SpydroidActivity.LOG_TAG,"Data read: "+fis.available()+","+len);
 				
 				if (oldavailable<available) {
 					// We don't want fis.available to reach 0 because it provokes choppy streaming (which is logical because it causes fis.read to block the thread periodically).
