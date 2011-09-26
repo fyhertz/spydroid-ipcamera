@@ -35,7 +35,7 @@ import android.util.Log;
  *   
  *   
  *   Must be fed with an InputStream containing raw amr nb
- *   Stream must begin with 6 bytes long header: "#!AMR.", it will be skipped
+ *   Stream must begin with 6 bytes long header: "#!AMR\n", it will be skipped
  *   
  */
 
@@ -61,7 +61,12 @@ public class AMRNBPacketizer extends AbstractPacketizer {
 		while (running) {
 			
 			fill(rtphl+1,amrps);
+			
+			// RFC 3267 Page 14: 
+			// "For AMR, the sampling frequency is 8 kHz, corresponding to
+			// 160 encoded speech samples per frame from each channel."
 			rsock.updateTimestamp(ts); ts+=160;
+			
 			rsock.send(rtphl+amrps+1);
 			
 		}

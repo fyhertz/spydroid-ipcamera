@@ -43,7 +43,7 @@ import android.util.Log;
 public class H264Packetizer extends AbstractPacketizer {
 
 	private final int packetSize = 1400;
-	private final int mpeg4HeaderLength = 40; 	// 40 Bytes
+	private final int mpeghl = 40; 	// 40 Bytes
 
 	private long oldtime = SystemClock.elapsedRealtime(), delay = 18, oldavailable;
 	
@@ -56,7 +56,7 @@ public class H264Packetizer extends AbstractPacketizer {
 		int naluLength, sum, len;
         
 		// Skip mpeg4 header (all bytes preceding the mdat atom)
-		fill(rtphl,mpeg4HeaderLength);
+		fill(rtphl,mpeghl);
 		
 		while (running) { 
 		 
