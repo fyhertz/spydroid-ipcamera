@@ -43,7 +43,6 @@ import android.util.Log;
 public class H264Packetizer extends AbstractPacketizer {
 
 	private final int packetSize = 1400;
-	private final int mpeghl = 40; 	// 40 Bytes
 
 	private long oldtime = SystemClock.elapsedRealtime(), delay = 18, oldavailable;
 	
@@ -55,8 +54,14 @@ public class H264Packetizer extends AbstractPacketizer {
 		
 		int naluLength, sum, len;
         
-		// Skip mpeg4 header (all bytes preceding the mdat atom)
-		fill(rtphl,mpeghl);
+		// Spkip all atoms preceding mdat atom
+		while (true) {
+			fill(rtphl,8);
+			if (buffer[rtphl+4] == 'm' && buffer[rtphl+5] == 'd' && buffer[rtphl+6] == 'a' && buffer[rtphl+7] == 't') break;
+			len = (buffer[rtphl+3]&0xFF) + (buffer[rtphl+2]&0xFF)*256 + (buffer[rtphl+1]&0xFF)*65536;
+			//Log.e(SpydroidActivity.LOG_TAG,"Atom skipped: "+printBuffer(rtphl+4,rtphl+8)+" size: "+len);
+			fill(rtphl,len-8);
+		} 
 		
 		while (running) { 
 		 
@@ -70,8 +75,7 @@ public class H264Packetizer extends AbstractPacketizer {
 			
 			sum = 1;
 			
-			// RFC 3984
-			// Packetization mode = 1
+			// RFC 3984, packetization mode = 1
 			
 			// Small nal unit => Single nal unit
 			if (naluLength<=packetSize-rtphl-2) {
@@ -173,6 +177,5 @@ public class H264Packetizer extends AbstractPacketizer {
 		rsock.send(size);
 		
 	}
-	
 
 }

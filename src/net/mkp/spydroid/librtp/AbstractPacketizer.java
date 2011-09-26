@@ -54,6 +54,11 @@ abstract public class AbstractPacketizer extends Thread implements Runnable{
 	
 	abstract public void run();
 	
-	
+    // Useful for debug
+    protected String printBuffer(int start,int end) {
+            String str = "";
+            for (int i=start;i<end;i++) str+=","+Integer.toHexString(buffer[i]&0xFF);
+            return str;
+    }
 	
 }

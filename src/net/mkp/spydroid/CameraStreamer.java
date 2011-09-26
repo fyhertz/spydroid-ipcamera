@@ -70,7 +70,7 @@ public class CameraStreamer {
 		
 		video.setVideoSource(MediaRecorder.VideoSource.CAMERA);
 		video.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
-		video.setVideoFrameRate(20);
+		video.setVideoFrameRate(15);
 		video.setVideoSize(640, 480);
 		video.setVideoEncoder(MediaRecorder.VideoEncoder.H264);
 		video.setPreviewDisplay(holder.getSurface());
