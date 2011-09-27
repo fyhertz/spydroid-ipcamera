@@ -43,7 +43,6 @@ import android.util.Log;
 public class H264Packetizer extends AbstractPacketizer {
 
 	private final int packetSize = 1400;
-
 	private long oldtime = SystemClock.elapsedRealtime(), delay = 18, oldavailable;
 	
 	public H264Packetizer(InputStream fis, InetAddress dest) throws SocketException {
@@ -52,16 +51,34 @@ public class H264Packetizer extends AbstractPacketizer {
 
 	public void run() {
 		
-		int naluLength, sum, len;
+		int naluLength, sum, len = 0;
         
+		try {
+		
 		// Skip all atoms preceding mdat atom
-		while (true) {
-			fill(rtphl,8);
-			if (buffer[rtphl+4] == 'm' && buffer[rtphl+5] == 'd' && buffer[rtphl+6] == 'a' && buffer[rtphl+7] == 't') break;
-			len = (buffer[rtphl+3]&0xFF) + (buffer[rtphl+2]&0xFF)*256 + (buffer[rtphl+1]&0xFF)*65536;
-			//Log.e(SpydroidActivity.LOG_TAG,"Atom skipped: "+printBuffer(rtphl+4,rtphl+8)+" size: "+len);
-			fill(rtphl,len-8);
-		} 
+			while (true) {
+				fis.read(buffer,rtphl,8);
+				if (buffer[rtphl+4] == 'm' && buffer[rtphl+5] == 'd' && buffer[rtphl+6] == 'a' && buffer[rtphl+7] == 't') break;
+				len = (buffer[rtphl+3]&0xFF) + (buffer[rtphl+2]&0xFF)*256 + (buffer[rtphl+1]&0xFF)*65536;
+				if (0 == len) break;
+				//Log.e(SpydroidActivity.LOG_TAG,"Atom skipped: "+printBuffer(rtphl+4,rtphl+8)+" size: "+len);
+				fis.read(buffer,rtphl,len-8);
+			} 
+			
+			// Some phones do not set length correctly when stream is not seekable
+			if (0 == len) {
+				while (true) {
+					while (fis.read() != 'm');
+					fis.read(buffer,rtphl,3);
+					if (buffer[rtphl] == 'd' && buffer[rtphl+1] == 'a' && buffer[rtphl+2] == 't') break;
+				}
+			}
+		
+		}
+		
+		catch (IOException e)  {
+			return;
+		}
 		
 		while (running) { 
 		 
