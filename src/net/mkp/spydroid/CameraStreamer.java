@@ -23,8 +23,8 @@ package net.mkp.spydroid;
 import java.io.IOException;
 import java.net.InetAddress;
 
-import net.mkp.spydroid.librtp.AMRNBPacketizer;
-import net.mkp.spydroid.librtp.H264Packetizer;
+import net.mkp.librtp.AMRNBPacketizer;
+import net.mkp.librtp.H264Packetizer;
 
 import android.media.MediaRecorder;
 import android.util.Log;
@@ -58,7 +58,7 @@ public class CameraStreamer {
 		}
 		
 		try {
-			sstream = new AMRNBPacketizer(sound.getOutputStream(), InetAddress.getByName(ip));
+			sstream = new AMRNBPacketizer(sound.getInputStream(), InetAddress.getByName(ip));
 		} catch (IOException e) {
 			Log.e(SpydroidActivity.LOG_TAG,"Unknown host");
 			throw new IOException("Can't resolve host :(");
@@ -82,7 +82,7 @@ public class CameraStreamer {
 		}
 		
 		try {
-			vstream = new H264Packetizer(video.getOutputStream(), InetAddress.getByName(ip));
+			vstream = new H264Packetizer(video.getInputStream(), InetAddress.getByName(ip));
 		} catch (IOException e) {
 			Log.e(SpydroidActivity.LOG_TAG,"Unknown host");
 			throw new IOException("Can't resolve host :(");

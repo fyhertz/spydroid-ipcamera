@@ -18,7 +18,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-package net.mkp.spydroid.librtp;
+package net.mkp.librtp;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -35,11 +35,13 @@ import android.util.Log;
  *   
  *   
  *   Must be fed with an InputStream containing raw amr nb
- *   Stream must begin with 6 bytes long header: "#!AMR\n", it will be skipped
+ *   Stream must begin with a 6 bytes long header: "#!AMR\n", it will be skipped
  *   
  */
 
 public class AMRNBPacketizer extends AbstractPacketizer {
+	
+	static public final int PORT = 5004;
 	
 	private long ts = 0;
 	
@@ -47,7 +49,7 @@ public class AMRNBPacketizer extends AbstractPacketizer {
 	private final int amrps = 32;   // Packet size
 	
 	public AMRNBPacketizer(InputStream fis, InetAddress dest) throws SocketException {
-		super(fis, dest, 5004);
+		super(fis, dest, PORT);
 	}
 
 	public void run() {

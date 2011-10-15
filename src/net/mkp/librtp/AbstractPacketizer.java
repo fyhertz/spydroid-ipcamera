@@ -18,21 +18,22 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-package net.mkp.spydroid.librtp;
+package net.mkp.librtp;
 
 import java.io.InputStream;
 import java.net.InetAddress;
 import java.net.SocketException;
 
-abstract public class AbstractPacketizer extends Thread implements Runnable{
 
+abstract public class AbstractPacketizer extends Thread implements Runnable{
+	
 	protected SmallRtpSocket rsock = null;
 	protected InputStream fis = null;
 	protected boolean running = false;
 	
 	protected byte[] buffer = new byte[4096];	
 	
-	protected final int rtphl = 12; 				// Rtp header length
+	protected final int rtphl = 12; // Rtp header length
 	
 	
 	public AbstractPacketizer(InputStream fis, InetAddress dest, int port) throws SocketException {

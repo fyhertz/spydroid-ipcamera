@@ -7,11 +7,13 @@
     
     >
     <TextView 
-    	android:gravity="center"
+    	android:gravity="top"
     	android:layout_width="fill_parent"
 	    android:layout_height="wrap_content"
-    	android:text="Hi folks :)\nJust enter your pc ip address and press stream !"
     	android:layout_weight="3"
+    	android:id="@+id/console"
+    	android:textColor="#FFAC63"
+    	android:padding="10px"
     />
 	<ImageView 
 	    android:layout_width="fill_parent"
@@ -43,4 +45,11 @@
     		android:id="@+id/streambutton"
 		/>
 	</LinearLayout>
+	
+    <SurfaceView 
+       	android:layout_width="1px"
+ 		android:layout_height="1px"
+ 		android:id="@+id/smallcameraview"
+   />
+	
 </LinearLayout>	

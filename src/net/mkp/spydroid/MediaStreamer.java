@@ -30,7 +30,8 @@ import android.net.LocalSocketAddress;
 import android.util.Log;
 
 /* 
- *  Just a MediaRecorder that writes in an OutputStream
+ *  Just a MediaRecorder that writes in an OutputStream 
+ *  so that you can modify data on-th-fly with getInputStream()
  * 
  */
 
@@ -45,8 +46,8 @@ public class MediaStreamer extends MediaRecorder{
 		
 		receiver = new LocalSocket();
 		try {
-			lss = new LocalServerSocket("Spydroid"+id);
-			receiver.connect(new LocalSocketAddress("Spydroid"+id));
+			lss = new LocalServerSocket("librtp-"+id);
+			receiver.connect(new LocalSocketAddress("librtp-"+id));
 			receiver.setReceiveBufferSize(500000);
 			receiver.setSendBufferSize(500000);
 			sender = lss.accept();
@@ -72,7 +73,7 @@ public class MediaStreamer extends MediaRecorder{
 		
 	}
 	
-	public InputStream getOutputStream() {
+	public InputStream getInputStream() {
 		
 		InputStream out = null;
 		

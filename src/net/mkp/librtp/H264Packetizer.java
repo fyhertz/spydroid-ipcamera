@@ -18,7 +18,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-package net.mkp.spydroid.librtp;
+package net.mkp.librtp;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -42,11 +42,13 @@ import android.util.Log;
 
 public class H264Packetizer extends AbstractPacketizer {
 
+	static public final int PORT = 5006;
+	
 	private final int packetSize = 1400;
-	private long oldtime = SystemClock.elapsedRealtime(), delay = 18, oldavailable;
+	private long oldtime = SystemClock.elapsedRealtime(), delay = 20, oldavailable;
 	
 	public H264Packetizer(InputStream fis, InetAddress dest) throws SocketException {
-		super(fis, dest, 5006);
+		super(fis, dest, PORT);
 	}
 
 	public void run() {
@@ -155,16 +157,16 @@ public class H264Packetizer extends AbstractPacketizer {
 				//Log.e(SpydroidActivity.LOG_TAG,"Data read: "+fis.available()+","+len);
 				
 				if (oldavailable<available) {
-					// We don't want fis.available to reach 0 because it provokes choppy streaming (which is logical because it causes fis.read to block the thread periodically).
-					// So here, we increase the delay between two send calls to induce more buffering (and the buffer is basically the fis input stream) 
-					if (oldavailable<10000) {
+					// We don't want fis.available to reach 0 because it provokes choppy streaming (which is logical: it causes fis.read to block the thread periodically).
+					// So here, we increase the delay between two send calls to induce more buffering
+					if (oldavailable<20000) {
 						delay++;
-						//Log.e(SpydroidActivity.LOG_TAG,"Inc delay: "+delay);
+						//Log.e(SpydroidActivity.LOG_TAG,"Inc delay: "+delay+" oa: "+oldavailable);
 					}
 					// But we don't want to much buffering either:
-					else if (oldavailable>10000) {						
+					else if (oldavailable>20000) {						
 						delay--;
-						//Log.e(SpydroidActivity.LOG_TAG,"Dec delay: "+delay);
+						//Log.e(SpydroidActivity.LOG_TAG,"Dec delay: "+delay+" oa: "+oldavailable);
 					}
 				}
 				oldavailable = available;
