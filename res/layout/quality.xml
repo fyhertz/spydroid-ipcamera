@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!-- Layout for entries of the ListView of the QualityListView activity -->
+	
+<CheckedTextView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:checkMark="?android:attr/listChoiceIndicatorSingle"
+    android:id="@+id/quality" 
+	android:layout_width="fill_parent"
+	android:layout_height="wrap_content" 
+	android:paddingLeft="10px"
+	android:textSize="20sp"
+	android:textStyle="bold"
+	android:gravity="center_vertical"
+	android:layout_gravity="left" />
+			

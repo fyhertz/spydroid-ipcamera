@@ -32,6 +32,8 @@ import android.view.SurfaceHolder;
 
 /*
  * 
+ * Instantiates two MediaStreamer objects, one for audio streaming and the other for video streaming
+ * then it uses the H264Packetizer and the AMRNBPacketizer to generate two RTP streams
  * 
  */
 
@@ -41,7 +43,7 @@ public class CameraStreamer {
 	private AMRNBPacketizer sstream = null;
 	private H264Packetizer vstream = null;
 	
-	public void setup(SurfaceHolder holder, String ip) throws IOException {
+	public void setup(SurfaceHolder holder, String ip, int resX, int resY, int fps) throws IOException {
 	
 		// AUDIO
 		
@@ -70,8 +72,8 @@ public class CameraStreamer {
 		
 		video.setVideoSource(MediaRecorder.VideoSource.CAMERA);
 		video.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
-		video.setVideoFrameRate(15);
-		video.setVideoSize(640, 480);
+		video.setVideoFrameRate(fps);
+		video.setVideoSize(resX, resY);
 		video.setVideoEncoder(MediaRecorder.VideoEncoder.H264);
 		video.setPreviewDisplay(holder.getSurface());
 		

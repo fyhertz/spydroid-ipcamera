@@ -28,7 +28,7 @@ import java.io.RandomAccessFile;
 import net.mkp.libmp4.MP4Parser;
 import net.mkp.libmp4.StsdBox;
 import android.media.MediaRecorder;
-import android.os.AsyncTask;
+import android.os.Handler;
 import android.util.Log;
 import android.view.SurfaceHolder;
 
@@ -39,127 +39,166 @@ import android.view.SurfaceHolder;
  * 
  */
 
-public class TestH264 extends AsyncTask<SurfaceHolder, Integer, String> {
+public class TestH264 {
 
 	/* Launches the test */
-	public static void RunTest(File cacheDir,SurfaceHolder holder, Callbacks cbs) {
+	public static void RunTest(File cacheDir,SurfaceHolder holder, int resX, int resY, int fps, Callback cb) {
 
-		test.cbs = cbs;
-		test.cacheDir = cacheDir;
+		if (test == null) test = new TestH264();
 		
-    	holder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
-    	holder.addCallback(new SurfaceHolder.Callback() {
+		test.cb = cb;
+		test.cacheDir = cacheDir;
+		test.resX = resX;
+		test.resY = resY;
+		test.fps = fps;
+		test.holder = holder;
 
-    		@Override
-			public void surfaceChanged(SurfaceHolder holder, int format,
-					int width, int height) {
-    			
-			}
-
-    		@Override
-			public void surfaceCreated(SurfaceHolder holder) {
-    			test.execute(holder);
-			}
-
-    		@Override
-			public void surfaceDestroyed(SurfaceHolder holder) {
-    			test.cancel(true);
-			}
-    		
-    	});
+		test.start();
 		
 	}
 	
 	/* If test succesful, onSuccess is called and provides H264 settings on the phone  */
-	public interface Callbacks {
+	public interface Callback {
+		public void onStart();
 		public void onError(String error);
 		public void onSuccess(String result);
 	}
 	
-	private final String TESTFILE = "spydroid-test.mp4";
+	private final String TESTFILE = "net.mpk.spydroid-test.mp4";
 	
-	private static TestH264 test = new TestH264();
+	private static TestH264 test = null;
+	private SurfaceHolder.Callback shcb;
+	private SurfaceHolder holder;
 	private MediaRecorder mr = new MediaRecorder();
-	private Callbacks cbs;
+	private Callback cb;
 	private File cacheDir;
+	private int resX, resY, fps;
+	private Handler handler = new Handler();
+	private Runnable runnable;
+	private boolean recording = false;
 	
 	private TestH264() { }
 
-	@Override
-	protected String doInBackground(SurfaceHolder... holder) {
+	private void start() {
+		
+		if (shcb==null) {
+			
+			shcb = new SurfaceHolder.Callback() {
+
+	    		@Override
+				public void surfaceChanged(SurfaceHolder holder, int format,
+						int width, int height) {
+	    			
+				}
+	
+	    		@Override
+				public void surfaceCreated(SurfaceHolder holder) {
+	    			runTest();
+				}
+	
+	    		@Override
+				public void surfaceDestroyed(SurfaceHolder holder) {
+	    			error("Test cancelled !");
+				}
+	    		
+	    	};
+    	
+	    	holder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
+	    	holder.addCallback(shcb);
+	    	
+		}
+		
+	}
+	
+	private void runTest() {
+		
+		cb.onStart();
 		
 		/* 1 - Set up MediaRecorder */
 		mr.setVideoSource(MediaRecorder.VideoSource.CAMERA);
 		mr.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
-		mr.setVideoFrameRate(15);
-		mr.setVideoSize(640, 480);
+		mr.setVideoFrameRate(fps);
+		mr.setVideoSize(resX, resY);
 		mr.setVideoEncoder(MediaRecorder.VideoEncoder.H264);
-		mr.setPreviewDisplay(holder[0].getSurface());
+		mr.setPreviewDisplay(holder.getSurface());
 
 		mr.setOutputFile(cacheDir.getPath()+'/'+TESTFILE);
 		
 		try {
 			mr.prepare();
 		} catch (IOException e) {
-			return "Can't record video, H.264 not supported ?";
+			error("Can't record video, H.264 not supported ?");
 		}
 		
-		/* 2 - Record dummy video for 2 secs */
-		mr.start();
+		/* 2 - Record dummy video for 500 msecs */
+		mr.start(); recording = true;
 		
-		try {
-			Thread.sleep(2000);
-		} catch (InterruptedException e1) {
-			return "Interrupted exception";
-		}
-		
-		mr.stop();
-		
-		/* 3 - Parse video with MP4Parser */
-		File file = new File(cacheDir.getPath()+'/'+TESTFILE);
-		RandomAccessFile raf = null;
-		try {
-			raf = new RandomAccessFile(file, "r");
-		} catch (FileNotFoundException e1) {
-			return "Can't load dummy video";
-		}
-		
-		MP4Parser parser = null;
-		try {
-			parser = new MP4Parser(raf);
-		} catch (IOException e2) {
-			return e2.getMessage();
-		}
-		
-		/* 4 - Get stsd box (contains h.264 parameters) */
-		StsdBox stsd = null;
-		try {
-			stsd = parser.getStsdBox();
-		} catch (IOException e1) {
-			return e1.getMessage();
-		}
-		
-		try {
-			raf.close();
-		} catch (IOException e) {
-			return "Error :(";
-		}
+		runnable = new Runnable() {
 
-		if (!file.delete()) Log.e(SpydroidActivity.LOG_TAG,"Temp file not erased");
+			@Override
+			public void run() {
+				
+				mr.stop(); recording = false;
+				
+				/* 3 - Parse video with MP4Parser */
+				File file = new File(cacheDir.getPath()+'/'+TESTFILE);
+				RandomAccessFile raf = null;
+				try {
+					raf = new RandomAccessFile(file, "r");
+				} catch (FileNotFoundException e1) {
+					error("Can't load dummy video");
+				}
+				
+				MP4Parser parser = null;
+				try {
+					parser = new MP4Parser(raf);
+				} catch (IOException e2) {
+					error(e2.getMessage());
+				}
+				
+				/* 4 - Get stsd box (contains h.264 parameters) */
+				StsdBox stsd = null;
+				try {
+					stsd = parser.getStsdBox();
+				} catch (IOException e1) {
+					error(e1.getMessage());
+				}
+				
+				try {
+					raf.close();
+				} catch (IOException e) {
+					error("Error :(");
+				}
+
+				if (!file.delete()) Log.e(SpydroidActivity.LOG_TAG,"Temp file not erased");
+				
+				success(stsd.getProfileLevel()+":"+stsd.getB64PPS()+":"+stsd.getB64SPS()); 	
+				
+			}
+			
+			
+		};
 		
-		return "Success:"+stsd.getProfileLevel()+":"+stsd.getB64PPS()+":"+stsd.getB64SPS();
+		handler.postDelayed(runnable, 500);
 		
 	}
 	
-	protected void onPostExecute(String result) {
-		if (result.startsWith("Success")) {
-			cbs.onSuccess(result);
-		}
-		else cbs.onError(result);
+	private void success(String result) {
+		clean();
+		cb.onSuccess(result);
 	}
 	
-	protected void onCancelled(Object obj) {
-		cbs.onError("Test cancelled :(");
+	private void error(String error) {
+		clean();
+		cb.onError(error);
+	}
+	
+	private void clean () {
+		if (recording) mr.stop();
+		recording = false;
+		handler.removeCallbacks(runnable);
+		holder.removeCallback(shcb);
+		shcb = null;
 	}
 	
 	

@@ -24,7 +24,6 @@ import java.io.IOException;
 
 import android.app.Activity;
 import android.content.Context;
-import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.PowerManager;
 import android.view.SurfaceHolder;
@@ -69,16 +68,22 @@ public class SecondActivity  extends Activity implements SurfaceHolder.Callback 
 	@Override
 	public void surfaceCreated(SurfaceHolder holder) {
 		
-		String ip = getIntent().getStringExtra("ip");
+		String ip = getIntent().getStringExtra("net.mpk.spydroid.ip");
+		int resX = getIntent().getIntExtra("net.mpk.spydroid.resX",0);
+		int resY = getIntent().getIntExtra("net.mpk.spydroid.resY",0);
+		int fps = getIntent().getIntExtra("net.mpk.spydroid.fps",0);
 		
 	    // Ensures that the screen stays on
 		wl.acquire();
 		
 		try {
-			streamer.setup(holder,ip);
+			streamer.setup(holder,ip, resX, resY, fps);
 		} catch (IOException e) {
-			// Catch error if any and display message
+			// Catch error if any
+			// TODO: display message
 		}
+		
+		// Streaming starts as soon as the surface for the MediaRecorder is created
 		streamer.start();				
 	}
 

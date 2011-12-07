@@ -30,8 +30,8 @@ import android.net.LocalSocketAddress;
 import android.util.Log;
 
 /* 
- *  Just a MediaRecorder that writes in an OutputStream 
- *  so that you can modify data on-th-fly with getInputStream()
+ *  Just a MediaRecorder that writes in a local socket instead of a file
+ *  so that you can modify data on-the-fly with getInputStream()
  * 
  */
 

@@ -32,6 +32,7 @@ public class StsdBox {
 	
 	private byte[] pps = new byte[5];
 	private byte[] sps = new byte[11];
+	private int spsLength, ppsLength;
 	
 	/*
 	 * fis: proper mp4 file
@@ -40,12 +41,12 @@ public class StsdBox {
 	 */
 	
 	public StsdBox (RandomAccessFile fis, long pos) {
-		
+
 		this.fis = fis;
 		this.pos = pos;
 		
-		findPPS();
-		findSPS();
+		findBoxAvcc();
+		findSPSandPPS();
 		
 	}
 	
@@ -54,42 +55,64 @@ public class StsdBox {
 	}
 	
 	public String getB64PPS() {
-		return Base64.encodeToString(pps, 0, 5, Base64.NO_WRAP);
+		return Base64.encodeToString(pps, 0, ppsLength, Base64.NO_WRAP);
 	}
 	
 	public String getB64SPS() {
-		return Base64.encodeToString(sps, 0, 9, Base64.NO_WRAP);
+		return Base64.encodeToString(sps, 0, spsLength, Base64.NO_WRAP);
 	}
 	
-	private byte[] findPPS() {
+	private boolean findSPSandPPS() {
 		
-		if (!findBoxAvcc()) return null;
-		
-		// Find PPS field in avcC box
+		/*
+		 *  SPS and PPS parameters are stored in the avcC box
+		 *  You may find really useful information about this box 
+		 *  in the document ISO-IEC 14496-15, part 5.2.4.1.1
+		 *  The box's structure is described there
+		 *  
+		 *  aligned(8) class AVCDecoderConfigurationRecord {
+		 *		unsigned int(8) configurationVersion = 1;
+		 *		unsigned int(8) AVCProfileIndication;
+		 *		unsigned int(8) profile_compatibility;
+		 *		unsigned int(8) AVCLevelIndication;
+		 *		bit(6) reserved = ‘111111’b;
+		 *		unsigned int(2) lengthSizeMinusOne;
+		 *		bit(3) reserved = ‘111’b;
+		 *		unsigned int(5) numOfSequenceParameterSets;
+		 *		for (i=0; i< numOfSequenceParameterSets; i++) {
+		 *			unsigned int(16) sequenceParameterSetLength ;
+		 *			bit(8*sequenceParameterSetLength) sequenceParameterSetNALUnit;
+		 *		}
+		 *		unsigned int(8) numOfPictureParameterSets;
+		 *		for (i=0; i< numOfPictureParameterSets; i++) {
+		 *			unsigned int(16) pictureParameterSetLength;
+		 *			bit(8*pictureParameterSetLength) pictureParameterSetNALUnit;
+		 *		}
+		 *	}
+		 *
+		 *  
+		 *  
+		 */
+
 		try {
-			fis.skipBytes(20);
-			fis.read(pps,0,5);
+			
+			// TODO: Here we assume that numOfSequenceParameterSets = 1, numOfPictureParameterSets = 1 !
+			
+			// Here we extract the SPS parameter
+			fis.skipBytes(7);
+			spsLength  = 0xFF&fis.readByte();
+			fis.read(sps,0,spsLength);
+			// Here we extract the PPS parameter
+			fis.skipBytes(2);
+			ppsLength = 0xFF&fis.readByte();
+			fis.read(pps,0,ppsLength);
+			
+			
 		} catch (IOException e) {
-			return null;
-		}  
+			return false;
+		}
 		
-		return pps;
-		
-	}	
-	
-	private byte[] findSPS() {
-		
-		if (!findBoxAvcc()) return null;
-		
-		// Find SPS field in avcC box
-		try {
-			fis.skipBytes(8);
-			fis.read(sps,0,11);
-		} catch (IOException e) {
-			return null;
-		}  
-		
-		return sps;
+		return true;
 		
 	}
 	

@@ -57,7 +57,7 @@ public class H264Packetizer extends AbstractPacketizer {
         
 		try {
 		
-		// Skip all atoms preceding mdat atom
+			// Skip all atoms preceding mdat atom
 			while (true) {
 				fis.read(buffer,rtphl,8);
 				if (buffer[rtphl+4] == 'm' && buffer[rtphl+5] == 'd' && buffer[rtphl+6] == 'a' && buffer[rtphl+7] == 't') break;
