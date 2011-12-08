@@ -114,7 +114,7 @@ public class SpydroidActivity extends Activity {
     	    log("And open it with vlc");
     		return;
     	}
-    	/*
+
     	// Test H.264 Support
     	cv = (SurfaceView) findViewById(R.id.smallcameraview);
     	sh = cv.getHolder();
@@ -166,7 +166,7 @@ public class SpydroidActivity extends Activity {
 			}
 			
 		});
-		*/
+
     }
     
     public boolean onCreateOptionsMenu(Menu menu) {
