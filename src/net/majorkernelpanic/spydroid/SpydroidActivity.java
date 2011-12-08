@@ -51,7 +51,6 @@ public class SpydroidActivity extends Activity {
     public Button startButton, quitButton;
     public TextView console;
     
-    
     static final public String LOG_TAG = "SPYDROID";
     
     private SharedPreferences settings;
@@ -81,10 +80,10 @@ public class SpydroidActivity extends Activity {
         	    editor.commit();
         		
         		Intent intent = new Intent(v.getContext(),SecondActivity.class);
-        		intent.putExtra("net.mpk.spydroid.ip", ip );
-        		intent.putExtra("net.mpk.spydroid.resX", resX );
-        		intent.putExtra("net.mpk.spydroid.resY", resY );
-        		intent.putExtra("net.mpk.spydroid.fps", fps );
+        		intent.putExtra("net.majorkernelpanic.spydroid.ip", ip );
+        		intent.putExtra("net.majorkernelpanic.spydroid.resX", resX );
+        		intent.putExtra("net.majorkernelpanic.spydroid.resY", resY );
+        		intent.putExtra("net.majorkernelpanic.spydroid.fps", fps );
         		startActivityForResult(intent, 0);
         		
         	}
@@ -180,7 +179,9 @@ public class SpydroidActivity extends Activity {
         case R.id.quality:
         	// Starts QualityListActivity where user can change the streaming quality
     		Intent intent = new Intent(this.getBaseContext(),QualityListActivity.class);
-    		intent.putExtra("ip", ip );
+    		intent.putExtra("net.majorkernelpanic.spydroid.resX", resX );
+    		intent.putExtra("net.majorkernelpanic.spydroid.resY", resY );
+    		intent.putExtra("net.majorkernelpanic.spydroid.fps", fps );
     		startActivityForResult(intent, 0);
         	return true;
         default:
@@ -193,9 +194,9 @@ public class SpydroidActivity extends Activity {
     	// User has changed quality
     	if (resultCode==1000) {
 
-    		resX = data.getIntExtra("net.mpk.spydroid.resX", 0);
-    		resY = data.getIntExtra("net.mpk.spydroid.resY", 0);
-    		fps = data.getIntExtra("net.mpk.spydroid.fps", 0);
+    		resX = data.getIntExtra("net.majorkernelpanic.spydroid.resX", 0);
+    		resY = data.getIntExtra("net.majorkernelpanic.spydroid.resY", 0);
+    		fps = data.getIntExtra("net.majorkernelpanic.spydroid.fps", 0);
 
     		SharedPreferences.Editor editor = settings.edit();
     		editor.putInt("resX", resX);

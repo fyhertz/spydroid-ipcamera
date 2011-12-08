@@ -68,10 +68,10 @@ public class SecondActivity  extends Activity implements SurfaceHolder.Callback 
 	@Override
 	public void surfaceCreated(SurfaceHolder holder) {
 		
-		String ip = getIntent().getStringExtra("net.mpk.spydroid.ip");
-		int resX = getIntent().getIntExtra("net.mpk.spydroid.resX",0);
-		int resY = getIntent().getIntExtra("net.mpk.spydroid.resY",0);
-		int fps = getIntent().getIntExtra("net.mpk.spydroid.fps",0);
+		String ip = getIntent().getStringExtra("net.majorkernelpanic.spydroid.ip");
+		int resX = getIntent().getIntExtra("net.majorkernelpanic.spydroid.resX",0);
+		int resY = getIntent().getIntExtra("net.majorkernelpanic.spydroid.resY",0);
+		int fps = getIntent().getIntExtra("net.majorkernelpanic.spydroid.fps",0);
 		
 	    // Ensures that the screen stays on
 		wl.acquire();
