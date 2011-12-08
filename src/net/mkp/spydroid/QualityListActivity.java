@@ -21,7 +21,6 @@ public class QualityListActivity extends ListActivity {
     /* User can choose a quality among those */
     private String[] ql = new String[] {
     		
-    		"1024x768, 15fps",
     		"640x480, 20fps",
     		"640x480, 15fps",
     		"640x480, 10fps",
