@@ -57,8 +57,6 @@ public class QualityListActivity extends ListActivity {
 		for (i=0;i<ql.length;i++)
 			if (ql[i].equals(String.valueOf(resX)+"x"+String.valueOf(resY)+", "+String.valueOf(fps)+"fps")) break;
 		
-		Log.e("LOL",""+i);
-		
     	listView.setItemChecked(i,true);
     	
     }
