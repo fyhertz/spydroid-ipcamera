@@ -18,13 +18,13 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-package net.mkp.spydroid;
+package net.majorkernelpanic.spydroid;
 
 import java.io.IOException;
 import java.net.InetAddress;
 
-import net.mkp.librtp.AMRNBPacketizer;
-import net.mkp.librtp.H264Packetizer;
+import net.majorkernelpanic.librtp.AMRNBPacketizer;
+import net.majorkernelpanic.librtp.H264Packetizer;
 
 import android.media.MediaRecorder;
 import android.util.Log;

@@ -18,14 +18,14 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-package net.mkp.librtp;
+package net.majorkernelpanic.librtp;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.InetAddress;
 import java.net.SocketException;
 
-import net.mkp.spydroid.SpydroidActivity;
+import net.majorkernelpanic.spydroid.SpydroidActivity;
 import android.os.SystemClock;
 import android.util.Log;
 

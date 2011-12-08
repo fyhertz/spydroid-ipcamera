@@ -18,7 +18,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-package net.mkp.librtp;
+package net.majorkernelpanic.librtp;
 
 import java.io.IOException;
 import java.net.DatagramPacket;
@@ -27,7 +27,7 @@ import java.net.InetAddress;
 import java.net.SocketException;
 import java.util.Random;
 
-import net.mkp.spydroid.SpydroidActivity;
+import net.majorkernelpanic.spydroid.SpydroidActivity;
 import android.util.Log;
 
 

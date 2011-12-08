@@ -18,11 +18,11 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-package net.mkp.spydroid;
+package net.majorkernelpanic.spydroid;
 
 import java.io.IOException;
 
-import net.mkp.librtp.SessionDescriptor;
+import net.majorkernelpanic.librtp.SessionDescriptor;
 import android.app.Activity;
 import android.content.Intent;
 import android.content.SharedPreferences;

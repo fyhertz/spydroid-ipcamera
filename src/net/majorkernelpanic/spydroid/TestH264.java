@@ -18,15 +18,15 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-package net.mkp.spydroid;
+package net.majorkernelpanic.spydroid;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 
-import net.mkp.libmp4.MP4Parser;
-import net.mkp.libmp4.StsdBox;
+import net.majorkernelpanic.libmp4.MP4Parser;
+import net.majorkernelpanic.libmp4.StsdBox;
 import android.media.MediaRecorder;
 import android.os.Handler;
 import android.util.Log;

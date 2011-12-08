@@ -1,4 +1,4 @@
-package net.mkp.spydroid;
+package net.majorkernelpanic.spydroid;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
