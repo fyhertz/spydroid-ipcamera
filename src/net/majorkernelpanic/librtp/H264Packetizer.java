@@ -67,7 +67,7 @@ public class H264Packetizer extends AbstractPacketizer {
 				fis.read(buffer,rtphl,len-8);
 			} 
 			
-			// Some phones do not set length correctly when stream is not seekable
+			// Some phones do not set length correctly when stream is not seekable, still we need to skip the header
 			if (0 == len) {
 				while (true) {
 					while (fis.read() != 'm');
