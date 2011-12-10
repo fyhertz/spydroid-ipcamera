@@ -29,6 +29,7 @@ import net.majorkernelpanic.libmp4.MP4Parser;
 import net.majorkernelpanic.libmp4.StsdBox;
 import android.media.MediaRecorder;
 import android.os.Handler;
+import android.os.Message;
 import android.util.Log;
 import android.view.SurfaceHolder;
 
@@ -73,113 +74,118 @@ public class TestH264 {
 	private Callback cb;
 	private File cacheDir;
 	private int resX, resY, fps;
-	private Handler handler = new Handler();
-	private Runnable runnable;
+	private Handler handler;
 	private boolean recording = false;
 	
-	private TestH264() { }
-
-	private void start() {
+	private TestH264() {
 		
-		if (shcb==null) {
+		handler = new Handler() {
 			
-			shcb = new SurfaceHolder.Callback() {
-
-	    		@Override
-				public void surfaceChanged(SurfaceHolder holder, int format,
-						int width, int height) {
-	    			
-				}
-	
-	    		@Override
-				public void surfaceCreated(SurfaceHolder holder) {
-	    			runTest();
-				}
-	
-	    		@Override
-				public void surfaceDestroyed(SurfaceHolder holder) {
-	    			error("Test cancelled !");
-				}
-	    		
-	    	};
-    	
-	    	holder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
-	    	holder.addCallback(shcb);
-	    	
-		}
-		
-	}
-	
-	private void runTest() {
-		
-		cb.onStart();
-		
-		/* 1 - Set up MediaRecorder */
-		mr.setVideoSource(MediaRecorder.VideoSource.CAMERA);
-		mr.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
-		mr.setVideoFrameRate(fps);
-		mr.setVideoSize(resX, resY);
-		mr.setVideoEncoder(MediaRecorder.VideoEncoder.H264);
-		mr.setPreviewDisplay(holder.getSurface());
-
-		mr.setOutputFile(cacheDir.getPath()+'/'+TESTFILE);
-		
-		try {
-			mr.prepare();
-		} catch (IOException e) {
-			error("Can't record video, H.264 not supported ?");
-		}
-		
-		/* 2 - Record dummy video for 500 msecs */
-		mr.start(); recording = true;
-		
-		runnable = new Runnable() {
-
 			@Override
-			public void run() {
-				
-				mr.stop(); recording = false;
-				
-				/* 3 - Parse video with MP4Parser */
-				File file = new File(cacheDir.getPath()+'/'+TESTFILE);
-				RandomAccessFile raf = null;
-				try {
-					raf = new RandomAccessFile(file, "r");
-				} catch (FileNotFoundException e1) {
-					error("Can't load dummy video");
-				}
-				
-				MP4Parser parser = null;
-				try {
-					parser = new MP4Parser(raf);
-				} catch (IOException e2) {
-					error(e2.getMessage());
-				}
-				
-				/* 4 - Get stsd box (contains h.264 parameters) */
-				StsdBox stsd = null;
-				try {
-					stsd = parser.getStsdBox();
-				} catch (IOException e1) {
-					error(e1.getMessage());
-				}
-				
-				try {
-					raf.close();
-				} catch (IOException e) {
-					error("Error :(");
-				}
-
-				if (!file.delete()) Log.e(SpydroidActivity.LOG_TAG,"Temp file not erased");
-				
-				success(stsd.getProfileLevel()+":"+stsd.getB64PPS()+":"+stsd.getB64SPS()); 	
-				
+			public void handleMessage(Message msg) {
+				runTest(1);
 			}
-			
 			
 		};
 		
-		handler.postDelayed(runnable, 500);
+		shcb = new SurfaceHolder.Callback() {
+
+    		@Override
+			public void surfaceChanged(SurfaceHolder holder, int format,
+					int width, int height) {
+    			
+			}
+
+    		@Override
+			public void surfaceCreated(SurfaceHolder holder) {
+    			runTest(0);
+			}
+
+    		@Override
+			public void surfaceDestroyed(SurfaceHolder holder) {
+    			error("Test cancelled !");
+			}
+    		
+    	};
+		
+	}
+
+	private void start() {
+
+		holder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
+    	holder.addCallback(shcb);
+		
+	}
+	
+	private void runTest(int step) {
+		
+		switch (step) {
+		
+		case 0:
+		
+			cb.onStart();
+			
+			/* 1 - Set up MediaRecorder */
+			mr.setVideoSource(MediaRecorder.VideoSource.CAMERA);
+			mr.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
+			mr.setVideoFrameRate(fps);
+			mr.setVideoSize(resX, resY);
+			mr.setVideoEncoder(MediaRecorder.VideoEncoder.H264);
+			mr.setPreviewDisplay(holder.getSurface());
+	
+			mr.setOutputFile(cacheDir.getPath()+'/'+TESTFILE);
+			
+			try {
+				mr.prepare();
+			} catch (IOException e) {
+				error("Can't record video, H.264 not supported ?");
+			}
+			
+			/* 2 - Record dummy video for 500 msecs */
+			mr.start(); recording = true;
+			handler.sendMessageDelayed(Message.obtain(), 500);
+		
+			break;
+		
+		case 1:
+		
+			mr.stop(); recording = false;
+			
+			/* 3 - Parse video with MP4Parser */
+			File file = new File(cacheDir.getPath()+'/'+TESTFILE);
+			RandomAccessFile raf = null;
+			try {
+				raf = new RandomAccessFile(file, "r");
+			} catch (FileNotFoundException e1) {
+				error("Can't load dummy video");
+			}
+			
+			MP4Parser parser = null;
+			try {
+				parser = new MP4Parser(raf);
+			} catch (IOException e2) {
+				error(e2.getMessage());
+			}
+			
+			/* 4 - Get stsd box (contains h.264 parameters) */
+			StsdBox stsd = null;
+			try {
+				stsd = parser.getStsdBox();
+			} catch (IOException e1) {
+				error(e1.getMessage());
+			}
+			
+			try {
+				raf.close();
+			} catch (IOException e) {
+				error("Error :(");
+			}
+
+			if (!file.delete()) Log.e(SpydroidActivity.LOG_TAG,"Temp file not erased");
+			
+			success(stsd.getProfileLevel()+":"+stsd.getB64PPS()+":"+stsd.getB64SPS()); 	
+			
+		}
 		
 	}
 	
@@ -196,9 +202,7 @@ public class TestH264 {
 	private void clean () {
 		if (recording) mr.stop();
 		recording = false;
-		handler.removeCallbacks(runnable);
 		holder.removeCallback(shcb);
-		shcb = null;
 	}
 	
 	
