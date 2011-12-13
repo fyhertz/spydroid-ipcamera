@@ -39,7 +39,7 @@ import android.view.SurfaceHolder;
 
 public class CameraStreamer {
 
-	private MediaStreamer sound = null, video = null;
+	private MediaStreamer sound = new MediaStreamer(), video = new MediaStreamer();
 	private AMRNBPacketizer sstream = null;
 	private H264Packetizer vstream = null;
 	
@@ -47,7 +47,7 @@ public class CameraStreamer {
 	
 		// AUDIO
 		
-		sound = new MediaStreamer();
+		sound.reset();
 		
 		sound.setAudioSource(MediaRecorder.AudioSource.CAMCORDER);
 		sound.setOutputFormat(MediaRecorder.OutputFormat.RAW_AMR);
@@ -68,7 +68,7 @@ public class CameraStreamer {
 		
 		// VIDEO
 		
-		video = new MediaStreamer();
+		video.reset();
 		
 		video.setVideoSource(MediaRecorder.VideoSource.CAMERA);
 		video.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
@@ -94,18 +94,26 @@ public class CameraStreamer {
 	
 	public void start() {
 	
+		Log.e("e","sound: "+sound.getState()+" video: "+video.getState());
+		
 		// Start sound streaming
-		sound.start();
-		sstream.startStreaming();
+		if (sound.getState()==MediaStreamer.State.PREPARED) {
+			sound.start();
+			sstream.startStreaming();
+		}
 		
 		// Start video streaming
-		video.start();
-		vstream.startStreaming();
+		if (video.getState()==MediaStreamer.State.PREPARED) {
+			video.start();
+			vstream.startStreaming();
+		}
 		
 	}
 	
 	public void stop() {
 	
+		Log.e("e","stop, sound: "+sound.getState()+" video: "+video.getState());
+		
 		// Stop sound streaming
 		sstream.stopStreaming();
 		sound.stop();

@@ -58,7 +58,7 @@ public class TestH264 {
 		
 	}
 	
-	/* If test succesful, onSuccess is called and provides H264 settings on the phone  */
+	/* If test successful, onSuccess is called and provides H264 settings on the phone  */
 	public interface Callback {
 		public void onStart();
 		public void onError(String error);

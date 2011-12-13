@@ -27,6 +27,7 @@ import android.app.Activity;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.os.StrictMode;
 import android.text.Html;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -61,6 +62,13 @@ public class SpydroidActivity extends Activity {
     private int resX,resY,fps, oldResX, oldResY, oldFps;
     
     public void onCreate(Bundle savedInstanceState) {
+    	
+    	StrictMode.setVmPolicy(new StrictMode.VmPolicy.Builder()
+        .detectAll()
+        .penaltyLog()
+        .penaltyDeath()
+        .build());
+    	
         super.onCreate(savedInstanceState);
         
         setContentView(R.layout.main);

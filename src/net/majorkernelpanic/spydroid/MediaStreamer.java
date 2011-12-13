@@ -42,6 +42,15 @@ public class MediaStreamer extends MediaRecorder{
 	private LocalServerSocket lss = null;
 	private LocalSocket receiver, sender = null;
 	
+	public static class State {
+		public static int INITIAL = 0x00000000;
+		public static int PREPARED = 0x00000001;
+		public static int RECORDING = 0x00000002;
+		public static int ERROR = 0x00000003;
+	}
+	
+	private int state = State.INITIAL;
+	
 	public void prepare() throws IllegalStateException,IOException {
 		
 		receiver = new LocalSocket();
@@ -55,8 +64,7 @@ public class MediaStreamer extends MediaRecorder{
 			sender.setSendBufferSize(500000);
 			id++;
 		} catch (IOException e1) {
-			Log.e(SpydroidActivity.LOG_TAG, "What ? It cannot be !!");
-			return;
+			throw new IOException("Can't create local socket !");
 		}
 		
 		setOutputFile(sender.getFileDescriptor());
@@ -65,11 +73,15 @@ public class MediaStreamer extends MediaRecorder{
 			super.prepare();
 		} catch (IllegalStateException e) {
 			closeSockets();
+			state = State.ERROR;
 			throw e;
 		} catch (IOException e) {
+			state = State.ERROR;
 			closeSockets();
 			throw e;
 		}
+		
+		state = State.PREPARED;
 		
 	}
 	
@@ -88,8 +100,26 @@ public class MediaStreamer extends MediaRecorder{
 
 	
 	public void stop() {
-		super.stop();
+		state = State.INITIAL;
 		closeSockets();
+		try {
+			super.stop();
+		} catch (IllegalStateException e) {
+			state = State.ERROR;
+		}
+	}
+	
+	public void start() {
+		state = State.RECORDING;
+		try {
+			super.start();
+		} catch (IllegalStateException e) {
+			state = State.ERROR;
+		}
+	}
+	
+	public int getState() {
+		return state;
 	}
 	
 	private void closeSockets() {
