@@ -22,13 +22,9 @@ package net.majorkernelpanic.spydroid;
 
 import java.io.IOException;
 import java.net.InetAddress;
-import java.util.Random;
-
 import net.majorkernelpanic.librtp.AMRNBPacketizer;
 import net.majorkernelpanic.librtp.H264Packetizer;
-
 import android.media.MediaRecorder;
-import android.util.Log;
 import android.view.SurfaceHolder;
 
 /*
