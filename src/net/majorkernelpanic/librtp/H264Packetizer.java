@@ -41,19 +41,19 @@ import android.util.Log;
  */
 
 public class H264Packetizer extends AbstractPacketizer {
-
-	static public final int PORT = 5006;
 	
 	private final int packetSize = 1400;
-	private long oldtime = SystemClock.elapsedRealtime(), delay = 20, oldavailable;
+	private long oldtime = SystemClock.elapsedRealtime(), delay = 0, average = 0, oldavailable;
+	private long latency, oldlat = oldtime, tleft = 0;
+	private int available, naluLength;
 	
-	public H264Packetizer(InputStream fis, InetAddress dest) throws SocketException {
-		super(fis, dest, PORT);
+	public H264Packetizer(InputStream fis, InetAddress dest, int port) throws SocketException {
+		super(fis, dest, port);
 	}
-
+	
 	public void run() {
 		
-		int naluLength, sum, len = 0;
+		int sum, len = 0;
         
 		try {
 		
@@ -62,13 +62,13 @@ public class H264Packetizer extends AbstractPacketizer {
 				fis.read(buffer,rtphl,8);
 				if (buffer[rtphl+4] == 'm' && buffer[rtphl+5] == 'd' && buffer[rtphl+6] == 'a' && buffer[rtphl+7] == 't') break;
 				len = (buffer[rtphl+3]&0xFF) + (buffer[rtphl+2]&0xFF)*256 + (buffer[rtphl+1]&0xFF)*65536;
-				if (0 == len) break;
+				if (len<=0) return;
 				//Log.e(SpydroidActivity.LOG_TAG,"Atom skipped: "+printBuffer(rtphl+4,rtphl+8)+" size: "+len);
 				fis.read(buffer,rtphl,len-8);
 			} 
 			
 			// Some phones do not set length correctly when stream is not seekable, still we need to skip the header
-			if (0 == len) {
+			if (len<=0) {
 				while (true) {
 					while (fis.read() != 'm');
 					fis.read(buffer,rtphl,3);
@@ -85,7 +85,7 @@ public class H264Packetizer extends AbstractPacketizer {
 		while (running) { 
 		 
 			// Read nal unit length (4 bytes) and nal unit header (1 byte)
-			fill(rtphl, 5);   
+			len = fill(rtphl, 5);
 			naluLength = (buffer[rtphl+3]&0xFF) + (buffer[rtphl+2]&0xFF)*256 + (buffer[rtphl+1]&0xFF)*65536;
 			
 			//Log.e(SpydroidActivity.LOG_TAG,"- Nal unit length: " + naluLength);
@@ -100,9 +100,11 @@ public class H264Packetizer extends AbstractPacketizer {
 			if (naluLength<=packetSize-rtphl-2) {
 				
 				buffer[rtphl] = buffer[rtphl+4];
+				if (!running) break;
 				len = fill(rtphl+1,  naluLength-1  );
+				if (len<0) break;
 				rsock.markNextPacket();
-				send(naluLength+rtphl);
+				send(naluLength+rtphl,false);
 				
 				//Log.e(SpydroidActivity.LOG_TAG,"----- Single NAL unit read:"+len+" header:"+printBuffer(rtphl,rtphl+3));
 				
@@ -111,7 +113,7 @@ public class H264Packetizer extends AbstractPacketizer {
 			else {
 			
 				// Set FU-A indicator
-				buffer[rtphl] = 28; 
+				buffer[rtphl] = 28;
 				buffer[rtphl] += (buffer[rtphl+4] & 0x60) & 0xFF; // FU indicator NRI
 				//buffer[rtphl] += 0x80;
 				
@@ -122,7 +124,9 @@ public class H264Packetizer extends AbstractPacketizer {
 				 
 		    	while (sum < naluLength) {
 		    		
+		    		if (!running) break;
 					len = fill( rtphl+2,  naluLength-sum > packetSize-rtphl-2 ? packetSize-rtphl-2 : naluLength-sum  ); sum += len;
+					if (len<0) break;
 					
 					// Last packet before next nal
 					if (sum >= naluLength) {
@@ -131,67 +135,86 @@ public class H264Packetizer extends AbstractPacketizer {
 						rsock.markNextPacket();
 					}
 						
-					send(len+rtphl+2);
+					send(len+rtphl+2,true);
 					
 					// Switch start bit 
 					buffer[rtphl+1] = (byte) (buffer[rtphl+1] & 0x7F); 
 					
-					//Log.e(SpydroidActivity.LOG_TAG,"--- FU-A unit, end:"+(boolean)(sum>=naluLength));
+					//Log.d(SpydroidActivity.LOG_TAG,"--- FU-A unit, end:"+(boolean)(sum>=naluLength));
 					
 		    	}
+		    	
 			}
 			
 		}
 		
+		Log.d(SpydroidActivity.LOG_TAG,"Thread over !!!");
 		
 	}
 	
 	private int fill(int offset,int length) {
 		
-		int sum = 0, len, available;
+		int sum = 0, len;
+		long time;
 		
 		while (sum<length) {
 			try { 
+				
 				available = fis.available();
 				len = fis.read(buffer, offset+sum, length-sum);
-				//Log.e(SpydroidActivity.LOG_TAG,"Data read: "+fis.available()+","+len);
+				//Log.d(SpydroidActivity.LOG_TAG,"Data read: "+fis.available()+","+len);
 				
 				if (oldavailable<available) {
-					// We don't want fis.available to reach 0 because it provokes choppy streaming (which is logical: it causes fis.read to block the thread periodically).
-					// So here, we increase the delay between two send calls to induce more buffering
-					if (oldavailable<20000) {
-						delay++;
-						//Log.e(SpydroidActivity.LOG_TAG,"Inc delay: "+delay+" oa: "+oldavailable);
-					}
-					// But we don't want to much buffering either:
-					else if (oldavailable>20000) {						
-						delay--;
-						//Log.e(SpydroidActivity.LOG_TAG,"Dec delay: "+delay+" oa: "+oldavailable);
-					}
+					
+					time = SystemClock.elapsedRealtime();
+					latency = time - oldlat;
+					tleft = latency;
+					oldlat = time;
+					
+					Log.d(SpydroidActivity.LOG_TAG,"latency: "+latency);
+					Log.d(SpydroidActivity.LOG_TAG,"Delay: "+delay+" available: "+fis.available()+", oldavailable: "+oldavailable);
+
 				}
+				
 				oldavailable = available;
+				
 				if (len<0) {
 					Log.e(SpydroidActivity.LOG_TAG,"Read error");
+					return -1;
 				}
 				else sum+=len;
+				
 			} catch (IOException e) {
-				stopStreaming();
-				return sum;
+				Log.e(SpydroidActivity.LOG_TAG,"Read try failed");
+				return -1;
 			}
-		}
+		} 
 		
 		return sum;
 			
 	}
 	
-	private void send(int size) {
+	private void send(int size, boolean split) {
 		
-		long now = SystemClock.elapsedRealtime();
+		long now = SystemClock.elapsedRealtime(), res = 0;
 		
-		if (now-oldtime<delay)
-			try {
-				Thread.sleep(delay-(now-oldtime));
-			} catch (InterruptedException e) {}
+		if (rsock.isMarked()) {
+			
+			if (available>0) res = (tleft*naluLength)/available;
+			average = (9*average+res)/10;
+			if (res>0 && (average<=0 || res<2*average)) delay = res;
+			
+			Log.d(SpydroidActivity.LOG_TAG,"avail: "+available+", nalu: "+naluLength+", tleft: "+tleft+", aver: "+average+", delay: "+delay+", res: "+res);
+			
+			tleft -= delay;
+
+			if (now-oldtime<delay)
+				try {
+					Thread.sleep(delay-(now-oldtime));
+				} catch (InterruptedException e) {}
+				
+		}
+		
 		oldtime = SystemClock.elapsedRealtime();
 		rsock.send(size);
 		

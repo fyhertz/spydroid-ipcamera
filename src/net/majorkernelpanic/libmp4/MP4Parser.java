@@ -23,6 +23,8 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.HashMap;
 
+import android.util.Log;
+
 
 public class MP4Parser {
 
@@ -42,14 +44,14 @@ public class MP4Parser {
 			throw new IOException("Wrong size");
 		}
 		
-		if (!parse("",length)) throw new IOException("Parsing error");
+		if (!parse("",length)) throw new IOException("MP4 Parsing error");
 		
 	}
 	
 	public long getBoxPos(String box) throws IOException {
 		
 		Long r = boxes.get(box);
-		if (r==null) throw new IOException("Error: box not found");
+		if (r==null) throw new IOException("box not found: "+box);
 		return boxes.get(box);
 	}
 	
@@ -72,10 +74,11 @@ public class MP4Parser {
 
 			while (sum<len) {
 				
-				fis.read(buffer,0,8); sum += 8; pos +=8;
+				fis.read(buffer,0,8); sum += 8; pos += 8;
 				if (validBoxName()) {
 					
 					newlen = (buffer[1]&0xFF)*65536 + (buffer[2]&0xFF)*256 + (buffer[3]&0xFF) - 8;
+					if (newlen<0) return false;
 					name = new String(buffer,4,4);
 					sum += newlen;
 					if (!parse(path+'/'+name,newlen)) return false;

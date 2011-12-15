@@ -42,15 +42,6 @@ public class MediaStreamer extends MediaRecorder{
 	private LocalServerSocket lss = null;
 	private LocalSocket receiver, sender = null;
 	
-	public static class State {
-		public static int INITIAL = 0x00000000;
-		public static int PREPARED = 0x00000001;
-		public static int RECORDING = 0x00000002;
-		public static int ERROR = 0x00000003;
-	}
-	
-	private int state = State.INITIAL;
-	
 	public void prepare() throws IllegalStateException,IOException {
 		
 		receiver = new LocalSocket();
@@ -61,7 +52,7 @@ public class MediaStreamer extends MediaRecorder{
 			receiver.setSendBufferSize(500000);
 			sender = lss.accept();
 			sender.setReceiveBufferSize(500000);
-			sender.setSendBufferSize(500000);
+			sender.setSendBufferSize(500000); 
 			id++;
 		} catch (IOException e1) {
 			throw new IOException("Can't create local socket !");
@@ -73,15 +64,11 @@ public class MediaStreamer extends MediaRecorder{
 			super.prepare();
 		} catch (IllegalStateException e) {
 			closeSockets();
-			state = State.ERROR;
 			throw e;
 		} catch (IOException e) {
-			state = State.ERROR;
 			closeSockets();
 			throw e;
 		}
-		
-		state = State.PREPARED;
 		
 	}
 	
@@ -100,26 +87,8 @@ public class MediaStreamer extends MediaRecorder{
 
 	
 	public void stop() {
-		state = State.INITIAL;
 		closeSockets();
-		try {
-			super.stop();
-		} catch (IllegalStateException e) {
-			state = State.ERROR;
-		}
-	}
-	
-	public void start() {
-		state = State.RECORDING;
-		try {
-			super.start();
-		} catch (IllegalStateException e) {
-			state = State.ERROR;
-		}
-	}
-	
-	public int getState() {
-		return state;
+		super.stop();
 	}
 	
 	private void closeSockets() {

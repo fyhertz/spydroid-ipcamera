@@ -63,12 +63,6 @@ public class SpydroidActivity extends Activity {
     
     public void onCreate(Bundle savedInstanceState) {
     	
-    	StrictMode.setVmPolicy(new StrictMode.VmPolicy.Builder()
-        .detectAll()
-        .penaltyLog()
-        .penaltyDeath()
-        .build());
-    	
         super.onCreate(savedInstanceState);
         
         setContentView(R.layout.main);
@@ -216,7 +210,7 @@ public class SpydroidActivity extends Activity {
     	
     }
     
-    public synchronized void log(String s) {
+    public void log(String s) {
     	console.append(Html.fromHtml(s+"<br />"));
     }
     

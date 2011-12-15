@@ -30,6 +30,7 @@ public class QualityListActivity extends ListActivity {
     		"320x240, 12fps",
     		"176x144, 10fps",
     		"176x144, 8fps",
+    		"176x144, 3fps",
     		
     };
 	
