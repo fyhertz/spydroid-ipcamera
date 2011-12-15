@@ -22,6 +22,7 @@ package net.majorkernelpanic.spydroid;
 
 import java.io.IOException;
 import java.net.InetAddress;
+import java.util.Random;
 
 import net.majorkernelpanic.librtp.AMRNBPacketizer;
 import net.majorkernelpanic.librtp.H264Packetizer;
@@ -45,7 +46,16 @@ public class CameraStreamer {
 	
 	public void setup(SurfaceHolder holder, String ip, int resX, int resY, int fps) throws IOException {
 	
-		// AUDIO
+		// First we try to resolve the host
+		InetAddress dest = null;
+		try {
+			dest = InetAddress.getByName(ip);
+		}
+		catch (IOException e) {
+			throw new IOException("Can't resolve host");
+		}
+		
+		// Then we prepare audio streaming
 		
 		sound = new MediaStreamer();
 		
@@ -58,15 +68,10 @@ public class CameraStreamer {
 		} catch (IOException e) {
 			throw new IOException("Can't stream sound :(");
 		}
+		 
+		sstream = new AMRNBPacketizer(sound.getInputStream(),dest,5004);
 		
-		try {
-			sstream = new AMRNBPacketizer(sound.getInputStream(), InetAddress.getByName(ip));
-		} catch (IOException e) {
-			Log.e(SpydroidActivity.LOG_TAG,"Unknown host");
-			throw new IOException("Can't resolve host :(");
-		}
-		
-		// VIDEO
+		// And finally we prepare video streaming
 		
 		video = new MediaStreamer();
 		
@@ -83,12 +88,7 @@ public class CameraStreamer {
 			throw new IOException("Can't stream video :(");
 		}
 		
-		try {
-			vstream = new H264Packetizer(video.getInputStream(), InetAddress.getByName(ip));
-		} catch (IOException e) {
-			Log.e(SpydroidActivity.LOG_TAG,"Unknown host");
-			throw new IOException("Can't resolve host :(");
-		}
+		vstream = new H264Packetizer(video.getInputStream(),dest,5006);
 		
 	}
 	
@@ -97,11 +97,11 @@ public class CameraStreamer {
 		// Start sound streaming
 		sound.start();
 		sstream.startStreaming();
-		
+
 		// Start video streaming
 		video.start();
 		vstream.startStreaming();
-		
+
 	}
 	
 	public void stop() {
