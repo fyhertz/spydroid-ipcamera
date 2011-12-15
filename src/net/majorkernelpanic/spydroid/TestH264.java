@@ -29,8 +29,6 @@ import net.majorkernelpanic.libmp4.MP4Parser;
 import net.majorkernelpanic.libmp4.StsdBox;
 import android.media.MediaRecorder;
 import android.media.MediaRecorder.OnInfoListener;
-import android.os.Handler;
-import android.os.Message;
 import android.util.Log;
 import android.view.SurfaceHolder;
 
