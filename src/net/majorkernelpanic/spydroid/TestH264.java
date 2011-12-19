@@ -102,7 +102,7 @@ public class TestH264 {
 
     		@Override
 			public void surfaceDestroyed(SurfaceHolder holder) {
-    			error("Test cancelled !");
+
 			}
     		
     	};
