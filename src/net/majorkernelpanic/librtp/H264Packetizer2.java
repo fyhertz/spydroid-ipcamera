@@ -24,8 +24,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.InetAddress;
 import java.net.SocketException;
-
-import net.majorkernelpanic.spydroid.SpydroidActivity;
 import android.os.SystemClock;
 import android.util.Log;
 
@@ -45,7 +43,7 @@ public class H264Packetizer2 extends AbstractPacketizer {
 	private final int packetSize = 1400;
 	private long oldtime = SystemClock.elapsedRealtime(), delay = 10;
 	private long latency, oldlat = oldtime;
-	private int available, naluLength = 0, nbNalu = 0, len = 0;
+	private int available = 0, oldavailable = 0, naluLength = 0, nbNalu = 0, len = 0;
 	private SimpleFifo fifo = new SimpleFifo(500000);
 	
 	public H264Packetizer2(InputStream fis, InetAddress dest, int port) throws SocketException {
@@ -157,7 +155,7 @@ public class H264Packetizer2 extends AbstractPacketizer {
 				len = fifo.read(buffer, rtphl+2,  naluLength-sum > packetSize-rtphl-2 ? packetSize-rtphl-2 : naluLength-sum  ); sum += len;
 				if (len<0) break;
 				
-				/* Last packet before next nal */
+				/* Last packet before next NAL */
 				if (sum >= naluLength) {
 					// End bit on
 					buffer[rtphl+1] += 0x40;
@@ -177,7 +175,7 @@ public class H264Packetizer2 extends AbstractPacketizer {
 		
 		nbNalu--;
 		
-		Log.i(SpydroidActivity.LOG_TAG,"NAL UNIT SENT "+nbNalu);
+		//Log.i(SpydroidActivity.LOG_TAG,"NAL UNIT SENT "+nbNalu);
 		
 	}
 	
@@ -185,7 +183,16 @@ public class H264Packetizer2 extends AbstractPacketizer {
 		
 		try {
 		
-			if (fis.available()>4) {
+			available = fis.available();
+			
+			if (available>oldavailable) {
+				long now = SystemClock.elapsedRealtime();
+				latency = now - oldlat;
+				oldlat = now;
+				oldavailable = available;
+			}
+			
+			if (nbNalu==0 && available>4) {
 				nbNalu = naluLength-len == 0 ? nbNalu : nbNalu+1;
 			}
 			else return;
@@ -195,7 +202,7 @@ public class H264Packetizer2 extends AbstractPacketizer {
 				fis.read(buffer,rtphl,naluLength-len);
 				fifo.write(buffer, rtphl, naluLength-len);
 				
-				/* Read nal unit and copy it in the fifo */
+				/* Read NAL unit and copy it in the fifo */
 				len = fis.read(buffer, rtphl, 4);
 				naluLength = (buffer[rtphl+3]&0xFF) + (buffer[rtphl+2]&0xFF)*256 + (buffer[rtphl+1]&0xFF)*65536;
 				len = fis.read(buffer, rtphl+4, naluLength);
@@ -207,12 +214,9 @@ public class H264Packetizer2 extends AbstractPacketizer {
 				
 				if (fis.available()<4) {
 					
-					long now = SystemClock.elapsedRealtime();
-					latency = now - oldlat;
-					oldlat = now;
 					delay = latency/nbNalu;
-					
-					Log.i(SpydroidActivity.LOG_TAG,"latency: "+latency+", nbNalu: "+nbNalu+", delay: "+delay+" avfifo: "+fifo.available() );
+					oldavailable = fis.available();
+					//Log.i(SpydroidActivity.LOG_TAG,"latency: "+latency+", nbNalu: "+nbNalu+", delay: "+delay+" avfifo: "+fifo.available() );
 					
 				}
 				
