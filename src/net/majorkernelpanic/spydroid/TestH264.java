@@ -149,8 +149,16 @@ public class TestH264 {
 			break;
 		
 		case 1:
-		
-			mr.stop(); recording = false;
+
+			recording = false;
+			try {
+				mr.stop(); 
+			}
+			catch (IllegalStateException e) {
+				mr.reset();
+				error("Test cancelled !");
+				return;
+			}
 			
 			/* 3 - Parse video with MP4Parser */
 			File file = new File(cacheDir.getPath()+'/'+TESTFILE);

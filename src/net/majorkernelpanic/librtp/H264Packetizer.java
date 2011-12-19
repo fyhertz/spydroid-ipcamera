@@ -43,9 +43,9 @@ import android.util.Log;
 public class H264Packetizer extends AbstractPacketizer {
 	
 	private final int packetSize = 1400;
-	private long oldtime = SystemClock.elapsedRealtime(), delay = 0, average = 0, oldavailable;
+	private long oldtime = SystemClock.elapsedRealtime(), delay = 0, avdelay = 0, avnal = 0;
 	private long latency, oldlat = oldtime, tleft = 0;
-	private int available, naluLength;
+	private int available, naluLength, oldavailable, bleft, utype = 0;
 	
 	public H264Packetizer(InputStream fis, InetAddress dest, int port) throws SocketException {
 		super(fis, dest, port);
@@ -95,6 +95,9 @@ public class H264Packetizer extends AbstractPacketizer {
 			sum = 1;
 			
 			// RFC 3984, packetization mode = 1
+			
+			utype = buffer[rtphl+4]&0x1F;
+			//Log.d(SpydroidActivity.LOG_TAG,"NAL UNIT TYPE: "+(buffer[rtphl+4]&0x1F));
 			
 			// Small nal unit => Single nal unit
 			if (naluLength<=packetSize-rtphl-2) {
@@ -166,12 +169,14 @@ public class H264Packetizer extends AbstractPacketizer {
 				
 				if (oldavailable<available) {
 					
+					bleft = available-oldavailable;
+					
 					time = SystemClock.elapsedRealtime();
 					latency = time - oldlat;
 					tleft = latency;
 					oldlat = time;
 					
-					Log.d(SpydroidActivity.LOG_TAG,"latency: "+latency);
+					Log.d(SpydroidActivity.LOG_TAG,"latency: "+latency+", buffer: "+bleft);
 					Log.d(SpydroidActivity.LOG_TAG,"Delay: "+delay+" available: "+fis.available()+", oldavailable: "+oldavailable);
 
 				}
@@ -201,12 +206,19 @@ public class H264Packetizer extends AbstractPacketizer {
 		if (rsock.isMarked()) {
 			
 			if (available>0) res = (tleft*naluLength)/available;
-			average = (9*average+res)/10;
-			if (res>0 && (average<=0 || res<2*average)) delay = res;
+			//if (available>0) res = (tleft*naluLength)/bleft;
+			if (utype != 5) {
+				if (0==avdelay) avdelay = res;
+				else avdelay = (99*avdelay+res)/100;
+				avnal = (99*avnal+naluLength)/100;
+				//if (res>0 && (avdelay<=0 || res<2*avdelay)) delay = res+1;
+				if (res>0) delay = res;
+			}
 			
-			Log.d(SpydroidActivity.LOG_TAG,"avail: "+available+", nalu: "+naluLength+", tleft: "+tleft+", aver: "+average+", delay: "+delay+", res: "+res);
+			Log.d(SpydroidActivity.LOG_TAG,"a: "+available+", av: "+avnal+", nal: "+naluLength+", t: "+tleft+", aver: "+avdelay+", del: "+delay+", res: "+res+", r2: "+(tleft*naluLength)/bleft);
 			
 			tleft -= delay;
+			bleft -= naluLength;
 
 			if (now-oldtime<delay)
 				try {
