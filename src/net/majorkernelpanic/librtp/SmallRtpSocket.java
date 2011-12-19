@@ -69,7 +69,7 @@ public class SmallRtpSocket {
 		upack = new DatagramPacket(buffer,1,dest,dport);
 
 	}
-	
+
 	public void close() {
 		usock.close();
 	}
@@ -104,6 +104,10 @@ public class SmallRtpSocket {
 	public void markNextPacket() {
 		upts = true;
 		buffer[1] += 0x80; // Mark next packet
+	}
+	
+	public boolean isMarked() {
+		return upts;
 	}
 	
 	// Call this only one time !

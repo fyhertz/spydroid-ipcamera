@@ -35,7 +35,7 @@ import android.view.SurfaceView;
 
 public class SecondActivity  extends Activity implements SurfaceHolder.Callback {
 
-    private CameraStreamer streamer = null;
+    private static CameraStreamer streamer = new CameraStreamer();
 	private PowerManager.WakeLock wl;
     
     public void onCreate(Bundle savedInstanceState) {
@@ -55,9 +55,12 @@ public class SecondActivity  extends Activity implements SurfaceHolder.Callback 
     	sh.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
     	sh.addCallback(this);
     	
-		streamer = new CameraStreamer();
     }
-	
+    
+    public void onDestroy() {
+    	super.onDestroy();
+    }
+    
 	@Override
 	public void surfaceChanged(SurfaceHolder holder, int format,
 			int width, int height) {

@@ -28,8 +28,7 @@ import java.io.RandomAccessFile;
 import net.majorkernelpanic.libmp4.MP4Parser;
 import net.majorkernelpanic.libmp4.StsdBox;
 import android.media.MediaRecorder;
-import android.os.Handler;
-import android.os.Message;
+import android.media.MediaRecorder.OnInfoListener;
 import android.util.Log;
 import android.view.SurfaceHolder;
 
@@ -58,7 +57,7 @@ public class TestH264 {
 		
 	}
 	
-	/* If test succesful, onSuccess is called and provides H264 settings on the phone  */
+	/* If test successful, onSuccess is called and return H264 settings for the phone  */
 	public interface Callback {
 		public void onStart();
 		public void onError(String error);
@@ -74,18 +73,18 @@ public class TestH264 {
 	private Callback cb;
 	private File cacheDir;
 	private int resX, resY, fps;
-	private Handler handler;
+	private OnInfoListener infoListener;
 	private boolean recording = false;
 	
 	private TestH264() {
 		
-		handler = new Handler() {
-			
+		infoListener = new OnInfoListener() {
 			@Override
-			public void handleMessage(Message msg) {
-				runTest(1);
+			public void onInfo(MediaRecorder mr, int what, int extra) {
+				if (what==MediaRecorder.MEDIA_RECORDER_INFO_MAX_DURATION_REACHED) {
+					runTest(1);
+				}
 			}
-			
 		};
 		
 		shcb = new SurfaceHolder.Callback() {
@@ -103,7 +102,7 @@ public class TestH264 {
 
     		@Override
 			public void surfaceDestroyed(SurfaceHolder holder) {
-    			error("Test cancelled !");
+
 			}
     		
     	};
@@ -132,6 +131,8 @@ public class TestH264 {
 			mr.setVideoSize(resX, resY);
 			mr.setVideoEncoder(MediaRecorder.VideoEncoder.H264);
 			mr.setPreviewDisplay(holder.getSurface());
+			mr.setOnInfoListener(infoListener);
+			mr.setMaxDuration(500);
 	
 			mr.setOutputFile(cacheDir.getPath()+'/'+TESTFILE);
 			
@@ -139,17 +140,25 @@ public class TestH264 {
 				mr.prepare();
 			} catch (IOException e) {
 				error("Can't record video, H.264 not supported ?");
+				return;
 			}
 			
 			/* 2 - Record dummy video for 500 msecs */
 			mr.start(); recording = true;
-			handler.sendMessageDelayed(Message.obtain(), 500);
 		
 			break;
 		
 		case 1:
-		
-			mr.stop(); recording = false;
+
+			recording = false;
+			try {
+				mr.stop(); 
+			}
+			catch (IllegalStateException e) {
+				mr.reset();
+				error("Test cancelled !");
+				return;
+			}
 			
 			/* 3 - Parse video with MP4Parser */
 			File file = new File(cacheDir.getPath()+'/'+TESTFILE);
@@ -158,6 +167,7 @@ public class TestH264 {
 				raf = new RandomAccessFile(file, "r");
 			} catch (FileNotFoundException e1) {
 				error("Can't load dummy video");
+				return;
 			}
 			
 			MP4Parser parser = null;
@@ -165,6 +175,7 @@ public class TestH264 {
 				parser = new MP4Parser(raf);
 			} catch (IOException e2) {
 				error(e2.getMessage());
+				return;
 			}
 			
 			/* 4 - Get stsd box (contains h.264 parameters) */
@@ -173,12 +184,14 @@ public class TestH264 {
 				stsd = parser.getStsdBox();
 			} catch (IOException e1) {
 				error(e1.getMessage());
+				return;
 			}
 			
 			try {
 				raf.close();
 			} catch (IOException e) {
 				error("Error :(");
+				return;
 			}
 
 			if (!file.delete()) Log.e(SpydroidActivity.LOG_TAG,"Temp file not erased");
@@ -204,6 +217,5 @@ public class TestH264 {
 		recording = false;
 		holder.removeCallback(shcb);
 	}
-	
 	
 }

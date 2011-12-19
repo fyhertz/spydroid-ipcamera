@@ -41,15 +41,13 @@ import android.util.Log;
 
 public class AMRNBPacketizer extends AbstractPacketizer {
 	
-	static public final int PORT = 5004;
-	
 	private long ts = 0;
 	
 	private final int amrhl = 6; // Header length
 	private final int amrps = 32;   // Packet size
 	
-	public AMRNBPacketizer(InputStream fis, InetAddress dest) throws SocketException {
-		super(fis, dest, PORT);
+	public AMRNBPacketizer(InputStream fis, InetAddress dest, int port) throws SocketException {
+		super(fis, dest, port);
 	}
 
 	public void run() {

@@ -61,6 +61,7 @@ public class SpydroidActivity extends Activity {
     private int resX,resY,fps, oldResX, oldResY, oldFps;
     
     public void onCreate(Bundle savedInstanceState) {
+    	
         super.onCreate(savedInstanceState);
         
         setContentView(R.layout.main);
@@ -208,7 +209,7 @@ public class SpydroidActivity extends Activity {
     	
     }
     
-    public synchronized void log(String s) {
+    public void log(String s) {
     	console.append(Html.fromHtml(s+"<br />"));
     }
     

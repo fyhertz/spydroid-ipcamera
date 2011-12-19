@@ -20,6 +20,7 @@
 
 package net.majorkernelpanic.librtp;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.InetAddress;
 import java.net.SocketException;
@@ -31,7 +32,7 @@ abstract public class AbstractPacketizer extends Thread implements Runnable{
 	protected InputStream fis = null;
 	protected boolean running = false;
 	
-	protected byte[] buffer = new byte[4096];	
+	protected byte[] buffer = new byte[16384];	
 	
 	protected final int rtphl = 12; // Rtp header length
 	
@@ -40,9 +41,7 @@ abstract public class AbstractPacketizer extends Thread implements Runnable{
 		
 		this.fis = fis;
 		this.rsock = new SmallRtpSocket(dest, port, buffer);
-		
 	}
-	
 	
 	public void startStreaming() {
 		running = true;
@@ -50,6 +49,11 @@ abstract public class AbstractPacketizer extends Thread implements Runnable{
 	}
 
 	public void stopStreaming() {
+		try {
+			fis.close();
+		} catch (IOException e) {
+			
+		}
 		running = false;
 	}
 	

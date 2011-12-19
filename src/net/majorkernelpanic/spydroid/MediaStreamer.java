@@ -52,11 +52,10 @@ public class MediaStreamer extends MediaRecorder{
 			receiver.setSendBufferSize(500000);
 			sender = lss.accept();
 			sender.setReceiveBufferSize(500000);
-			sender.setSendBufferSize(500000);
+			sender.setSendBufferSize(500000); 
 			id++;
 		} catch (IOException e1) {
-			Log.e(SpydroidActivity.LOG_TAG, "What ? It cannot be !!");
-			return;
+			throw new IOException("Can't create local socket !");
 		}
 		
 		setOutputFile(sender.getFileDescriptor());
@@ -88,8 +87,8 @@ public class MediaStreamer extends MediaRecorder{
 
 	
 	public void stop() {
-		super.stop();
 		closeSockets();
+		super.stop();
 	}
 	
 	private void closeSockets() {
