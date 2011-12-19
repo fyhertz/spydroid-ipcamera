@@ -32,7 +32,7 @@ abstract public class AbstractPacketizer extends Thread implements Runnable{
 	protected InputStream fis = null;
 	protected boolean running = false;
 	
-	protected byte[] buffer = new byte[4096];	
+	protected byte[] buffer = new byte[16384];	
 	
 	protected final int rtphl = 12; // Rtp header length
 	
