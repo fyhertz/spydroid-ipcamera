@@ -93,8 +93,8 @@ public class CameraStreamer {
 	public void start() {
 	
 		// Start sound streaming
-		//sound.start();
-		//sstream.startStreaming();
+		sound.start();
+		sstream.startStreaming();
 
 		// Start video streaming
 		video.start();
@@ -105,8 +105,8 @@ public class CameraStreamer {
 	public void stop() {
 	
 		// Stop sound streaming
-		//sstream.stopStreaming();
-		//sound.stop();
+		sstream.stopStreaming();
+		sound.stop();
 	
 		// Stop video streaming
 		vstream.stopStreaming();
