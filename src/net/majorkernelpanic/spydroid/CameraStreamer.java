@@ -57,7 +57,7 @@ public class CameraStreamer {
 		try {
 			sound.prepare();
 		} catch (IOException e) {
-			throw new IOException("Can't stream sound :(");
+			throw new IOException("Can't stream sound :("); 
 		}
 		
 		try {
