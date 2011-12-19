@@ -25,6 +25,7 @@ import java.net.InetAddress;
 
 import net.majorkernelpanic.librtp.AMRNBPacketizer;
 import net.majorkernelpanic.librtp.H264Packetizer;
+import net.majorkernelpanic.librtp.H264Packetizer2;
 
 import android.media.MediaRecorder;
 import android.util.Log;
@@ -41,7 +42,7 @@ public class CameraStreamer {
 
 	private MediaStreamer sound = new MediaStreamer(), video = new MediaStreamer();
 	private AMRNBPacketizer sstream = null;
-	private H264Packetizer vstream = null;
+	private H264Packetizer2 vstream = null;
 	
 	public void setup(SurfaceHolder holder, String ip, int resX, int resY, int fps) throws IOException {
 	
@@ -84,7 +85,7 @@ public class CameraStreamer {
 		}
 		
 		try {
-			vstream = new H264Packetizer(video.getInputStream(), InetAddress.getByName(ip), 5006);
+			vstream = new H264Packetizer2(video.getInputStream(), InetAddress.getByName(ip), 5006);
 		} catch (IOException e) {
 			Log.e(SpydroidActivity.LOG_TAG,"Unknown host");
 			throw new IOException("Can't resolve host :(");
