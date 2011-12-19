@@ -75,6 +75,7 @@ public class CameraStreamer {
 		video.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
 		video.setVideoFrameRate(fps);
 		video.setVideoSize(resX, resY);
+		video.setVideoEncodingBitRate(10000);
 		video.setVideoEncoder(MediaRecorder.VideoEncoder.H264);
 		video.setPreviewDisplay(holder.getSurface());
 		
@@ -91,8 +92,8 @@ public class CameraStreamer {
 	public void start() {
 	
 		// Start sound streaming
-		sound.start();
-		sstream.startStreaming();
+		//sound.start();
+		//sstream.startStreaming();
 
 		// Start video streaming
 		video.start();
@@ -103,8 +104,8 @@ public class CameraStreamer {
 	public void stop() {
 	
 		// Stop sound streaming
-		sstream.stopStreaming();
-		sound.stop();
+		//sstream.stopStreaming();
+		//sound.stop();
 	
 		// Stop video streaming
 		vstream.stopStreaming();
