@@ -62,7 +62,7 @@ public class H264Packetizer2 extends AbstractPacketizer {
 				fis.read(buffer,rtphl,8);
 				if (buffer[rtphl+4] == 'm' && buffer[rtphl+5] == 'd' && buffer[rtphl+6] == 'a' && buffer[rtphl+7] == 't') break;
 				len = (buffer[rtphl+3]&0xFF) + (buffer[rtphl+2]&0xFF)*256 + (buffer[rtphl+1]&0xFF)*65536;
-				if (len<=0) return;
+				if (len<=0) break;
 				//Log.e(SpydroidActivity.LOG_TAG,"Atom skipped: "+printBuffer(rtphl+4,rtphl+8)+" size: "+len);
 				fis.read(buffer,rtphl,len-8);
 			} 
