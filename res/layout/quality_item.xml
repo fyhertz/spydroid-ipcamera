@@ -9,7 +9,6 @@
 	android:layout_height="wrap_content" 
 	android:paddingLeft="10px"
 	android:textSize="20sp"
-	android:textStyle="bold"
 	android:gravity="center_vertical"
 	android:layout_gravity="left" />
 			

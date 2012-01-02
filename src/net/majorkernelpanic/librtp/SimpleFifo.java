@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011 GUIGUI Simon, fyhertz@gmail.com
+ * Copyright (C) 2011-2012 GUIGUI Simon, fyhertz@gmail.com
  * 
  * This file is part of Spydroid (http://code.google.com/p/spydroid-ipcamera/)
  * 

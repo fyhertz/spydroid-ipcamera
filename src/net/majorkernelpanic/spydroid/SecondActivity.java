@@ -75,12 +75,13 @@ public class SecondActivity  extends Activity implements SurfaceHolder.Callback 
 		int resX = getIntent().getIntExtra("net.majorkernelpanic.spydroid.resX",0);
 		int resY = getIntent().getIntExtra("net.majorkernelpanic.spydroid.resY",0);
 		int fps = getIntent().getIntExtra("net.majorkernelpanic.spydroid.fps",0);
+		int br = getIntent().getIntExtra("net.majorkernelpanic.spydroid.br",0);
 		
 	    // Ensures that the screen stays on
 		wl.acquire();
 		
 		try {
-			streamer.setup(holder,ip, resX, resY, fps);
+			streamer.setup(holder,ip, resX, resY, fps, br);
 		} catch (IOException e) {
 			// Catch error if any
 			// TODO: display message

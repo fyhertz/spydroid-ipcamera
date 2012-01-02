@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011 GUIGUI Simon, fyhertz@gmail.com
+ * Copyright (C) 2011-2012 GUIGUI Simon, fyhertz@gmail.com
  * 
  * This file is part of Spydroid (http://code.google.com/p/spydroid-ipcamera/)
  * 
@@ -44,7 +44,7 @@ public class CameraStreamer {
 	private AMRNBPacketizer sstream = null;
 	private H264Packetizer2 vstream = null;
 	
-	public void setup(SurfaceHolder holder, String ip, int resX, int resY, int fps) throws IOException {
+	public void setup(SurfaceHolder holder, String ip, int resX, int resY, int fps, int br) throws IOException {
 	
 		// AUDIO
 		
@@ -53,6 +53,7 @@ public class CameraStreamer {
 		sound.setAudioSource(MediaRecorder.AudioSource.CAMCORDER);
 		sound.setOutputFormat(MediaRecorder.OutputFormat.RAW_AMR);
 		sound.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
+		sound.setAudioChannels(1);
 		
 		try {
 			sound.prepare();
@@ -75,6 +76,7 @@ public class CameraStreamer {
 		video.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
 		video.setVideoFrameRate(fps);
 		video.setVideoSize(resX, resY);
+		if (br != QualityListActivity.DefaultBitRate) video.setVideoEncodingBitRate(br*1000);
 		video.setVideoEncoder(MediaRecorder.VideoEncoder.H264);
 		video.setPreviewDisplay(holder.getSurface());
 		

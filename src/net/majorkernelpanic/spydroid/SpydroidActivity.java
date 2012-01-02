@@ -58,7 +58,7 @@ public class SpydroidActivity extends Activity {
     private SurfaceView cv;
     private SurfaceHolder sh;
     
-    private int resX,resY,fps, oldResX, oldResY, oldFps;
+    private int resX, resY, fps, br, oldResX, oldResY, oldFps;
     
     public void onCreate(Bundle savedInstanceState) {
     	
@@ -85,6 +85,7 @@ public class SpydroidActivity extends Activity {
         		intent.putExtra("net.majorkernelpanic.spydroid.resX", resX );
         		intent.putExtra("net.majorkernelpanic.spydroid.resY", resY );
         		intent.putExtra("net.majorkernelpanic.spydroid.fps", fps );
+        		intent.putExtra("net.majorkernelpanic.spydroid.br", br );
         		startActivityForResult(intent, 0);
         		
         	}
@@ -95,6 +96,7 @@ public class SpydroidActivity extends Activity {
        	resX = settings.getInt("resX", 640);
        	resY = settings.getInt("resY", 480);
        	fps = settings.getInt("fps", 15);
+       	br = settings.getInt("br", QualityListActivity.DefaultBitRate);
        	oldResX = resX; oldResY = resY; oldFps = fps;
         ((EditText) findViewById(R.id.ip)).setText(ip);
         
@@ -183,6 +185,7 @@ public class SpydroidActivity extends Activity {
     		intent.putExtra("net.majorkernelpanic.spydroid.resX", resX );
     		intent.putExtra("net.majorkernelpanic.spydroid.resY", resY );
     		intent.putExtra("net.majorkernelpanic.spydroid.fps", fps );
+    		intent.putExtra("net.majorkernelpanic.spydroid.br", br );
     		startActivityForResult(intent, 0);
         	return true;
         default:
@@ -198,11 +201,13 @@ public class SpydroidActivity extends Activity {
     		resX = data.getIntExtra("net.majorkernelpanic.spydroid.resX", 0);
     		resY = data.getIntExtra("net.majorkernelpanic.spydroid.resY", 0);
     		fps = data.getIntExtra("net.majorkernelpanic.spydroid.fps", 0);
+    		br = data.getIntExtra("net.majorkernelpanic.spydroid.br", 0);
 
     		SharedPreferences.Editor editor = settings.edit();
     		editor.putInt("resX", resX);
     		editor.putInt("resY", resY);
     		editor.putInt("fps", fps);
+    		editor.putInt("br", br);
     	    editor.commit();
     		
     	}

@@ -65,7 +65,7 @@ public class H264Packetizer2 extends AbstractPacketizer {
 				if (len<=0) break;
 				//Log.e(SpydroidActivity.LOG_TAG,"Atom skipped: "+printBuffer(rtphl+4,rtphl+8)+" size: "+len);
 				fis.read(buffer,rtphl,len-8);
-			} 
+			}
 			
 			// Some phones do not set length correctly when stream is not seekable, still we need to skip the header
 			if (len<=0) {
@@ -198,7 +198,7 @@ public class H264Packetizer2 extends AbstractPacketizer {
 			else return;
 			
 			while ((available = fis.available()) >= 4) {
-					
+
 				fis.read(buffer,rtphl,naluLength-len);
 				fifo.write(buffer, rtphl, naluLength-len);
 				
@@ -227,6 +227,7 @@ public class H264Packetizer2 extends AbstractPacketizer {
 		catch (IOException e) {
 			return;
 		}
+		
 	}
 
 
