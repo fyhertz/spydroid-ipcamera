@@ -22,11 +22,8 @@ package net.majorkernelpanic.spydroid;
 
 import java.io.IOException;
 import java.net.InetAddress;
-
 import net.majorkernelpanic.librtp.AMRNBPacketizer;
-import net.majorkernelpanic.librtp.H264Packetizer;
 import net.majorkernelpanic.librtp.H264Packetizer2;
-
 import android.media.MediaRecorder;
 import android.util.Log;
 import android.view.SurfaceHolder;
@@ -43,6 +40,7 @@ public class CameraStreamer {
 	private MediaStreamer sound = new MediaStreamer(), video = new MediaStreamer();
 	private AMRNBPacketizer sstream = null;
 	private H264Packetizer2 vstream = null;
+	private boolean streaming = false;
 	
 	public void setup(SurfaceHolder holder, String ip, int resX, int resY, int fps, int br) throws IOException {
 	
@@ -58,7 +56,7 @@ public class CameraStreamer {
 		try {
 			sound.prepare();
 		} catch (IOException e) {
-			throw new IOException("Can't stream sound :("); 
+			throw new IOException("Can't stream sound: "+e.getMessage()); 
 		}
 		
 		try {
@@ -83,7 +81,7 @@ public class CameraStreamer {
 		try {
 			video.prepare();
 		} catch (IOException e) {
-			throw new IOException("Can't stream video :(");
+			throw new IOException("Can't stream video: "+e.getMessage());
 		}
 		
 		try {
@@ -105,6 +103,8 @@ public class CameraStreamer {
 		video.start();
 		vstream.startStreaming();
 		
+		streaming = true;
+		
 	}
 	
 	public void stop() {
@@ -117,6 +117,12 @@ public class CameraStreamer {
 		vstream.stopStreaming();
 		video.stop();
 		
+		streaming = false;
+		
+	}
+	
+	public boolean isStreaming() {
+		return streaming;
 	}
 	
 }

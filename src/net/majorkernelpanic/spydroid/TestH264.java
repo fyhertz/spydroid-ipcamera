@@ -24,7 +24,6 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
-
 import net.majorkernelpanic.libmp4.MP4Parser;
 import net.majorkernelpanic.libmp4.StsdBox;
 import android.media.MediaRecorder;

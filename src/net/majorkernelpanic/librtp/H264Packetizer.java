@@ -38,6 +38,8 @@ import android.util.Log;
  *   NAL units must be preceded by their length (4 bytes)
  *   Stream must start with mpeg4 or 3gpp header, it will be skipped
  *   
+ *   H264Packetizer2 should be used instead of this one
+ *   
  */
 
 public class H264Packetizer extends AbstractPacketizer {

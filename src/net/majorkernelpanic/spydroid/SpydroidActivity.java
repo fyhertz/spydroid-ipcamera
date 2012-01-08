@@ -24,9 +24,11 @@ import java.io.IOException;
 
 import net.majorkernelpanic.librtp.SessionDescriptor;
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.os.PowerManager;
 import android.text.Html;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -35,9 +37,11 @@ import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.SurfaceHolder.Callback;
 import android.view.View.OnClickListener;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 /*
@@ -48,23 +52,29 @@ import android.widget.TextView;
 public class SpydroidActivity extends Activity {
     
     public ViewGroup topLayout;
-    public Button startButton, quitButton;
+    public Button startButton;
     public TextView console;
+    public ImageView logo;
+    public TextView ipView;
     
     static final public String LOG_TAG = "SPYDROID";
     
     private SharedPreferences settings;
     private String ip;
-    private SurfaceView cv;
-    private SurfaceHolder sh;
+    private SurfaceView camera;
+    private PowerManager.WakeLock wl;
     
     private int resX, resY, fps, br, oldResX, oldResY, oldFps;
+    private static CameraStreamer streamer = new CameraStreamer();
     
     public void onCreate(Bundle savedInstanceState) {
     	
         super.onCreate(savedInstanceState);
         
         setContentView(R.layout.main);
+        ipView = (TextView)findViewById(R.id.ip);
+        camera = (SurfaceView)findViewById(R.id.smallcameraview);
+        logo = (ImageView)findViewById(R.id.logo);
         topLayout = (ViewGroup) findViewById(R.id.mainlayout);
         console = (TextView) findViewById(R.id.console);
         startButton = (Button) findViewById(R.id.streambutton);
@@ -74,23 +84,19 @@ public class SpydroidActivity extends Activity {
         	// Called when pressing the "Stream" button
         	public void onClick(View v) {
         		
-        		ip = ((EditText) findViewById(R.id.ip)).getText().toString();
+        		ip = ipView.getText().toString();
         		
         		SharedPreferences.Editor editor = settings.edit();
         		editor.putString("ip", ip);
         	    editor.commit();
-        		
-        		Intent intent = new Intent(v.getContext(),SecondActivity.class);
-        		intent.putExtra("net.majorkernelpanic.spydroid.ip", ip );
-        		intent.putExtra("net.majorkernelpanic.spydroid.resX", resX );
-        		intent.putExtra("net.majorkernelpanic.spydroid.resY", resY );
-        		intent.putExtra("net.majorkernelpanic.spydroid.fps", fps );
-        		intent.putExtra("net.majorkernelpanic.spydroid.br", br );
-        		startActivityForResult(intent, 0);
+        	    
+        	    toggleStreaming();
         		
         	}
         });
    
+        logo.setAlpha(100);
+        
         settings = getSharedPreferences("spydroid-ipcamera-prefs", 0);
         ip = settings.getString("ip", "192.170.0.1");
        	resX = settings.getInt("resX", 640);
@@ -100,6 +106,32 @@ public class SpydroidActivity extends Activity {
        	oldResX = resX; oldResY = resY; oldFps = fps;
         ((EditText) findViewById(R.id.ip)).setText(ip);
         
+        camera.getHolder().setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
+        Callback shcb = new SurfaceHolder.Callback() {
+
+    		@Override
+			public void surfaceChanged(SurfaceHolder holder, int format,
+					int width, int height) {
+
+			}
+
+    		@Override
+			public void surfaceCreated(SurfaceHolder holder) {
+
+			}
+
+    		@Override
+			public void surfaceDestroyed(SurfaceHolder holder) {
+    			stopStreaming();
+			}
+    		
+    	};
+    	
+    	((SurfaceView)findViewById(R.id.smallcameraview)).getHolder().addCallback(shcb);
+    	
+		PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
+		wl = pm.newWakeLock(PowerManager.SCREEN_DIM_WAKE_LOCK, "SpydroidWakeLock");
+    	
     }
     
     public void onResume() {
@@ -118,9 +150,7 @@ public class SpydroidActivity extends Activity {
     	}
 
     	// Test H.264 Support
-    	cv = (SurfaceView) findViewById(R.id.smallcameraview);
-    	sh = cv.getHolder();
-		TestH264.RunTest(this.getCacheDir(),sh, resX, resY, fps, new TestH264.Callback() {
+		TestH264.RunTest(this.getCacheDir(),camera.getHolder(), resX, resY, fps, new TestH264.Callback() {
 			
 			@Override
 			public void onStart() {
@@ -169,6 +199,44 @@ public class SpydroidActivity extends Activity {
 			
 		});
 
+    }
+    
+    private void toggleStreaming() {
+    	
+    	if (streamer.isStreaming())
+    		stopStreaming();
+    	else
+    		startStreaming();
+
+    }
+    
+    private void startStreaming() {
+    	
+    	if (streamer.isStreaming()) return;
+    	
+		try {
+			streamer.setup(camera.getHolder(),ip, resX, resY, fps, br);
+		} catch (IOException e) {
+			log(e.getMessage());
+			return;
+		}
+
+		streamer.start();
+		ipView.setEnabled(false);
+		startButton.setText("Stop");
+		wl.acquire();
+		
+    }
+    
+    private void stopStreaming() {
+    	
+    	if (!streamer.isStreaming()) return;
+    	
+		streamer.stop();
+		startButton.setText("Stream");
+		ipView.setEnabled(true);
+		wl.release();
+		
     }
     
     public boolean onCreateOptionsMenu(Menu menu) {

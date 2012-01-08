@@ -92,15 +92,17 @@ public class MediaStreamer extends MediaRecorder{
 	}
 	
 	private void closeSockets() {
-		try {
-			lss.close();
-			sender.close();
-			receiver.close();
+		if (lss!=null) {
+			try {
+				lss.close();
+				sender.close();
+				receiver.close();
+			}
+			catch (IOException e) {
+				Log.e(SpydroidActivity.LOG_TAG,"Error while attempting to close local sockets");
+			}
+			lss = null; sender = null; receiver = null;
 		}
-		catch (IOException e) {
-			Log.e(SpydroidActivity.LOG_TAG,"Error while attempting to close local sockets");
-		}
-		lss = null; sender = null; receiver = null;
 	}
 	
 }

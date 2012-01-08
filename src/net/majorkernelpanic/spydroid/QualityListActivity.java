@@ -7,7 +7,6 @@ import android.app.ListActivity;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -36,7 +35,8 @@ public class QualityListActivity extends ListActivity {
     private String[] framerates = new String[] {
     		"20 fps",
     		"15 fps",
-    		"10 fps"
+    		"10 fps",
+    		"8 fps"
     };
     private String[] bitrates = new String[] {
     		"Default",
