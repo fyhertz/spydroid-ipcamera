@@ -20,9 +20,9 @@
 
 package net.majorkernelpanic.spydroid;
 
+import java.io.File;
 import java.io.IOException;
-
-import net.majorkernelpanic.librtp.SessionDescriptor;
+import java.io.RandomAccessFile;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
@@ -65,7 +65,7 @@ public class SpydroidActivity extends Activity {
     private PowerManager.WakeLock wl;
     
     private int resX, resY, fps, br, oldResX, oldResY, oldFps;
-    private static CameraStreamer streamer = new CameraStreamer();
+    private CameraStreamer streamer = new CameraStreamer();
     
     public void onCreate(Bundle savedInstanceState) {
     	
@@ -171,14 +171,26 @@ public class SpydroidActivity extends Activity {
 				log("Phone supported ! ");
 			    
 			    // we have everything we need to generate a proper SDP file
-			    SessionDescriptor sd = new SessionDescriptor();
-			    sd.addH264Track(params[0], params[2], params[1]);
-			    sd.addAMRNBTrack();
+				String sdp = "m=video 5006 RTP/AVP 96\r\n" +
+					"b=RR:0\r\n" +
+					"a=rtpmap:96 H264/90000\r\n" +
+					"a=fmtp:96 packetization-mode=1;profile-level-id="+params[0]+";sprop-parameter-sets="+params[2]+","+params[1]+";\r\n" +
+					"m=audio 5004 RTP/AVP 96\r\n" +
+					"b=AS:128\r\n" +
+					"b=RR:0\r\n" +
+					"a=rtpmap:96 AMR/8000\r\n" +
+					"a=fmtp:96 octet-align=1\r\n";
 			    
 			    try {
-			    	
-					sd.saveToFile("/sdcard/spydroid.sdp");
 					
+			    	// Store sdp file
+					File file = new File("/sdcard/spydroid.sdp");
+					RandomAccessFile raf = null;
+					raf = new RandomAccessFile(file, "rw");
+					raf.writeBytes("v=0\r\ns=Unnamed\r\n");
+					raf.writeBytes(sdp);
+					raf.close();
+			    	
 					// Store H264 parameters
 		    		SharedPreferences.Editor editor = settings.edit();
 		    		editor.putString("profile", params[0]);

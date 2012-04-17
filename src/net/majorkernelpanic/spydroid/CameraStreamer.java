@@ -21,9 +21,10 @@
 package net.majorkernelpanic.spydroid;
 
 import java.io.IOException;
-import java.net.InetAddress;
+import java.net.UnknownHostException;
 import net.majorkernelpanic.librtp.AMRNBPacketizer;
-import net.majorkernelpanic.librtp.H264Packetizer2;
+import net.majorkernelpanic.librtp.H264Packetizer;
+import net.majorkernelpanic.streaming.MediaStreamer;
 import android.media.MediaRecorder;
 import android.util.Log;
 import android.view.SurfaceHolder;
@@ -38,8 +39,6 @@ import android.view.SurfaceHolder;
 public class CameraStreamer {
 
 	private MediaStreamer sound = new MediaStreamer(), video = new MediaStreamer();
-	private AMRNBPacketizer sstream = null;
-	private H264Packetizer2 vstream = null;
 	private boolean streaming = false;
 	
 	public void setup(SurfaceHolder holder, String ip, int resX, int resY, int fps, int br) throws IOException {
@@ -53,17 +52,19 @@ public class CameraStreamer {
 		sound.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
 		sound.setAudioChannels(1);
 		
+		sound.setPacketizer(new AMRNBPacketizer());
+		
+		try {
+			sound.setDestination(ip,5004);
+		} catch (IOException e) {
+			Log.e(SpydroidActivity.LOG_TAG,e.getMessage());
+			throw new IOException(e.getMessage());
+		}
+	
 		try {
 			sound.prepare();
 		} catch (IOException e) {
 			throw new IOException("Can't stream sound: "+e.getMessage()); 
-		}
-		
-		try {
-			sstream = new AMRNBPacketizer(sound.getInputStream(), InetAddress.getByName(ip), 5004);
-		} catch (IOException e) {
-			Log.e(SpydroidActivity.LOG_TAG,"Unknown host");
-			throw new IOException("Can't resolve host :(");
 		}
 		
 		// VIDEO
@@ -78,17 +79,19 @@ public class CameraStreamer {
 		video.setVideoEncoder(MediaRecorder.VideoEncoder.H264);
 		video.setPreviewDisplay(holder.getSurface());
 		
+		video.setPacketizer(new H264Packetizer());
+		
+		try {
+			video.setDestination(ip,5006);
+		} catch (IOException e) {
+			Log.e(SpydroidActivity.LOG_TAG,e.getMessage());
+			throw new IOException(e.getMessage());
+		}
+		
 		try {
 			video.prepare();
 		} catch (IOException e) {
 			throw new IOException("Can't stream video: "+e.getMessage());
-		}
-		
-		try {
-			vstream = new H264Packetizer2(video.getInputStream(), InetAddress.getByName(ip), 5006);
-		} catch (IOException e) {
-			Log.e(SpydroidActivity.LOG_TAG,"Unknown host");
-			throw new IOException("Can't resolve host :(");
 		}
 		
 	}
@@ -97,11 +100,9 @@ public class CameraStreamer {
 	
 		// Start sound streaming
 		sound.start();
-		sstream.startStreaming();
 		
 		// Start video streaming
 		video.start();
-		vstream.startStreaming();
 		
 		streaming = true;
 		
@@ -110,11 +111,9 @@ public class CameraStreamer {
 	public void stop() {
 		
 		// Stop sound streaming
-		sstream.stopStreaming();
 		sound.stop();
 	
 		// Stop video streaming
-		vstream.stopStreaming();
 		video.stop();
 		
 		streaming = false;

@@ -21,9 +21,7 @@
 package net.majorkernelpanic.librtp;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.net.InetAddress;
-import java.net.SocketException;
+import java.util.LinkedList;
 import android.os.SystemClock;
 import android.util.Log;
 
@@ -41,14 +39,10 @@ import android.util.Log;
 public class H264Packetizer2 extends AbstractPacketizer {
 	
 	private final int packetSize = 1400;
-	private long oldtime = SystemClock.elapsedRealtime(), delay = 10;
-	private long latency, oldlat = oldtime;
+	private long oldtime = SystemClock.elapsedRealtime(), delay = 10, latency, oldlat = oldtime;
 	private int available = 0, oldavailable = 0, naluLength = 0, nbNalu = 0, len = 0;
 	private SimpleFifo fifo = new SimpleFifo(500000);
-	
-	public H264Packetizer2(InputStream fis, InetAddress dest, int port) throws SocketException {
-		super(fis, dest, port);
-	}
+	private LinkedList<Long> timeStampList = new LinkedList<Long>();
 	
 	public void run() {
         
@@ -62,13 +56,13 @@ public class H264Packetizer2 extends AbstractPacketizer {
 				fis.read(buffer,rtphl,8);
 				if (buffer[rtphl+4] == 'm' && buffer[rtphl+5] == 'd' && buffer[rtphl+6] == 'a' && buffer[rtphl+7] == 't') break;
 				len = (buffer[rtphl+3]&0xFF) + (buffer[rtphl+2]&0xFF)*256 + (buffer[rtphl+1]&0xFF)*65536;
-				if (len<=0) break;
+				if (len<=7) break;
 				//Log.e(SpydroidActivity.LOG_TAG,"Atom skipped: "+printBuffer(rtphl+4,rtphl+8)+" size: "+len);
 				fis.read(buffer,rtphl,len-8);
 			}
 			
 			// Some phones do not set length correctly when stream is not seekable, still we need to skip the header
-			if (len<=0) {
+			if (len<=0 || len>1000) {
 				while (true) {
 					while (fis.read() != 'm');
 					fis.read(buffer,rtphl,3);
@@ -80,7 +74,6 @@ public class H264Packetizer2 extends AbstractPacketizer {
 		catch (IOException e)  {
 			return;
 		}
-
 
 		while (running) { 
 		 
@@ -94,12 +87,6 @@ public class H264Packetizer2 extends AbstractPacketizer {
 			 * nbNalu: number of NAL units in the FIFO
 			 */
 			fillFifo();
-			
-			try {
-				Thread.sleep(delay);
-			} catch (InterruptedException e) {
-				return;
-			}
 			
 		}
 		
@@ -119,9 +106,16 @@ public class H264Packetizer2 extends AbstractPacketizer {
 		/* Read nal unit length (4 bytes) and nal unit header (1 byte) */
 		len = fifo.read(buffer, rtphl, 5);
 		naluLength = (buffer[rtphl+3]&0xFF) + (buffer[rtphl+2]&0xFF)*256 + (buffer[rtphl+1]&0xFF)*65536;
+	
+		Log.d("SPYDROID","- Nal unit length: " + naluLength+ " delay: "+delay);
 		
-		//Log.d(SpydroidActivity.LOG_TAG,"- Nal unit length: " + naluLength);
-		
+		if (timeStampList.size()>0) delay = timeStampList.pop();
+	
+		try {
+			Thread.sleep(delay);
+		} catch (InterruptedException e) {
+			return;
+		}
 		rsock.updateTimestamp(SystemClock.elapsedRealtime()*90);
 		
 		/* Small nal unit => Single nal unit */
@@ -208,13 +202,15 @@ public class H264Packetizer2 extends AbstractPacketizer {
 				len = fis.read(buffer, rtphl+4, naluLength);
 				fifo.write(buffer, rtphl, len+4);
 				
-				if (len==naluLength) nbNalu++;
+				if (len==naluLength) {
+					nbNalu++;
+				}
+				timeStampList.push(latency*len/oldavailable);
 						
 				//Log.d(SpydroidActivity.LOG_TAG,"available: "+available+", len: "+len+", naluLength: "+naluLength);
 				
 				if (fis.available()<4) {
 					
-					delay = latency/nbNalu;
 					oldavailable = fis.available();
 					//Log.i(SpydroidActivity.LOG_TAG,"latency: "+latency+", nbNalu: "+nbNalu+", delay: "+delay+" avfifo: "+fifo.available() );
 					

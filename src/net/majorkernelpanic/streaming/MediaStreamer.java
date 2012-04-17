@@ -18,11 +18,15 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-package net.majorkernelpanic.spydroid;
+package net.majorkernelpanic.streaming;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 
+import net.majorkernelpanic.librtp.AbstractPacketizer;
+import net.majorkernelpanic.spydroid.SpydroidActivity;
 import android.media.MediaRecorder;
 import android.net.LocalServerSocket;
 import android.net.LocalSocket;
@@ -30,43 +34,57 @@ import android.net.LocalSocketAddress;
 import android.util.Log;
 
 /* 
- *  Just a MediaRecorder that writes in a local socket instead of a file
- *  so that you can modify data on-the-fly with getInputStream()
+ *  A MediaRecorder that streams what is recorder using a Packetizer
+ *  specified with setPacketizer 
  * 
  */
 
-public class MediaStreamer extends MediaRecorder{
+public class MediaStreamer extends MediaRecorder {
 
 	private static int id = 0;
 	
 	private LocalServerSocket lss = null;
 	private LocalSocket receiver, sender = null;
+	private AbstractPacketizer packetizer = null;
 	
-	public void prepare() throws IllegalStateException,IOException {
+	public MediaStreamer() {
 		
 		receiver = new LocalSocket();
 		try {
-			lss = new LocalServerSocket("librtp-"+id);
-			receiver.connect(new LocalSocketAddress("librtp-"+id));
+			lss = new LocalServerSocket("net.majorkernelpanic.librtp-"+id);
+			receiver.connect(new LocalSocketAddress("net.majorkernelpanic.librtp-"+id));
 			receiver.setReceiveBufferSize(500000);
 			receiver.setSendBufferSize(500000);
 			sender = lss.accept();
 			sender.setReceiveBufferSize(500000);
 			sender.setSendBufferSize(500000); 
-			id++;
 		} catch (IOException e1) {
-			throw new IOException("Can't create local socket !");
+			//throw new IOException("Can't create local socket !");
 		}
+		id++;
+		
+	}
+	
+	public void setDestination(String ip, int port) throws IOException, UnknownHostException {
+		if (packetizer==null) {
+			throw new IOException("You must set a packetizer first !");
+		}
+		packetizer.setDestination(InetAddress.getByName(ip),port);
+	}
+	
+	public void setPacketizer(AbstractPacketizer packetizer) {
+		this.packetizer = packetizer;
+	}
+	
+	public void prepare() throws IllegalStateException,IOException {
 		
 		setOutputFile(sender.getFileDescriptor());
 		
 		try {
 			super.prepare();
 		} catch (IllegalStateException e) {
-			closeSockets();
 			throw e;
 		} catch (IOException e) {
-			closeSockets();
 			throw e;
 		}
 		
@@ -74,34 +92,37 @@ public class MediaStreamer extends MediaRecorder{
 	
 	public InputStream getInputStream() {
 		
-		InputStream out = null;
+		InputStream in = null;
 		
 		try {
-			out = receiver.getInputStream();
+			in = receiver.getInputStream();
 		} catch (IOException e) {
+			e.printStackTrace();
 		}
 
-		return out;
+		return in;
 		
 	}
 
+	public void start() {
+		super.start();
+		packetizer.setInputStream(getInputStream());
+		packetizer.start();
+	}
 	
 	public void stop() {
-		closeSockets();
+		packetizer.stop();
 		super.stop();
 	}
 	
-	private void closeSockets() {
-		if (lss!=null) {
-			try {
-				lss.close();
-				sender.close();
-				receiver.close();
-			}
-			catch (IOException e) {
-				Log.e(SpydroidActivity.LOG_TAG,"Error while attempting to close local sockets");
-			}
-			lss = null; sender = null; receiver = null;
+	protected void finalize() {
+		try {
+			sender.close();
+			receiver.close();
+			lss.close();
+		}
+		catch (IOException e) {
+			Log.e(SpydroidActivity.LOG_TAG,"Error while attempting to close local sockets");
 		}
 	}
 	

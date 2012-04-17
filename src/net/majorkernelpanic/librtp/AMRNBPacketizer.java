@@ -21,10 +21,6 @@
 package net.majorkernelpanic.librtp;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.net.InetAddress;
-import java.net.SocketException;
-
 import net.majorkernelpanic.spydroid.SpydroidActivity;
 import android.util.Log;
 
@@ -45,10 +41,6 @@ public class AMRNBPacketizer extends AbstractPacketizer {
 	
 	private final int amrhl = 6; // Header length
 	private final int amrps = 32;   // Packet size
-	
-	public AMRNBPacketizer(InputStream fis, InetAddress dest, int port) throws SocketException {
-		super(fis, dest, port);
-	}
 
 	public void run() {
 	
@@ -86,7 +78,7 @@ public class AMRNBPacketizer extends AbstractPacketizer {
 				}
 				else sum+=len;
 			} catch (IOException e) {
-				stopStreaming();
+				stop();
 				return sum;
 			}
 		}

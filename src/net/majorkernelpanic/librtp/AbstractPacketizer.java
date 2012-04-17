@@ -23,10 +23,15 @@ package net.majorkernelpanic.librtp;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.InetAddress;
-import java.net.SocketException;
 
+import android.util.Log;
 
-abstract public class AbstractPacketizer extends Thread implements Runnable{
+/*
+ * Each packetizer inherits from this one and therefore uses RTP and UDP
+ *
+ */
+
+abstract public class AbstractPacketizer {
 	
 	protected SmallRtpSocket rsock = null;
 	protected InputStream fis = null;
@@ -36,24 +41,47 @@ abstract public class AbstractPacketizer extends Thread implements Runnable{
 	
 	protected final int rtphl = 12; // Rtp header length
 	
+
+	public AbstractPacketizer() {
+		
+		this.rsock = new SmallRtpSocket(buffer);
+		
+	}	
 	
-	public AbstractPacketizer(InputStream fis, InetAddress dest, int port) throws SocketException {
+	public AbstractPacketizer(InputStream fis, InetAddress dest, int port) {
 		
 		this.fis = fis;
 		this.rsock = new SmallRtpSocket(dest, port, buffer);
 	}
 	
-	public void startStreaming() {
+	public void setDestination(InetAddress dest, int port) {
+		rsock.setDestination(dest,port);
+	}
+	
+	public void setInputStream(InputStream fis) {
+		this.fis = fis;
+	}
+	
+	public void start() {
 		running = true;
-		start();
+		new Thread(new Runnable () {
+			public void run() {
+				try {
+					if (fis.available()>0) fis.skip(fis.available());
+				}
+				catch (IOException e) {
+					Log.e("LIBRTP","Wrong InputStream !");
+				}
+				catch (NullPointerException e) {
+					Log.e("LIBRTP","You must call setInputStream before calling start !");
+					e.printStackTrace();
+				}
+				AbstractPacketizer.this.run();
+			}
+		}).start();
 	}
 
-	public void stopStreaming() {
-		try {
-			fis.close();
-		} catch (IOException e) {
-			
-		}
+	public void stop() {
 		running = false;
 	}
 	

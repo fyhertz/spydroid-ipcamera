@@ -43,7 +43,16 @@ public class SmallRtpSocket {
 	
 	public static final int headerLength = 12;
 	
-	public SmallRtpSocket(InetAddress dest, int dport, byte[] buffer) throws SocketException {
+	public SmallRtpSocket(InetAddress dest, int dport, byte[] buffer) {
+		
+		this(buffer);
+		
+		upack.setPort(dport);
+		upack.setAddress(dest);
+		
+	}
+	
+	public SmallRtpSocket(byte[] buffer) {
 		
 		this.buffer = buffer;
 		
@@ -65,13 +74,22 @@ public class SmallRtpSocket {
 		/* Byte 8,9,10,11  ->  Sync Source Identifier            */
 		setLong((new Random()).nextLong(),8,12);
 		
-		usock = new DatagramSocket();
-		upack = new DatagramPacket(buffer,1,dest,dport);
+		try {
+			usock = new DatagramSocket();
+		} catch (SocketException e) {
+			
+		}
+		upack = new DatagramPacket(buffer, 1);
 
 	}
 
 	public void close() {
 		usock.close();
+	}
+
+	public void setDestination(InetAddress dest, int dport) {
+		upack.setPort(dport);
+		upack.setAddress(dest);
 	}
 	
 	/* Send RTP packet over the network */

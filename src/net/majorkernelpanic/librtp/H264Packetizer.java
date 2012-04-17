@@ -21,10 +21,6 @@
 package net.majorkernelpanic.librtp;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.net.InetAddress;
-import java.net.SocketException;
-
 import net.majorkernelpanic.spydroid.SpydroidActivity;
 import android.os.SystemClock;
 import android.util.Log;
@@ -49,14 +45,10 @@ public class H264Packetizer extends AbstractPacketizer {
 	private long latency, oldlat = oldtime, tleft = 0;
 	private int available, naluLength, oldavailable, bleft, utype = 0;
 	
-	public H264Packetizer(InputStream fis, InetAddress dest, int port) throws SocketException {
-		super(fis, dest, port);
-	}
-	
 	public void run() {
 		
 		int sum, len = 0;
-        
+         
 		try {
 		
 			// Skip all atoms preceding mdat atom
@@ -64,17 +56,21 @@ public class H264Packetizer extends AbstractPacketizer {
 				fis.read(buffer,rtphl,8);
 				if (buffer[rtphl+4] == 'm' && buffer[rtphl+5] == 'd' && buffer[rtphl+6] == 'a' && buffer[rtphl+7] == 't') break;
 				len = (buffer[rtphl+3]&0xFF) + (buffer[rtphl+2]&0xFF)*256 + (buffer[rtphl+1]&0xFF)*65536;
-				if (len<=0) break;
-				//Log.e(SpydroidActivity.LOG_TAG,"Atom skipped: "+printBuffer(rtphl+4,rtphl+8)+" size: "+len);
+				if (len<=7 || len>1000) break;
+				Log.e(SpydroidActivity.LOG_TAG,"Atom skipped: "+printBuffer(rtphl+4,rtphl+8)+" size: "+len);
 				fis.read(buffer,rtphl,len-8);
 			} 
 			
 			// Some phones do not set length correctly when stream is not seekable, still we need to skip the header
+			Log.e(SpydroidActivity.LOG_TAG,"avaialble: "+fis.available());
 			if (len<=0) {
 				while (true) {
 					while (fis.read() != 'm');
 					fis.read(buffer,rtphl,3);
-					if (buffer[rtphl] == 'd' && buffer[rtphl+1] == 'a' && buffer[rtphl+2] == 't') break;
+					if (buffer[rtphl] == 'd' && buffer[rtphl+1] == 'a' && buffer[rtphl+2] == 't') {
+						Log.e(SpydroidActivity.LOG_TAG,"mdat found");
+						break;
+					}
 				}
 			}
 		
@@ -178,8 +174,8 @@ public class H264Packetizer extends AbstractPacketizer {
 					tleft = latency;
 					oldlat = time;
 					
-					Log.d(SpydroidActivity.LOG_TAG,"latency: "+latency+", buffer: "+bleft);
-					Log.d(SpydroidActivity.LOG_TAG,"Delay: "+delay+" available: "+fis.available()+", oldavailable: "+oldavailable);
+					//Log.d(SpydroidActivity.LOG_TAG,"latency: "+latency+", buffer: "+bleft);
+					//Log.d(SpydroidActivity.LOG_TAG,"Delay: "+delay+" available: "+fis.available()+", oldavailable: "+oldavailable);
 
 				}
 				
@@ -217,7 +213,7 @@ public class H264Packetizer extends AbstractPacketizer {
 				if (res>0) delay = res;
 			}
 			
-			Log.d(SpydroidActivity.LOG_TAG,"a: "+available+", av: "+avnal+", nal: "+naluLength+", t: "+tleft+", aver: "+avdelay+", del: "+delay+", res: "+res+", r2: "+(tleft*naluLength)/bleft);
+			//Log.d(SpydroidActivity.LOG_TAG,"a: "+available+", av: "+avnal+", nal: "+naluLength+", t: "+tleft+", aver: "+avdelay+", del: "+delay+", res: "+res+", r2: "+(tleft*naluLength)/bleft);
 			
 			tleft -= delay;
 			bleft -= naluLength;
