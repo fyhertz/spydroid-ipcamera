@@ -44,6 +44,10 @@ public class H264Packetizer2 extends AbstractPacketizer {
 	private SimpleFifo fifo = new SimpleFifo(500000);
 	private LinkedList<Long> timeStampList = new LinkedList<Long>();
 	
+	public H264Packetizer2(SmallRtpSocket rtpSocket) {
+		super(rtpSocket);
+	}
+	
 	public void run() {
         
 		/*

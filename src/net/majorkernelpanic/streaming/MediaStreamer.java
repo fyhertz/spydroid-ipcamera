@@ -22,9 +22,6 @@ package net.majorkernelpanic.streaming;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-
 import net.majorkernelpanic.librtp.AbstractPacketizer;
 import net.majorkernelpanic.spydroid.SpydroidActivity;
 import android.media.MediaRecorder;
@@ -65,15 +62,12 @@ public class MediaStreamer extends MediaRecorder {
 		
 	}
 	
-	public void setDestination(String ip, int port) throws IOException, UnknownHostException {
-		if (packetizer==null) {
-			throw new IOException("You must set a packetizer first !");
-		}
-		packetizer.setDestination(InetAddress.getByName(ip),port);
-	}
-	
 	public void setPacketizer(AbstractPacketizer packetizer) {
 		this.packetizer = packetizer;
+	}
+
+	public AbstractPacketizer getPacketizer() {
+		return packetizer;
 	}
 	
 	public void prepare() throws IllegalStateException,IOException {
@@ -122,7 +116,7 @@ public class MediaStreamer extends MediaRecorder {
 			lss.close();
 		}
 		catch (IOException e) {
-			Log.e(SpydroidActivity.LOG_TAG,"Error while attempting to close local sockets");
+			Log.e(SpydroidActivity.TAG,"Error while attempting to close local sockets");
 		}
 	}
 	

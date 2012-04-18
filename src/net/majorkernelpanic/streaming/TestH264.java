@@ -18,7 +18,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-package net.majorkernelpanic.spydroid;
+package net.majorkernelpanic.streaming;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import net.majorkernelpanic.libmp4.MP4Parser;
 import net.majorkernelpanic.libmp4.StsdBox;
+import net.majorkernelpanic.spydroid.SpydroidActivity;
 import android.media.MediaRecorder;
 import android.media.MediaRecorder.OnInfoListener;
 import android.util.Log;
@@ -58,7 +59,6 @@ public class TestH264 {
 	
 	/* If test successful, onSuccess is called and return H264 settings for the phone  */
 	public interface Callback {
-		public void onStart();
 		public void onError(String error);
 		public void onSuccess(String result);
 	}
@@ -113,6 +113,8 @@ public class TestH264 {
 		holder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
     	holder.addCallback(shcb);
 		
+    	runTest(0);
+    	
 	}
 	
 	private void runTest(int step) {
@@ -120,8 +122,6 @@ public class TestH264 {
 		switch (step) {
 		
 		case 0:
-		
-			cb.onStart();
 			
 			/* 1 - Set up MediaRecorder */
 			mr.setVideoSource(MediaRecorder.VideoSource.CAMERA);
@@ -193,7 +193,7 @@ public class TestH264 {
 				return;
 			}
 
-			if (!file.delete()) Log.e(SpydroidActivity.LOG_TAG,"Temp file not erased");
+			if (!file.delete()) Log.e(SpydroidActivity.TAG,"Temp file not erased");
 			
 			success(stsd.getProfileLevel()+":"+stsd.getB64PPS()+":"+stsd.getB64SPS()); 	
 			

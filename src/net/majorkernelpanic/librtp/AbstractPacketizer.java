@@ -22,8 +22,6 @@ package net.majorkernelpanic.librtp;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.InetAddress;
-
 import android.util.Log;
 
 /*
@@ -37,25 +35,31 @@ abstract public class AbstractPacketizer {
 	protected InputStream fis = null;
 	protected boolean running = false;
 	
-	protected byte[] buffer = new byte[16384*2];	
+	protected byte[] buffer;	
 	
 	protected final int rtphl = 12; // Rtp header length
 	
 
-	public AbstractPacketizer() {
-		
-		this.rsock = new SmallRtpSocket(buffer);
-		
-	}	
+	public AbstractPacketizer() {}	
 	
-	public AbstractPacketizer(InputStream fis, InetAddress dest, int port) {
-		
-		this.fis = fis;
-		this.rsock = new SmallRtpSocket(dest, port, buffer);
+	public AbstractPacketizer(SmallRtpSocket rtpSocket) {
+		this.rsock = rtpSocket;
+		this.buffer = rsock.getBuffer();
 	}
 	
-	public void setDestination(InetAddress dest, int port) {
-		rsock.setDestination(dest,port);
+	public AbstractPacketizer(SmallRtpSocket rsock, InputStream fis) {
+		this.rsock = rsock;
+		this.fis = fis;
+		this.buffer = rsock.getBuffer();
+	}
+	
+	public void setRtpSocket(SmallRtpSocket rsock) {
+		this.rsock = rsock;
+		this.buffer = rsock.getBuffer();
+	}
+	
+	public SmallRtpSocket getRtpSocket() {
+		return rsock;
 	}
 	
 	public void setInputStream(InputStream fis) {
@@ -66,11 +70,13 @@ abstract public class AbstractPacketizer {
 		running = true;
 		new Thread(new Runnable () {
 			public void run() {
+				if (rsock==null) Log.e("LIBRTP","You must call setRtpSocket befor calling start !");
 				try {
 					if (fis.available()>0) fis.skip(fis.available());
 				}
 				catch (IOException e) {
 					Log.e("LIBRTP","Wrong InputStream !");
+					e.printStackTrace();
 				}
 				catch (NullPointerException e) {
 					Log.e("LIBRTP","You must call setInputStream before calling start !");

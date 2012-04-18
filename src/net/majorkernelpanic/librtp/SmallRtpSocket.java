@@ -43,7 +43,7 @@ public class SmallRtpSocket {
 	
 	public static final int headerLength = 12;
 	
-	public SmallRtpSocket(InetAddress dest, int dport, byte[] buffer) {
+	public SmallRtpSocket(byte[] buffer, InetAddress dest, int dport) {
 		
 		this(buffer);
 		
@@ -51,6 +51,8 @@ public class SmallRtpSocket {
 		upack.setAddress(dest);
 		
 	}
+	
+	
 	
 	public SmallRtpSocket(byte[] buffer) {
 		
@@ -86,10 +88,22 @@ public class SmallRtpSocket {
 	public void close() {
 		usock.close();
 	}
-
+	
+	public void setSSRC(long ssrc) {
+		setLong(ssrc,8,12);
+	}
+	
 	public void setDestination(InetAddress dest, int dport) {
 		upack.setPort(dport);
 		upack.setAddress(dest);
+	}
+	
+	public byte[] getBuffer() {
+		return buffer;
+	}
+	
+	public int getLocalPort() {
+		return usock.getLocalPort();
 	}
 	
 	/* Send RTP packet over the network */
@@ -101,7 +115,7 @@ public class SmallRtpSocket {
 		try {
 			usock.send(upack);
 		} catch (IOException e) {
-			Log.e(SpydroidActivity.LOG_TAG,"Send failed");
+			Log.e(SpydroidActivity.TAG,"Send failed");
 		}
 		
 		if (upts) {

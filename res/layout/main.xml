@@ -25,44 +25,17 @@
 	
 	</LinearLayout>
     
-	<TextView 
-		android:gravity="top"
-		android:layout_width="fill_parent"
-		android:layout_height="wrap_content"
-		android:layout_weight="3"
-		android:id="@+id/console"
-		android:textColor="#FFAC63"
-		android:shadowRadius="1"
-		android:shadowDx="1"
-		android:shadowDy="1"
-		android:shadowColor="#000000"
-		android:padding="10px"
-		android:text="192.170.0.1"
-    />
-    
-    <LinearLayout
-        android:id="@+id/linearLayout1"
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true"
-        android:layout_alignParentLeft="true" >
-
-        <EditText
-            android:id="@+id/ip"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_weight="9"
-            android:gravity="center_horizontal"
-            android:text="192.170.0.1" >
-        </EditText>
-
-        <Button
-            android:id="@+id/streambutton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="Stream !" />
-        
-    </LinearLayout>
+	<TextView
+	    android:id="@+id/console"
+	    android:layout_width="fill_parent"
+	    android:layout_height="wrap_content"
+	    android:layout_weight="3"
+	    android:gravity="top"
+	    android:padding="10px"
+	    android:shadowColor="#000000"
+	    android:shadowDx="1"
+	    android:shadowDy="1"
+	    android:shadowRadius="1"
+	    android:textColor="#FFAC63" />
 
 </RelativeLayout>

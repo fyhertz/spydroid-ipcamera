@@ -42,6 +42,14 @@ public class AMRNBPacketizer extends AbstractPacketizer {
 	private final int amrhl = 6; // Header length
 	private final int amrps = 32;   // Packet size
 
+	public AMRNBPacketizer() {
+		super();
+	}
+	
+	public AMRNBPacketizer(SmallRtpSocket rtpSocket) {
+		super(rtpSocket);
+	}
+
 	public void run() {
 	
 		// Skip raw amr header
@@ -74,7 +82,7 @@ public class AMRNBPacketizer extends AbstractPacketizer {
 			try { 
 				len = fis.read(buffer, offset+sum, length-sum);
 				if (len<0) {
-					Log.e(SpydroidActivity.LOG_TAG,"Read error");
+					Log.e(SpydroidActivity.TAG,"Read error");
 				}
 				else sum+=len;
 			} catch (IOException e) {
