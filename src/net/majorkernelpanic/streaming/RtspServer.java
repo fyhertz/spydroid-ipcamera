@@ -28,14 +28,17 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
 import android.media.MediaRecorder;
 import android.os.Handler;
 import android.util.Log;
 import android.view.SurfaceHolder;
 
 /**
+ * 
  *   RtspServer (RFC 2326)
- *   One client at a time only
+ *   One client handled at a time only
+ *   Has an instance of StreamingManager
  * 
  */
 public class RtspServer  extends Thread implements Runnable {
@@ -58,19 +61,13 @@ public class RtspServer  extends Thread implements Runnable {
 	private Handler handler = null;
 	private String request, response;
 	private byte[] buffer = new byte[4096];
-	private int port, seqid = 1;	
-	private boolean running = false;
+	private int port, seqid = 1;
 	
-	public StreamingService streamingService = new StreamingService();
+	public StreamingManager streamingManager = new StreamingManager();
 	
 	public RtspServer(int port, Handler handler) {
 		this.port = port;
 		this.handler = handler;
-	}
-
-	public void start() {
-		super.start();
-		log("RTSP Server running !");
 	}
 	
 	public void run() {
@@ -99,8 +96,8 @@ public class RtspServer  extends Thread implements Runnable {
 			return true;
 		}
 		
-		streamingService.setDestination(getClientAddress());
-		streamingService.flush();
+		streamingManager.setDestination(getClientAddress());
+		streamingManager.flush();
 		
 		log("Connection from "+getClientAddress().getHostAddress());
 		
@@ -114,7 +111,7 @@ public class RtspServer  extends Thread implements Runnable {
 			if (len<=0) break;
 			
 			request = new String(buffer,0,len);
-			
+						
 			/* Command Describe */
 			if (request.startsWith("DESCRIBE")) commandDescribe();
 			/* Command Options */
@@ -130,8 +127,7 @@ public class RtspServer  extends Thread implements Runnable {
 			
 		}
 		
-		log("Streaming stopped !");
-		streamingService.stopAll();
+		streamingManager.stopAll();
 		
 		try {
 			client.close();
@@ -148,29 +144,33 @@ public class RtspServer  extends Thread implements Runnable {
 	/* ******************************** Command DESCRIBE ******************************** */
 	/* ********************************************************************************** */
 	private void commandDescribe() {
-		
+
 		// Can't run H264Test from this thread because it has no Looper
 		// UI Thread then adds H264 Track
 		handler.obtainMessage(MESSAGE_H264_TEST).sendToTarget();
 		
+		streamingManager.addAMRNBTrack(MediaRecorder.AudioSource.CAMCORDER, 5004);
+		//respondDescribe();
+
 	}
 	
 	public void h264TestResult(VideoQuality videoQuality, String[] params, SurfaceHolder holder) {
-		streamingService.addH264Track(MediaRecorder.VideoSource.CAMERA, 5006, params, videoQuality, holder);
+		streamingManager.addH264Track(MediaRecorder.VideoSource.CAMERA, 5006, params, videoQuality, holder);
 		respondDescribe();
 		
 	}
 	
 	private void respondDescribe() {
 		
-		String requestContent = streamingService.getSessionDescriptor();
+		String requestContent = streamingManager.getSessionDescriptor();
 		String requestAttributes = "Content-Base: "+getServerAddress()+":"+port+"/\r\n" +
-							"Content-Type: application/sdp\r\n";
+								   "Content-Type: application/sdp\r\n";
 		
 		writeHeader(STATUS_OK,requestContent.length(),requestAttributes);
 		writeContent(requestContent);
 		
-		streamingService.prepareAll();
+		streamingManager.prepareAll();
+		streamingManager.startAll();
 		
 	}
 			
@@ -192,17 +192,6 @@ public class RtspServer  extends Thread implements Runnable {
 		Pattern p; Matcher m;
 		int ssrc, trackId;
 		
-		p = Pattern.compile("client_port=(\\d+)-(\\d+)",Pattern.CASE_INSENSITIVE);
-		m = p.matcher(request);
-		
-		if (!m.find()) {
-			writeHeader(STATUS_BAD_REQUEST,0,"");
-			writeContent("");
-			return;
-		}
-		
-		p1 = m.group(1); p2 = m.group(2);
-		
 		p = Pattern.compile("trackID=(\\w+)",Pattern.CASE_INSENSITIVE);
 		m = p.matcher(request);
 		
@@ -210,17 +199,29 @@ public class RtspServer  extends Thread implements Runnable {
 			writeHeader(STATUS_BAD_REQUEST,0,"");
 			writeContent("");
 			return;
-		}
+		} 
 		
 		trackId = Integer.parseInt(m.group(1));
 		
-		if (!streamingService.trackExists(trackId)) {
+		if (!streamingManager.trackExists(trackId)) {
 			writeHeader(STATUS_NOT_FOUND,0,"");
 			writeContent("");
 			return;
 		}
 		
-		ssrc = streamingService.getTrackSSRC(trackId);
+		p = Pattern.compile("client_port=(\\d+)-(\\d+)",Pattern.CASE_INSENSITIVE);
+		m = p.matcher(request);
+		
+		if (!m.find()) {
+			int port = streamingManager.getTrackPort(trackId);
+			p1 = String.valueOf(port);
+			p2 = String.valueOf(port+1);
+		}
+		else {
+			p1 = m.group(1); p2 = m.group(2);
+		}
+		
+		ssrc = streamingManager.getTrackSSRC(trackId);
 		
 		String attributes = "Transport: RTP/AVP/UDP;unicast;client_port="+p1+"-"+p2+";server_port=54782-54783;ssrc="+Integer.toHexString(ssrc)+";mode=play\r\n" +
 							"Session: "+ "1185d20035702ca" + "\r\n" +
@@ -228,9 +229,6 @@ public class RtspServer  extends Thread implements Runnable {
 		
 		writeHeader(STATUS_OK,0,attributes);
 		writeContent("");
-
-		log("Streaming started !");
-		streamingService.startAll();
 		
 	}
 		
@@ -262,11 +260,12 @@ public class RtspServer  extends Thread implements Runnable {
 	/* ******************************* Command Unknown !? ******************************* */
 	/* ********************************************************************************** */	
 	private void commandUnknown() {
+		Log.e(TAG,"Command unknown: "+request);
 		writeHeader(STATUS_BAD_REQUEST,0,"");
 		writeContent("");
 	}
 
-	private void writeHeader(String status, int length,String attributes) {
+	private void writeHeader(String requestStatus, int requestLength,String requestAttributes) {
 		
 		boolean match;
 		Pattern p = Pattern.compile("CSeq: (\\d+)",Pattern.CASE_INSENSITIVE);
@@ -275,18 +274,18 @@ public class RtspServer  extends Thread implements Runnable {
 		match = m.find();
 		if (match) seqid = Integer.parseInt(m.group(1));
 		
-		response = 	"RTSP/1.0 "+status+"\r\n" +
+		response = 	"RTSP/1.0 "+requestStatus+"\r\n" +
 					(match?("Cseq: " + seqid + "\r\n"):"") +
-					"Content-Length: " + length + "\r\n" +
-					attributes +
+					"Content-Length: " + requestLength + "\r\n" +
+					requestAttributes +
 					"\r\n";
-		
+				
 	}
 	
-	private void writeContent(String content) {
+	private void writeContent(String requestContent) {
 		
-		response += content;
-		
+		response += requestContent;
+					
 		try {
 			os.write(response.getBytes(),0, response.length());
 		} catch (IOException e) {

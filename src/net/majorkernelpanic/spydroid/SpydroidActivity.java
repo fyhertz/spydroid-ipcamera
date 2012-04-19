@@ -20,6 +20,11 @@
 
 package net.majorkernelpanic.spydroid;
 
+import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.net.SocketException;
+import java.util.Enumeration;
+
 import net.majorkernelpanic.streaming.RtspServer;
 import net.majorkernelpanic.streaming.TestH264;
 import net.majorkernelpanic.streaming.VideoQuality;
@@ -41,10 +46,11 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 /**
+ * 
  * Main activity
  * It will test H.264 support on the phone and then launch the RTSP Server
+ * 
  */
-
 public class SpydroidActivity extends Activity {
     
     static final public String TAG = "SPYDROID";
@@ -79,19 +85,47 @@ public class SpydroidActivity extends Activity {
        	
         camera.getHolder().setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
         holder = camera.getHolder();
-        
-        try {
-			log("<b>Spydroid v"+this.getPackageManager().getPackageInfo(this.getPackageName(), 0 ).versionName+"</b>");
-		} catch (NameNotFoundException e) {
-			log("<b>Spydroid</b>");
-		}
-        
+		
         startRtspServer();
     
     }
     
     public void onResume() {
     	super.onResume();
+    	
+    	String s = "";
+		int n = 0; 
+    	
+		// Clean console
+		console.setText("");
+		
+    	// Print version number
+        try {
+			log("<b>Spydroid v"+this.getPackageManager().getPackageInfo(this.getPackageName(), 0 ).versionName+"</b>");
+		} catch (NameNotFoundException e) {
+			log("<b>Spydroid</b>");
+		}
+        
+		// Print the device ip address
+		try {
+			for (Enumeration<NetworkInterface> en = NetworkInterface.getNetworkInterfaces(); en.hasMoreElements();) {
+				NetworkInterface i = en.nextElement();
+				// We skip the "lo" interface (127.0.0.1)
+				if (!i.getName().equals("lo")) {
+					for (Enumeration<InetAddress> al = i.getInetAddresses(); al.hasMoreElements();) {
+						InetAddress nextElement = al.nextElement();
+						s+="rtsp://"+nextElement.getHostAddress()+":8086/<br />";
+						n++;
+					}
+				}
+			}
+		} catch (SocketException e) {
+		} catch (NullPointerException e) {}
+    	
+		if (n>1) log("Launch VLC and try opening one of the following stream: <br />"+s);
+		if (n>0) log("Launch VLC and open the following stream:<br />"+s); 
+		else log("You don't seem to be connected to any network :(. Is the wifi on ?");
+		
 
     }
     

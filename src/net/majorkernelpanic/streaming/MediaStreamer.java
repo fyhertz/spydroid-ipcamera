@@ -30,12 +30,12 @@ import android.net.LocalSocket;
 import android.net.LocalSocketAddress;
 import android.util.Log;
 
-/* 
+/**
+ *  
  *  A MediaRecorder that streams what is recorder using a Packetizer
  *  specified with setPacketizer 
  * 
  */
-
 public class MediaStreamer extends MediaRecorder {
 
 	private static int id = 0;

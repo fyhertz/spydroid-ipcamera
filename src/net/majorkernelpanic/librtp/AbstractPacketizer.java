@@ -24,11 +24,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import android.util.Log;
 
-/*
+/**
+ * 
  * Each packetizer inherits from this one and therefore uses RTP and UDP
  *
  */
-
 abstract public class AbstractPacketizer {
 	
 	protected SmallRtpSocket rsock = null;
@@ -70,17 +70,8 @@ abstract public class AbstractPacketizer {
 		running = true;
 		new Thread(new Runnable () {
 			public void run() {
-				if (rsock==null) Log.e("LIBRTP","You must call setRtpSocket befor calling start !");
-				try {
-					if (fis.available()>0) fis.skip(fis.available());
-				}
-				catch (IOException e) {
-					Log.e("LIBRTP","Wrong InputStream !");
-					e.printStackTrace();
-				}
-				catch (NullPointerException e) {
-					Log.e("LIBRTP","You must call setInputStream before calling start !");
-					e.printStackTrace();
+				if (rsock==null) {
+					Log.e("LIBRTP","You must call setRtpSocket before calling start !");
 				}
 				AbstractPacketizer.this.run();
 			}

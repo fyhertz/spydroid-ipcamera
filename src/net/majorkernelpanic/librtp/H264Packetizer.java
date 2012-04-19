@@ -25,7 +25,8 @@ import net.majorkernelpanic.spydroid.SpydroidActivity;
 import android.os.SystemClock;
 import android.util.Log;
 
-/*
+/**
+ * 
  *   RFC 3984
  *   
  *   H264 Streaming over RTP
@@ -37,7 +38,6 @@ import android.util.Log;
  *   H264Packetizer2 should be used instead of this one
  *   
  */
-
 public class H264Packetizer extends AbstractPacketizer {
 	
 	private final int packetSize = 1400;

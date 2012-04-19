@@ -24,7 +24,8 @@ import java.io.IOException;
 import net.majorkernelpanic.spydroid.SpydroidActivity;
 import android.util.Log;
 
-/*
+/**
+ * 
  *   RFC 3267
  *   
  *   AMR Streaming over RTP
@@ -34,14 +35,15 @@ import android.util.Log;
  *   Stream must begin with a 6 bytes long header: "#!AMR\n", it will be skipped
  *   
  */
-
 public class AMRNBPacketizer extends AbstractPacketizer {
 	
-	private long ts = 0;
+	private final static String TAG = "AMRNBPacketizer";
 	
 	private final int amrhl = 6; // Header length
 	private final int amrps = 32;   // Packet size
 
+	private long ts = 0;
+	
 	public AMRNBPacketizer() {
 		super();
 	}
@@ -82,7 +84,7 @@ public class AMRNBPacketizer extends AbstractPacketizer {
 			try { 
 				len = fis.read(buffer, offset+sum, length-sum);
 				if (len<0) {
-					Log.e(SpydroidActivity.TAG,"Read error");
+					Log.e(TAG,"Read error");
 				}
 				else sum+=len;
 			} catch (IOException e) {
