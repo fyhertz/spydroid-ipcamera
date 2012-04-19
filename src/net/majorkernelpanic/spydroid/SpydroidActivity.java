@@ -114,7 +114,7 @@ public class SpydroidActivity extends Activity {
 				if (!i.getName().equals("lo")) {
 					for (Enumeration<InetAddress> al = i.getInetAddresses(); al.hasMoreElements();) {
 						InetAddress nextElement = al.nextElement();
-						s+="rtsp://"+nextElement.getHostAddress()+":8086/<br />";
+						s+="<br />rtsp://"+nextElement.getHostAddress()+":8086/";
 						n++;
 					}
 				}
@@ -122,8 +122,8 @@ public class SpydroidActivity extends Activity {
 		} catch (SocketException e) {
 		} catch (NullPointerException e) {}
     	
-		if (n>1) log("Launch VLC and try opening one of the following stream: <br />"+s);
-		if (n>0) log("Launch VLC and open the following stream:<br />"+s); 
+		if (n>1) log("Launch VLC and try opening one of the following stream:"+s);
+		if (n>0) log("Launch VLC and open the following stream:"+s); 
 		else log("You don't seem to be connected to any network :(. Is the wifi on ?");
 		
 
