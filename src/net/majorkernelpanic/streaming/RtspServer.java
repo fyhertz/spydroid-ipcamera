@@ -150,7 +150,7 @@ public class RtspServer  extends Thread implements Runnable {
 		// UI Thread then adds H264 Track
 		handler.obtainMessage(MESSAGE_H264_TEST).sendToTarget();
 		
-		//streamingManager.addAMRNBTrack(MediaRecorder.AudioSource.CAMCORDER, 5004);
+		streamingManager.addAMRNBTrack(MediaRecorder.AudioSource.CAMCORDER, 5004);
 		//respondDescribe();
 
 	}
