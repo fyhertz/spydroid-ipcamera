@@ -32,7 +32,7 @@ import android.util.Log;
 
 /**
  *  
- *  A MediaRecorder that streams what is recorder using a Packetizer
+ *  A MediaRecorder that streams what is recorder using a packetizer
  *  specified with setPacketizer 
  * 
  */

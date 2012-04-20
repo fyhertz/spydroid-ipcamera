@@ -38,7 +38,6 @@ import android.view.SurfaceHolder;
  * 
  *   RtspServer (RFC 2326)
  *   One client handled at a time only
- *   Has an instance of StreamingManager
  * 
  */
 public class RtspServer  extends Thread implements Runnable {
@@ -50,7 +49,7 @@ public class RtspServer  extends Thread implements Runnable {
 	private static final String STATUS_BAD_REQUEST = "400 Bad Request";
 	private static final String STATUS_NOT_FOUND = "404 Not Found";
 	
-	// Message types sent to UI Thread
+	// Message types
 	public static final int MESSAGE_H264_TEST = 1;
 	public static final int MESSAGE_LOG = 2;
 	
@@ -112,6 +111,8 @@ public class RtspServer  extends Thread implements Runnable {
 			
 			request = new String(buffer,0,len);
 						
+			Log.d(TAG, request);
+			
 			/* Command Describe */
 			if (request.startsWith("DESCRIBE")) commandDescribe();
 			/* Command Options */
@@ -144,12 +145,12 @@ public class RtspServer  extends Thread implements Runnable {
 	/* ******************************** Command DESCRIBE ******************************** */
 	/* ********************************************************************************** */
 	private void commandDescribe() {
-
+		
 		// Can't run H264Test from this thread because it has no Looper
 		// UI Thread then adds H264 Track
 		handler.obtainMessage(MESSAGE_H264_TEST).sendToTarget();
 		
-		streamingManager.addAMRNBTrack(MediaRecorder.AudioSource.CAMCORDER, 5004);
+		//streamingManager.addAMRNBTrack(MediaRecorder.AudioSource.CAMCORDER, 5004);
 		//respondDescribe();
 
 	}
@@ -285,7 +286,9 @@ public class RtspServer  extends Thread implements Runnable {
 	private void writeContent(String requestContent) {
 		
 		response += requestContent;
-					
+				
+		Log.d(TAG, response);
+		
 		try {
 			os.write(response.getBytes(),0, response.length());
 		} catch (IOException e) {

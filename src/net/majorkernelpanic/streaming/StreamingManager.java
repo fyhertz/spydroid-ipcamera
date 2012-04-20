@@ -27,17 +27,22 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Random;
-
 import net.majorkernelpanic.librtp.AMRNBPacketizer;
 import net.majorkernelpanic.librtp.AbstractPacketizer;
-import net.majorkernelpanic.librtp.H264Packetizer;
+import net.majorkernelpanic.librtp.H264Packetizer2;
 import net.majorkernelpanic.librtp.SmallRtpSocket;
 import android.media.MediaRecorder;
 import android.view.SurfaceHolder;
 
+/**
+ * 
+ * 
+ * 
+ *
+ */
 public class StreamingManager {
 
-	public final static String TAG = "SERVICESTREAMING";
+	public final static String TAG = "StreamingManager";
 	 
 	public StreamingManager() {
 		
@@ -67,7 +72,7 @@ public class StreamingManager {
 		
 		Track track = new Track(new MediaStreamer(),Track.TYPE_VIDEO);
 
-		track.packetizer = new H264Packetizer();
+		track.packetizer = new H264Packetizer2();
 		track.encoder = MediaRecorder.VideoEncoder.H264;
 		track.format = MediaRecorder.OutputFormat.THREE_GPP;
 		track.port = destinationPort;

@@ -21,7 +21,7 @@
 package net.majorkernelpanic.librtp;
 
 import java.io.IOException;
-import net.majorkernelpanic.spydroid.SpydroidActivity;
+
 import android.os.SystemClock;
 import android.util.Log;
 
@@ -35,207 +35,185 @@ import android.util.Log;
  *   NAL units must be preceded by their length (4 bytes)
  *   Stream must start with mpeg4 or 3gpp header, it will be skipped
  *   
- *   H264Packetizer2 should be used instead of this one
- *   
  */
 public class H264Packetizer extends AbstractPacketizer {
 	
+	private final static String TAG = "H264Packetizer";
+	
 	private final int packetSize = 1400;
-	private long oldtime = SystemClock.elapsedRealtime(), delay = 0, avdelay = 0, avnal = 0;
-	private long latency, oldlat = oldtime, tleft = 0;
-	private int available, naluLength, oldavailable, bleft, utype = 0;
-
+	private long time, delay, cts;
+	private int oldavailable = 0, available, len = 0, delta;
+	private boolean skip = true;
+	
 	public H264Packetizer() {
 		super();
 	}
 	
-	public H264Packetizer(SmallRtpSocket rtpSocket) {
-		super(rtpSocket);
-	}
-
 	public void run() {
 		
-		int sum, len = 0;
-         
+		/*
+		 * Here we just skip the mpeg4 header
+		 */
 		try {
-		
+			
 			// Skip all atoms preceding mdat atom
 			while (true) {
 				fis.read(buffer,rtphl,8);
 				if (buffer[rtphl+4] == 'm' && buffer[rtphl+5] == 'd' && buffer[rtphl+6] == 'a' && buffer[rtphl+7] == 't') break;
 				len = (buffer[rtphl+3]&0xFF) + (buffer[rtphl+2]&0xFF)*256 + (buffer[rtphl+1]&0xFF)*65536;
-				if (len<=7 || len>1000) break;
-				Log.e(SpydroidActivity.TAG,"Atom skipped: "+printBuffer(rtphl+4,rtphl+8)+" size: "+len);
+				if (len<=7) break;
+				//Log.e(SpydroidActivity.LOG_TAG,"Atom skipped: "+printBuffer(rtphl+4,rtphl+8)+" size: "+len);
 				fis.read(buffer,rtphl,len-8);
-			} 
+			}
 			
 			// Some phones do not set length correctly when stream is not seekable, still we need to skip the header
-			Log.e(SpydroidActivity.TAG,"avaialble: "+fis.available());
-			if (len<=0) {
+			if (len<=0 || len>1000) {
 				while (true) {
 					while (fis.read() != 'm');
 					fis.read(buffer,rtphl,3);
-					if (buffer[rtphl] == 'd' && buffer[rtphl+1] == 'a' && buffer[rtphl+2] == 't') {
-						Log.e(SpydroidActivity.TAG,"mdat found");
-						break;
-					}
+					if (buffer[rtphl] == 'd' && buffer[rtphl+1] == 'a' && buffer[rtphl+2] == 't') break;
 				}
 			}
-		
+			len = 0;
 		}
-		
 		catch (IOException e)  {
 			return;
 		}
+
+		cts = SystemClock.elapsedRealtime();
 		
-		while (running) { 
-		 
-			// Read nal unit length (4 bytes) and nal unit header (1 byte)
-			len = fill(rtphl, 5);
-			naluLength = (buffer[rtphl+3]&0xFF) + (buffer[rtphl+2]&0xFF)*256 + (buffer[rtphl+1]&0xFF)*65536;
+		try {
 			
-			//Log.e(SpydroidActivity.LOG_TAG,"- Nal unit length: " + naluLength);
+			delta = 1; 
+			oldavailable = fis.available();
+			time = SystemClock.elapsedRealtime();
 			
-			rsock.updateTimestamp(SystemClock.elapsedRealtime()*90);
-			
-			sum = 1;
-			
-			// RFC 3984, packetization mode = 1
-			
-			utype = buffer[rtphl+4]&0x1F;
-			//Log.d(SpydroidActivity.LOG_TAG,"NAL UNIT TYPE: "+(buffer[rtphl+4]&0x1F));
-			
-			// Small nal unit => Single nal unit
-			if (naluLength<=packetSize-rtphl-2) {
-				
-				buffer[rtphl] = buffer[rtphl+4];
-				if (!running) break;
-				len = fill(rtphl+1,  naluLength-1  );
-				if (len<0) break;
-				rsock.markNextPacket();
-				send(naluLength+rtphl,false);
-				
-				//Log.e(SpydroidActivity.LOG_TAG,"----- Single NAL unit read:"+len+" header:"+printBuffer(rtphl,rtphl+3));
-				
-			}
-			// Large nal unit => Split nal unit
-			else {
-			
-				// Set FU-A indicator
-				buffer[rtphl] = 28;
-				buffer[rtphl] += (buffer[rtphl+4] & 0x60) & 0xFF; // FU indicator NRI
-				//buffer[rtphl] += 0x80;
-				
-				// Set FU-A header
-				buffer[rtphl+1] = (byte) (buffer[rtphl+4] & 0x1F);  // FU header type
-				buffer[rtphl+1] += 0x80; // Start bit
-				
-				 
-		    	while (sum < naluLength) {
-		    		
-		    		if (!running) break;
-					len = fill( rtphl+2,  naluLength-sum > packetSize-rtphl-2 ? packetSize-rtphl-2 : naluLength-sum  ); sum += len;
-					if (len<0) break;
-					
-					// Last packet before next nal
-					if (sum >= naluLength) {
-						// End bit on
-						buffer[rtphl+1] += 0x40;
-						rsock.markNextPacket();
-					}
-						
-					send(len+rtphl+2,true);
-					
-					// Switch start bit 
-					buffer[rtphl+1] = (byte) (buffer[rtphl+1] & 0x7F);
-					
-					//Log.d(SpydroidActivity.LOG_TAG,"--- FU-A unit, end:"+(boolean)(sum>=naluLength));
-					
-		    	}
-		    	
-			}
-			
-		}
-		
-		Log.d(SpydroidActivity.TAG,"Thread over !!!");
-		
-	}
+			while (running) { 
 	
-	private int fill(int offset,int length) {
-		
-		int sum = 0, len;
-		long time;
-		
-		while (sum<length) {
-			try { 
+				send();
 				
 				available = fis.available();
-				len = fis.read(buffer, offset+sum, length-sum);
-				//Log.d(SpydroidActivity.LOG_TAG,"Data read: "+fis.available()+","+len);
 				
-				if (oldavailable<available) {
+				Log.d(TAG,"available: "+available);
+				
+				if (available - oldavailable>0 || available==0) {
 					
-					bleft = available-oldavailable;
-					
+					skip = false;
+					delay = SystemClock.elapsedRealtime() - time;
+					delta = available - oldavailable;
 					time = SystemClock.elapsedRealtime();
-					latency = time - oldlat;
-					tleft = latency;
-					oldlat = time;
-					
-					//Log.d(SpydroidActivity.LOG_TAG,"latency: "+latency+", buffer: "+bleft);
-					//Log.d(SpydroidActivity.LOG_TAG,"Delay: "+delay+" available: "+fis.available()+", oldavailable: "+oldavailable);
 
-				}
+					Log.e("TAG","delay: "+delay+" delta: "+delta);
+					
+				}	
 				
 				oldavailable = available;
 				
-				if (len<0) {
-					Log.e(SpydroidActivity.TAG,"Read error");
-					return -1;
-				}
-				else sum+=len;
-				
-			} catch (IOException e) {
-				Log.e(SpydroidActivity.TAG,"Read try failed");
-				return -1;
 			}
-		} 
 		
-		return sum;
-			
-	}
-	
-	private void send(int size, boolean split) {
-		
-		long now = SystemClock.elapsedRealtime(), res = 0;
-		
-		if (rsock.isMarked()) {
-			
-			if (available>0) res = (tleft*naluLength)/available;
-			//if (available>0) res = (tleft*naluLength)/bleft;
-			if (utype != 5) {
-				if (0==avdelay) avdelay = res;
-				else avdelay = (99*avdelay+res)/100;
-				avnal = (99*avnal+naluLength)/100;
-				//if (res>0 && (avdelay<=0 || res<2*avdelay)) delay = res+1;
-				if (res>0) delay = res;
-			}
-			
-			//Log.d(SpydroidActivity.LOG_TAG,"a: "+available+", av: "+avnal+", nal: "+naluLength+", t: "+tleft+", aver: "+avdelay+", del: "+delay+", res: "+res+", r2: "+(tleft*naluLength)/bleft);
-			
-			tleft -= delay;
-			bleft -= naluLength;
-
-			if (now-oldtime<delay)
-				try {
-					Thread.sleep(delay-(now-oldtime));
-				} catch (InterruptedException e) {}
-				
+		} catch (IOException e) {
+			return;
 		}
 		
-		oldtime = SystemClock.elapsedRealtime();
-		rsock.send(size);
+		
+	}
+	
+	
+	
+	/*
+	 * Reads a NAL unit and sends it
+	 * If it is too big, we split it in FU-A units (RFC 3984)
+	 */
+	private void send() {
+		
+		int sum = 1, len = 0, naluLength;
+		
+		
+		/* Read nal unit length (4 bytes) and nal unit header (1 byte) */
+		if ( ( len = fill(rtphl, 5) ) < 0 ) {running = false; return;}
+		naluLength = (buffer[rtphl+3]&0xFF) + (buffer[rtphl+2]&0xFF)*256 + (buffer[rtphl+1]&0xFF)*65536;
+		
+		//Log.d("SPYDROID","- Nal unit length: " + naluLength+ " deltaTS: "+(delay*naluLength/delta));
+		
+		if (delta==0) delta = naluLength;
+		cts += delay*naluLength/delta;
+		
+		try {
+			Thread.sleep(4*delay*naluLength/delta/5);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace(); 
+		}
+		
+		rsock.updateTimestamp(cts*90);
+		
+		/* Small nal unit => Single nal unit */
+		if (naluLength<=packetSize-rtphl-2) {
+			
+			buffer[rtphl] = buffer[rtphl+4];
+			len = fill(rtphl+1, naluLength-1);
+			rsock.markNextPacket();
+			if (!skip) rsock.send(naluLength+rtphl);
+			
+			//Log.e(SpydroidActivity.LOG_TAG,"----- Single NAL unit read:"+len+" header:"+printBuffer(rtphl,rtphl+3));
+			
+		}
+		
+		/* Large nal unit => Split nal unit */
+		else {
+		
+			/* Set FU-A indicator */
+			buffer[rtphl] = 28;
+			buffer[rtphl] += (buffer[rtphl+4] & 0x60) & 0xFF; // FU indicator NRI
+			
+			/* Set FU-A header */
+			buffer[rtphl+1] = (byte) (buffer[rtphl+4] & 0x1F);  // FU header type
+			buffer[rtphl+1] += 0x80; // Start bit
+			
+			 
+	    	while (sum < naluLength) {
+	    		
+				len = fill(rtphl+2, naluLength-sum > packetSize-rtphl-2 ? packetSize-rtphl-2 : naluLength-sum ); sum += len;
+				if (len<0) {running = false; return;}
+				
+				/* Last packet before next NAL */
+				if (sum >= naluLength) {
+					// End bit on
+					buffer[rtphl+1] += 0x40;
+					rsock.markNextPacket();
+				}
+					
+				if (!skip) rsock.send(len+rtphl+2);
+				
+				/* Switch start bit */
+				buffer[rtphl+1] = (byte) (buffer[rtphl+1] & 0x7F); 
+				
+				//Log.d(SpydroidActivity.LOG_TAG,"--- FU-A unit, end:"+(boolean)(sum>=naluLength));
+				
+	    	}
+	    	
+		}
+		
+		//Log.i(SpydroidActivity.LOG_TAG,"NAL UNIT SENT "+nbNalu);
 		
 	}
 
+	private int fill(int offset, int length) {
+		
+		int sum = 0, len = 0;
+		
+		try {
+			while (sum<length) {
+				len = fis.read(buffer,offset+sum,length-sum);
+				sum += len;
+				if (len==-1) return -1;
+			}
+		} catch (IOException e) {
+			return -1;
+		}
+		
+		return sum;
+		
+	}
+	
 }
