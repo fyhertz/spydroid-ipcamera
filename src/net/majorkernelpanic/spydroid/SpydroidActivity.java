@@ -123,7 +123,7 @@ public class SpydroidActivity extends Activity {
 		} catch (NullPointerException e) {}
     	
 		if (n>1) log("Launch VLC and try opening one of the following stream:"+s);
-		if (n>0) log("Launch VLC and open the following stream:"+s); 
+		else if (n>0) log("Launch VLC and open the following stream:"+s); 
 		else log("You don't seem to be connected to any network :(. Is the wifi on ?");
 		
 
