@@ -41,14 +41,14 @@ import android.util.Log;
 public class H264Packetizer2 extends AbstractPacketizer {
 	
 	private final static String TAG = "H264Packetizer";
+	private final int MAXPACKETSIZE = 1400;
 	
-	private final int packetSize = 1400;
-	private long oldtime = SystemClock.elapsedRealtime(), duration, delay, ts = oldtime;
+	private long oldtime = SystemClock.elapsedRealtime(), duration, delay = 10, newDelay, ts = oldtime;
 	private int available = 0, oldavailable = 0, size, naluLength = 0, cursor = 0;
 	private SimpleFifo fifo = new SimpleFifo(500000);
 	private Semaphore nbChunks = new Semaphore(0);
 	private LinkedList<Chunk> chunks = new LinkedList<Chunk>();
-	private Chunk chunk = null;
+	private Chunk chunk = null, tmpChunk = null;
 	
 	
 	private class Chunk {
@@ -66,38 +66,18 @@ public class H264Packetizer2 extends AbstractPacketizer {
 	}
 	
 	public void run() {
-        
-		int len = 0;
 		
-		/*
-		 * Here we just skip the mpeg4 header
-		 */
 		try {
-			
-			// Skip all atoms preceding mdat atom
-			while (true) {
-				fis.read(buffer,rtphl,8);
-				if (buffer[rtphl+4] == 'm' && buffer[rtphl+5] == 'd' && buffer[rtphl+6] == 'a' && buffer[rtphl+7] == 't') break;
-				len = (buffer[rtphl+3]&0xFF) + (buffer[rtphl+2]&0xFF)*256 + (buffer[rtphl+1]&0xFF)*65536;
-				if (len<=7) break;
-				//Log.e(TAG,"Atom skipped: "+printBuffer(rtphl+4,rtphl+8)+" size: "+len);
-				fis.read(buffer,rtphl,len-8);
-			}
-			
-			// Some phones do not set length correctly when stream is not seekable, still we need to skip the header
-			if (len<=0 || len>1000) {
-				while (true) {
-					while (fis.read() != 'm');
-					fis.read(buffer,rtphl,3);
-					if (buffer[rtphl] == 'd' && buffer[rtphl+1] == 'a' && buffer[rtphl+2] == 't') break;
-				}
-			}
-			len = 0;
+			// This will skip the MPEG4 header
+			skipHeader();
 		}
 		catch (IOException e)  {
 			return;
 		}
 
+		/*
+		 * This first thread waits for new NAL units and send them
+		 */
 		new Thread(new Runnable() {
 			public void run() {
 				try {
@@ -105,8 +85,11 @@ public class H264Packetizer2 extends AbstractPacketizer {
 				} catch (InterruptedException e1) {
 					e1.printStackTrace();
 				}
+				
+				chunk = chunks.getFirst();
+				
 				while (running) {
-					chunk = chunks.getFirst();
+					
 					while (cursor<chunk.size) send();
 					if (cursor==chunk.size) {
 						try {
@@ -115,12 +98,23 @@ public class H264Packetizer2 extends AbstractPacketizer {
 							e1.printStackTrace();
 						}
 					}
-					chunks.pop();
+					
+					synchronized (chunks) {
+						
+						chunks.pop();
+						chunk = chunks.getFirst();
+						
+					}
 					cursor = 0;
+					
 				}
 			}
 		}).start();
 		
+		/*
+		 * This thread waits for the camera to deliver data and 
+		 * queue work for the first thread
+		 */
 		while (running) { 
 			
 			try {
@@ -134,8 +128,8 @@ public class H264Packetizer2 extends AbstractPacketizer {
 				
 				duration = SystemClock.elapsedRealtime() - oldtime;
 				size = fillFifo(available);
-				Log.e(TAG,"New chunk -> delay: "+duration+" s1: "+size+" s2: "+available+" available: "+fifo.available()+" chunks: "+chunks.size());
-				chunks.add(new Chunk(size,duration));
+				//Log.e(TAG,"New chunk -> delay: "+duration+" s1: "+size+" s2: "+available+" available: "+fifo.available()+" chunks: "+chunks.size());
+				synchronized (chunks) {chunks.add(new Chunk(size,duration));}
 				nbChunks.release();
 
 			} catch (InterruptedException e1) {
@@ -163,11 +157,11 @@ public class H264Packetizer2 extends AbstractPacketizer {
 
 		if (naluLength+cursor<=chunk.size) {
 			
-			delay = chunk.duration*naluLength/chunk.size;
+			newDelay = chunk.duration*naluLength/chunk.size;
 			
 		} else {
 			
-			Log.e(TAG,"nal unit cut: cursor: "+cursor+" naluLength: "+naluLength+" len: "+(naluLength-(chunk.size-cursor)));
+			//Log.e(TAG,"nal unit cut: cursor: "+cursor+" naluLength: "+naluLength+" len: "+(naluLength-(chunk.size-cursor)));
 			
 			try {
 				nbChunks.acquire(1);
@@ -175,14 +169,18 @@ public class H264Packetizer2 extends AbstractPacketizer {
 				e1.printStackTrace();
 			}
 			
+			synchronized (chunks) {
+				tmpChunk = chunks.get(1);				
+			}
+			
 			len = naluLength-(chunk.size-cursor);
-			Chunk c = chunks.get(1);
-			delay = chunk.duration*(chunk.size-cursor)/chunk.size + c.duration*len/c.size;
-			c.duration -= c.duration*len/c.size;
-			c.size -= len; 
+			newDelay = chunk.duration*(chunk.size-cursor)/chunk.size + tmpChunk.duration*len/tmpChunk.size;
+			tmpChunk.duration -= tmpChunk.duration*len/tmpChunk.size;
+			tmpChunk.size -= len; 
 			
 		}
 		
+		delay = (newDelay>100) ? delay:newDelay;
 		cursor += naluLength - 1;
 		ts += delay;
 		
@@ -197,7 +195,7 @@ public class H264Packetizer2 extends AbstractPacketizer {
 		rsock.updateTimestamp(ts*90);
 
 		// Small nal unit => Single nal unit 
-		if (naluLength<=packetSize-rtphl-2) {
+		if (naluLength<=MAXPACKETSIZE-rtphl-2) {
 
 			buffer[rtphl] = buffer[rtphl+4];
 			len = fifo.read(buffer, rtphl+1,  naluLength-1  );
@@ -224,7 +222,7 @@ public class H264Packetizer2 extends AbstractPacketizer {
 			while (sum < naluLength) {
 
 				if (!running) break;
-				len = fifo.read(buffer, rtphl+2,  naluLength-sum > packetSize-rtphl-2 ? packetSize-rtphl-2 : naluLength-sum  ); sum += len;
+				len = fifo.read(buffer, rtphl+2,  naluLength-sum > MAXPACKETSIZE-rtphl-2 ? MAXPACKETSIZE-rtphl-2 : naluLength-sum  ); sum += len;
 				if (len<0) break;
 
 				/* Last packet before next NAL */
@@ -265,5 +263,32 @@ public class H264Packetizer2 extends AbstractPacketizer {
 		return sum;
 		
 	}
+	
+	private void skipHeader() throws IOException {
+
+		int len = 0;
+		
+		// Skip all atoms preceding mdat atom
+		while (true) {
+			fis.read(buffer,rtphl,8);
+			if (buffer[rtphl+4] == 'm' && buffer[rtphl+5] == 'd' && buffer[rtphl+6] == 'a' && buffer[rtphl+7] == 't') break;
+			len = (buffer[rtphl+3]&0xFF) + (buffer[rtphl+2]&0xFF)*256 + (buffer[rtphl+1]&0xFF)*65536;
+			if (len<=7) break;
+			//Log.e(TAG,"Atom skipped: "+printBuffer(rtphl+4,rtphl+8)+" size: "+len);
+			fis.read(buffer,rtphl,len-8);
+		}
+		
+		// Some phones do not set length correctly when stream is not seekable, still we need to skip the header
+		if (len<=0 || len>1000) {
+			while (true) {
+				while (fis.read() != 'm');
+				fis.read(buffer,rtphl,3);
+				if (buffer[rtphl] == 'd' && buffer[rtphl+1] == 'a' && buffer[rtphl+2] == 't') break;
+			}
+		}
+		len = 0;
+		
+	}
+	
 
 }
