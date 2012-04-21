@@ -75,6 +75,7 @@ public class RtspServer  extends Thread implements Runnable {
 			server = new ServerSocket(port);
 		} catch (IOException e) {
 			Log.e(TAG,e.getMessage());
+			log(e.getMessage());
 			return;
 		}
 		
@@ -92,6 +93,7 @@ public class RtspServer  extends Thread implements Runnable {
 			os = client.getOutputStream();
 		} catch (IOException e) {
 			Log.e(TAG,e.getMessage());
+			log(e.getMessage());
 			return true;
 		}
 		
