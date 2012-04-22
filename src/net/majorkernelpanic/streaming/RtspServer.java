@@ -123,6 +123,8 @@ public class RtspServer  extends Thread implements Runnable {
 			else if (request.startsWith("SETUP")) commandSetup();
 			/* Command Play */
 			else if (request.startsWith("PLAY")) commandPlay();
+			/* Command Pause */
+			else if (request.startsWith("PAUSE")) commandPause();
 			/* Command Teardown */
 			else if (request.startsWith("TEARDOWN")) {commandTeardown();break;}
 			/* Command Unknown */
@@ -165,6 +167,8 @@ public class RtspServer  extends Thread implements Runnable {
 	
 	private void respondDescribe() {
 		
+		boolean error = false;
+		
 		String requestContent = streamingManager.getSessionDescriptor();
 		String requestAttributes = "Content-Base: "+getServerAddress()+":"+port+"/\r\n" +
 								   "Content-Type: application/sdp\r\n";
@@ -172,8 +176,22 @@ public class RtspServer  extends Thread implements Runnable {
 		writeHeader(STATUS_OK,requestContent.length(),requestAttributes);
 		writeContent(requestContent);
 		
-		streamingManager.prepareAll();
-		streamingManager.startAll();
+		try {
+			streamingManager.prepareAll();
+			streamingManager.startAll();
+		} catch (IllegalStateException e) {
+			error = true;
+		} catch (IOException e) {
+			error = true;
+		} catch (RuntimeException e) {
+			error = true;
+		}
+		
+		if (error) {
+			streamingManager.stopAll();
+			log("Something went wrong when starting streaming :/");
+		}
+		
 		
 	}
 			
@@ -182,7 +200,7 @@ public class RtspServer  extends Thread implements Runnable {
 	/* ******************************** Command OPTIONS ********************************* */
 	/* ********************************************************************************** */
 	private void commandOptions() {
-		writeHeader(STATUS_OK,0,"Public: DESCRIBE,SETUP,TEARDOWN,PLAY\r\n");
+		writeHeader(STATUS_OK,0,"Public: DESCRIBE,SETUP,TEARDOWN,PLAY,PAUSE\r\n");
 		writeContent("");
 	}
 		
@@ -250,13 +268,19 @@ public class RtspServer  extends Thread implements Runnable {
 	}
 	
 	/* ********************************************************************************** */
+	/* ********************************* Command PAUSE ********************************** */
+	/* ********************************************************************************** */
+	private void commandPause() {
+		writeHeader(STATUS_OK,0,"");
+		writeContent("");
+	}
+	
+	/* ********************************************************************************** */
 	/* ******************************** Command TEARDOWN ******************************** */
 	/* ********************************************************************************** */
 	private void commandTeardown() {
-		
 		writeHeader(STATUS_OK,0,"");
 		writeContent("");
-		
 	}
 	
 	/* ********************************************************************************** */

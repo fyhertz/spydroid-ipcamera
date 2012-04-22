@@ -29,12 +29,14 @@ import net.majorkernelpanic.streaming.RtspServer;
 import net.majorkernelpanic.streaming.TestH264;
 import net.majorkernelpanic.streaming.VideoQuality;
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.os.PowerManager;
 import android.text.Html;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -62,6 +64,7 @@ public class SpydroidActivity extends Activity {
     private SurfaceView camera;
     private SurfaceHolder holder;
     private int resX, resY, fps, br;
+    private PowerManager.WakeLock wl;
     
     private static RtspServer rtspServer;
     
@@ -86,10 +89,20 @@ public class SpydroidActivity extends Activity {
         camera.getHolder().setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
         holder = camera.getHolder();
 		
+        PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
+        wl = pm.newWakeLock(PowerManager.SCREEN_DIM_WAKE_LOCK, "SpydroidWakeLock");
+        
         startRtspServer();
     
+    }
+    
+    public void onResume() {
+    	super.onResume();
+    	
     	String s = "";
 		int n = 0; 
+    	
+    	wl.acquire();
     	
 		// Clean console
 		console.setText("");
@@ -120,13 +133,12 @@ public class SpydroidActivity extends Activity {
 		if (n>1) log("Launch VLC and try opening one of the following stream:"+s);
 		else if (n>0) log("Launch VLC and open the following stream:"+s); 
 		else log("You don't seem to be connected to any network :(. Is the wifi on ?");
-        
-        
+    	
     }
     
-    public void onResume() {
-    	super.onResume();
-    	
+    public void onPause() {
+    	super.onPause();
+    	wl.release();
     }
     
     // The Handler that gets information back from the RtspServer

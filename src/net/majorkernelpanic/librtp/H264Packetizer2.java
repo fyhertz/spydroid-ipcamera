@@ -41,6 +41,7 @@ import android.util.Log;
 public class H264Packetizer2 extends AbstractPacketizer {
 	
 	private final static String TAG = "H264Packetizer";
+	
 	private final int MAXPACKETSIZE = 1400;
 	
 	private long oldtime = SystemClock.elapsedRealtime(), duration, delay = 10, newDelay, ts = oldtime;
@@ -49,6 +50,7 @@ public class H264Packetizer2 extends AbstractPacketizer {
 	private Semaphore nbChunks = new Semaphore(0);
 	private LinkedList<Chunk> chunks = new LinkedList<Chunk>();
 	private Chunk chunk = null, tmpChunk = null;
+	boolean splitNal = false;
 	
 	
 	private class Chunk {
@@ -80,33 +82,37 @@ public class H264Packetizer2 extends AbstractPacketizer {
 		 */
 		new Thread(new Runnable() {
 			public void run() {
-				try {
-					nbChunks.acquire(1);
-				} catch (InterruptedException e1) {
-					e1.printStackTrace();
-				}
 				
-				chunk = chunks.getFirst();
+				int len = 0; 
+				chunks.add(new Chunk(0,0));
 				
 				while (running) {
+
+					try {
+						nbChunks.acquire(1);
+					} catch (InterruptedException e1) {
+						e1.printStackTrace();
+					}
 					
+					if (splitNal) {
+						
+						//Log.e(TAG,"nal unit cut: cursor: "+cursor+" naluLength: "+naluLength+" len: "+(naluLength-(chunk.size-cursor)));
+						
+						len = naluLength-(cursor-chunk.size);
+						
+						tmpChunk = chunks.get(1);
+						tmpChunk.duration += chunk.duration*len/chunk.size;
+						tmpChunk.size += len;
+						
+						splitNal = false;
+						
+					}
+					
+					chunks.pop(); cursor = 0;
+					
+					chunk = chunks.getFirst();
 					while (cursor<chunk.size) send();
-					if (cursor==chunk.size) {
-						try {
-							nbChunks.acquire(1);
-						} catch (InterruptedException e1) {
-							e1.printStackTrace();
-						}
-					}
-					
-					synchronized (chunks) {
-						
-						chunks.pop();
-						chunk = chunks.getFirst();
-						
-					}
-					cursor = 0;
-					
+
 				}
 			}
 		}).start();
@@ -129,7 +135,7 @@ public class H264Packetizer2 extends AbstractPacketizer {
 				duration = SystemClock.elapsedRealtime() - oldtime;
 				size = fillFifo(available);
 				//Log.e(TAG,"New chunk -> delay: "+duration+" s1: "+size+" s2: "+available+" available: "+fifo.available()+" chunks: "+chunks.size());
-				synchronized (chunks) {chunks.add(new Chunk(size,duration));}
+				chunks.add(new Chunk(size,duration));
 				nbChunks.release();
 
 			} catch (InterruptedException e1) {
@@ -152,36 +158,20 @@ public class H264Packetizer2 extends AbstractPacketizer {
 		int sum = 1, len = 0;
 		
 		// Read nal unit length (4 bytes) and nal unit header (1 byte)
-		fifo.read(buffer, rtphl, 5); cursor += 5;
+		fifo.read(buffer, rtphl, 5);
 		naluLength = (buffer[rtphl+3]&0xFF) + (buffer[rtphl+2]&0xFF)*256 + (buffer[rtphl+1]&0xFF)*65536;
 
-		if (naluLength+cursor<=chunk.size) {
-			
-			newDelay = chunk.duration*naluLength/chunk.size;
-			
-		} else {
-			
-			//Log.e(TAG,"nal unit cut: cursor: "+cursor+" naluLength: "+naluLength+" len: "+(naluLength-(chunk.size-cursor)));
-			
-			try {
-				nbChunks.acquire(1);
-			} catch (InterruptedException e1) {
-				e1.printStackTrace();
-			}
-			
-			synchronized (chunks) {
-				tmpChunk = chunks.get(1);				
-			}
-			
-			len = naluLength-(chunk.size-cursor);
-			newDelay = chunk.duration*(chunk.size-cursor)/chunk.size + tmpChunk.duration*len/tmpChunk.size;
-			tmpChunk.duration -= tmpChunk.duration*len/tmpChunk.size;
-			tmpChunk.size -= len; 
-			
+		cursor += naluLength+4;
+		
+		if (cursor<=chunk.size) {
+			newDelay = chunk.duration*naluLength/chunk.size;			
+		}
+		else {
+			splitNal = true;
+			return;
 		}
 		
 		delay = (newDelay>100) ? delay:newDelay;
-		cursor += naluLength - 1;
 		ts += delay;
 		
 		Log.d(TAG,"- Nal unit length: " + naluLength+" cursor: "+cursor+" delay: "+delay);

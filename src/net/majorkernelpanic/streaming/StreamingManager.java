@@ -143,36 +143,26 @@ public class StreamingManager {
 		this.destination =  destination;
 	}
 
-	public synchronized void prepareAll() {
+	public synchronized void prepareAll() throws IllegalStateException, IOException {
 		
 		Iterator<Track> it = trackList.values().iterator();
 		
 		// Let's start all MediaStreamers
 		while (it.hasNext()) {
 			MediaStreamer streamer = it.next().streamer;
-			try {
-				streamer.prepare();
-			} catch (IllegalStateException e) {
-				
-			} catch (IOException e) {
-				
-			} 
+			streamer.prepare();
 		}
 		
 	}
 	
-	public synchronized void startAll() {
+	public synchronized void startAll() throws RuntimeException, IllegalStateException {
 		
 		Iterator<Track> it = trackList.values().iterator();
 		
 		// Let's start all MediaStreamers
 		while (it.hasNext()) {
 			MediaStreamer streamer = it.next().streamer;
-			try {
-				streamer.start();
-			} catch (IllegalStateException e) {
-				
-			} 
+			streamer.start();
 		}
 		
 	}
@@ -184,11 +174,7 @@ public class StreamingManager {
 		// Let's stop all MediaStreamers
 		while (it.hasNext()) {
 			MediaStreamer streamer = it.next().streamer;
-			try {
-				streamer.reset();
-			} catch (IllegalStateException e) {
-				
-			} 
+			streamer.reset();
 		}
 		
 	}

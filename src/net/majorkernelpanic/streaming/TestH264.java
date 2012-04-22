@@ -143,7 +143,11 @@ public class TestH264 {
 			}
 			
 			/* 2 - Record dummy video for 500 msecs */
-			mr.start(); recording = true;
+			try {
+				mr.start(); recording = true;
+			} catch (RuntimeException e) {
+				error("Can't start camera :/");
+			}
 		
 			break;
 		
@@ -212,7 +216,7 @@ public class TestH264 {
 	}
 	
 	private void clean () {
-		if (recording) mr.stop();
+		mr.reset();
 		recording = false;
 		holder.removeCallback(shcb);
 	}
