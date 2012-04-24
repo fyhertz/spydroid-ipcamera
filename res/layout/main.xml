@@ -12,7 +12,7 @@
         android:layout_alignParentLeft="true" />
 
     <LinearLayout
-	    android:id="@+id/linearLayout2"
+	    android:id="@+id/linearLayout"
 	    android:layout_width="fill_parent"
 	    android:gravity="center"
 	    android:layout_height="fill_parent" >
@@ -29,9 +29,20 @@
 	    android:id="@+id/console"
 	    android:layout_width="fill_parent"
 	    android:layout_height="wrap_content"
-	    android:layout_weight="3"
 	    android:gravity="top"
-	    android:padding="10px"
+	    android:shadowColor="#000000"
+	    android:shadowDx="1"
+	    android:shadowDy="1"
+	    android:shadowRadius="1"
+	    android:textColor="#FFAC63" />
+
+	<TextView
+	    android:id="@+id/ip"
+	    android:layout_marginBottom="20dp"
+	    android:layout_width="wrap_content"
+	    android:layout_height="wrap_content"
+	    android:layout_alignParentBottom="true"
+	    android:layout_centerHorizontal="true" 	    
 	    android:shadowColor="#000000"
 	    android:shadowDx="1"
 	    android:shadowDy="1"

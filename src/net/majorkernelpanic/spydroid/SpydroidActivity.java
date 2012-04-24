@@ -21,9 +21,6 @@
 package net.majorkernelpanic.spydroid;
 
 import java.net.InetAddress;
-import java.net.NetworkInterface;
-import java.net.SocketException;
-import java.util.Enumeration;
 
 import net.majorkernelpanic.streaming.RtspServer;
 import net.majorkernelpanic.streaming.TestH264;
@@ -33,6 +30,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager.NameNotFoundException;
+import android.net.wifi.WifiInfo;
+import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -58,7 +57,7 @@ public class SpydroidActivity extends Activity {
     static final public String TAG = "SPYDROID";
     
     public ViewGroup topLayout;
-    public TextView console;
+    public TextView console, ip;
     public ImageView logo;
     private SharedPreferences settings;
     private SurfaceView camera;
@@ -69,7 +68,6 @@ public class SpydroidActivity extends Activity {
     private static RtspServer rtspServer;
     
     public void onCreate(Bundle savedInstanceState) {
-    	
         super.onCreate(savedInstanceState);
         
         setContentView(R.layout.main);
@@ -77,8 +75,7 @@ public class SpydroidActivity extends Activity {
         logo = (ImageView)findViewById(R.id.logo);
         topLayout = (ViewGroup) findViewById(R.id.mainlayout);
         console = (TextView) findViewById(R.id.console);
-   
-        logo.setAlpha(100);
+        ip = (TextView) findViewById(R.id.ip);
         
         settings = getSharedPreferences("spydroid-ipcamera-prefs", 0);
        	resX = settings.getInt("resX", 640);
@@ -90,23 +87,10 @@ public class SpydroidActivity extends Activity {
         holder = camera.getHolder();
 		
         PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
-        wl = pm.newWakeLock(PowerManager.SCREEN_DIM_WAKE_LOCK, "SpydroidWakeLock");
+        wl = pm.newWakeLock(PowerManager.SCREEN_DIM_WAKE_LOCK, "net.majorkernelpanic.spydroid.wakelock");
         
         startRtspServer();
     
-    }
-    
-    public void onResume() {
-    	super.onResume();
-    	
-    	String s = "";
-		int n = 0; 
-    	
-    	wl.acquire();
-    	
-		// Clean console
-		console.setText("");
-		
     	// Print version number
         try {
 			log("<b>Spydroid v"+this.getPackageManager().getPackageInfo(this.getPackageName(), 0 ).versionName+"</b>");
@@ -114,25 +98,27 @@ public class SpydroidActivity extends Activity {
 			log("<b>Spydroid</b>");
 		}
         
-		// Print the device ip address
-		try {
-			for (Enumeration<NetworkInterface> en = NetworkInterface.getNetworkInterfaces(); en.hasMoreElements();) {
-				NetworkInterface i = en.nextElement();
-				// We skip the "lo" interface (127.0.0.1)
-				if (!i.getName().equals("lo")) {
-					for (Enumeration<InetAddress> al = i.getInetAddresses(); al.hasMoreElements();) {
-						InetAddress nextElement = al.nextElement();
-						s+="<br />rtsp://"+nextElement.getHostAddress()+":8086/";
-						n++;
-					}
-				}
-			}
-		} catch (SocketException e) {
-		} catch (NullPointerException e) {}
+    }
+    
+    public void onResume() {
+    	super.onResume();
     	
-		if (n>1) log("Launch VLC and try opening one of the following stream:"+s);
-		else if (n>0) log("Launch VLC and open the following stream:"+s); 
-		else log("You don't seem to be connected to any network :(. Is the wifi on ?");
+    	wl.acquire();
+    	
+    	WifiManager wifiManager = (WifiManager) this.getSystemService(Context.WIFI_SERVICE);
+    	WifiInfo wifiInfo = wifiManager.getConnectionInfo();
+    	
+    	if (wifiInfo.getNetworkId()>-1) {
+	    	
+	    	int i = wifiInfo.getIpAddress();
+	    	
+	    	ip.setText("rtsp://");
+	    	ip.append(String.format("%d.%d.%d.%d", i & 0xff, i >> 8 & 0xff,i >> 16 & 0xff,i >> 24 & 0xff));
+	    	ip.append(":8086/");
+	    	
+    	} else {
+    		ip.setText("Wifi should be enabled !");
+    	}
     	
     }
     
@@ -169,7 +155,16 @@ public class SpydroidActivity extends Activity {
     		case RtspServer.MESSAGE_LOG:
     			log((String)msg.obj);
     			break;
-    		
+
+
+    		case RtspServer.MESSAGE_START:
+    			logo.setAlpha(100);
+    			break;
+    			
+    		case RtspServer.MESSAGE_STOP:
+    			logo.setAlpha(255);
+    			break;
+
     		}
     		
     	}

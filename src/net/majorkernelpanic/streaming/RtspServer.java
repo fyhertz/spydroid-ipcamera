@@ -52,6 +52,8 @@ public class RtspServer  extends Thread implements Runnable {
 	// Message types
 	public static final int MESSAGE_H264_TEST = 1;
 	public static final int MESSAGE_LOG = 2;
+	public static final int MESSAGE_START = 3;
+	public static final int MESSAGE_STOP = 4;
 	
 	private ServerSocket server = null; 
 	private Socket client = null;
@@ -132,6 +134,7 @@ public class RtspServer  extends Thread implements Runnable {
 			
 		}
 		
+		handler.obtainMessage(MESSAGE_STOP).sendToTarget();
 		streamingManager.stopAll();
 		
 		try {
@@ -190,6 +193,9 @@ public class RtspServer  extends Thread implements Runnable {
 		if (error) {
 			streamingManager.stopAll();
 			log("Something went wrong when starting streaming :/");
+		}
+		else {
+			handler.obtainMessage(MESSAGE_START).sendToTarget();
 		}
 		
 		
