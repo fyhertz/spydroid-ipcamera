@@ -22,9 +22,9 @@ package net.majorkernelpanic.spydroid;
 
 import java.net.InetAddress;
 
-import net.majorkernelpanic.streaming.RtspServer;
-import net.majorkernelpanic.streaming.TestH264;
-import net.majorkernelpanic.streaming.VideoQuality;
+import net.majorkernelpanic.libstreaming.RtspServer;
+import net.majorkernelpanic.libstreaming.TestH264;
+import net.majorkernelpanic.libstreaming.VideoQuality;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
