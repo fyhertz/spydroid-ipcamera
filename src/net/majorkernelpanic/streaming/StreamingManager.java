@@ -29,8 +29,8 @@ import java.util.Iterator;
 import java.util.Random;
 import net.majorkernelpanic.librtp.AMRNBPacketizer;
 import net.majorkernelpanic.librtp.AbstractPacketizer;
-import net.majorkernelpanic.librtp.H264Packetizer2;
-import net.majorkernelpanic.librtp.SmallRtpSocket;
+import net.majorkernelpanic.librtp.H264Packetizer;
+import net.majorkernelpanic.librtp.RtpSocket;
 import android.media.MediaRecorder;
 import android.view.SurfaceHolder;
 
@@ -72,7 +72,7 @@ public class StreamingManager {
 		
 		Track track = new Track(new MediaStreamer(),Track.TYPE_VIDEO);
 
-		track.packetizer = new H264Packetizer2();
+		track.packetizer = new H264Packetizer();
 		track.encoder = MediaRecorder.VideoEncoder.H264;
 		track.format = MediaRecorder.OutputFormat.THREE_GPP;
 		track.port = destinationPort;
@@ -228,7 +228,7 @@ public class StreamingManager {
 		track.ssrc = new Random().nextInt();
 		track.descriptor += "a=control:trackID="+id+"\r\n";
 		track.streamer.setPacketizer(track.packetizer);
-		track.packetizer.setRtpSocket(new SmallRtpSocket(new byte[65536],destination,track.port));		
+		track.packetizer.setRtpSocket(new RtpSocket(new byte[65536],destination,track.port));		
 		track.packetizer.getRtpSocket().setSSRC(track.ssrc);
 		
 		trackList.put(id, track);

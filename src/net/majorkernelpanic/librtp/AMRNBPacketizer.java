@@ -48,7 +48,7 @@ public class AMRNBPacketizer extends AbstractPacketizer {
 		super();
 	}
 	
-	public AMRNBPacketizer(SmallRtpSocket rtpSocket) {
+	public AMRNBPacketizer(RtpSocket rtpSocket) {
 		super(rtpSocket);
 	}
 

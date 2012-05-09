@@ -56,9 +56,9 @@ public class SpydroidActivity extends Activity {
     
     static final public String TAG = "SPYDROID";
     
-    public ViewGroup topLayout;
-    public TextView console, ip;
-    public ImageView logo;
+    private ViewGroup topLayout;
+    private TextView console, ip;
+    private ImageView logo;
     private SharedPreferences settings;
     private SurfaceView camera;
     private SurfaceHolder holder;
@@ -105,17 +105,14 @@ public class SpydroidActivity extends Activity {
     	
     	wl.acquire();
     	
+    	// Determines if user is connected to a wireless network & displays ip 
     	WifiManager wifiManager = (WifiManager) this.getSystemService(Context.WIFI_SERVICE);
     	WifiInfo wifiInfo = wifiManager.getConnectionInfo();
-    	
     	if (wifiInfo.getNetworkId()>-1) {
-	    	
 	    	int i = wifiInfo.getIpAddress();
-	    	
 	    	ip.setText("rtsp://");
 	    	ip.append(String.format("%d.%d.%d.%d", i & 0xff, i >> 8 & 0xff,i >> 16 & 0xff,i >> 24 & 0xff));
 	    	ip.append(":8086/");
-	    	
     	} else {
     		ip.setText("Wifi should be enabled !");
     	}
@@ -134,7 +131,8 @@ public class SpydroidActivity extends Activity {
     		
     		switch (msg.what) {
     		
-    		// We test H264 support before starting streaming
+    		// Sent when H264 support needs to be tested 
+    		// it will then call rtspServer.h264TestResult to pass sps and pps parameters to streamingManager
     		case RtspServer.MESSAGE_H264_TEST:
     			log("Testing H264 support: "+resX+"x"+resY+","+fps+" fps");
     			TestH264.RunTest(SpydroidActivity.this.getCacheDir(),camera.getHolder(), resX, resY, fps, new TestH264.Callback() {
@@ -153,15 +151,17 @@ public class SpydroidActivity extends Activity {
     			break;
     			
     		case RtspServer.MESSAGE_LOG:
+    			// Sent when the streamingManager has something to report
     			log((String)msg.obj);
     			break;
 
-
     		case RtspServer.MESSAGE_START:
+    			// Sent when streaming starts
     			logo.setAlpha(100);
     			break;
     			
     		case RtspServer.MESSAGE_STOP:
+    			// Sent when streaming ends
     			logo.setAlpha(255);
     			break;
 

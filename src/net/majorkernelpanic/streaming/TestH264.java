@@ -218,7 +218,7 @@ public class TestH264 {
 	private void clean () {
 		try {
 			mr.stop();
-		} catch (IllegalStateException e) {}
+		} catch (IllegalStateException ignore) {}
 		mr.reset();
 		recording = false;
 		holder.removeCallback(shcb);

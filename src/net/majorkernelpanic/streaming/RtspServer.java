@@ -55,6 +55,9 @@ public class RtspServer  extends Thread implements Runnable {
 	public static final int MESSAGE_START = 3;
 	public static final int MESSAGE_STOP = 4;
 	
+	// The RTSP server his just an interface for the streamingManager
+	public StreamingManager streamingManager = new StreamingManager();
+	
 	private ServerSocket server = null; 
 	private Socket client = null;
 	private InputStream is = null;
@@ -63,8 +66,6 @@ public class RtspServer  extends Thread implements Runnable {
 	private String request, response;
 	private byte[] buffer = new byte[4096];
 	private int port, seqid = 1;
-	
-	public StreamingManager streamingManager = new StreamingManager();
 	
 	public RtspServer(int port, Handler handler) {
 		this.port = port;
@@ -134,8 +135,10 @@ public class RtspServer  extends Thread implements Runnable {
 			
 		}
 		
-		handler.obtainMessage(MESSAGE_STOP).sendToTarget();
+		// Streaming stop when client disconnect
 		streamingManager.stopAll();
+		// Inform the UI Thread that streaming has stopped
+		handler.obtainMessage(MESSAGE_STOP).sendToTarget();
 		
 		try {
 			client.close();

@@ -31,7 +31,7 @@ import android.util.Log;
  */
 abstract public class AbstractPacketizer {
 	
-	protected SmallRtpSocket rsock = null;
+	protected RtpSocket rsock = null;
 	protected InputStream fis = null;
 	protected boolean running = false;
 	
@@ -42,23 +42,23 @@ abstract public class AbstractPacketizer {
 
 	public AbstractPacketizer() {}	
 	
-	public AbstractPacketizer(SmallRtpSocket rtpSocket) {
+	public AbstractPacketizer(RtpSocket rtpSocket) {
 		this.rsock = rtpSocket;
 		this.buffer = rsock.getBuffer();
 	}
 	
-	public AbstractPacketizer(SmallRtpSocket rsock, InputStream fis) {
+	public AbstractPacketizer(RtpSocket rsock, InputStream fis) {
 		this.rsock = rsock;
 		this.fis = fis;
 		this.buffer = rsock.getBuffer();
 	}
 	
-	public void setRtpSocket(SmallRtpSocket rsock) {
+	public void setRtpSocket(RtpSocket rsock) {
 		this.rsock = rsock;
 		this.buffer = rsock.getBuffer();
 	}
 	
-	public SmallRtpSocket getRtpSocket() {
+	public RtpSocket getRtpSocket() {
 		return rsock;
 	}
 	
