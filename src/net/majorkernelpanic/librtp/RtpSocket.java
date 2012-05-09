@@ -32,7 +32,7 @@ import android.util.Log;
 
 
 
-public class SmallRtpSocket {
+public class RtpSocket {
 
 	private DatagramSocket usock;
 	private DatagramPacket upack;
@@ -43,7 +43,7 @@ public class SmallRtpSocket {
 	
 	public static final int headerLength = 12;
 	
-	public SmallRtpSocket(byte[] buffer, InetAddress dest, int dport) {
+	public RtpSocket(byte[] buffer, InetAddress dest, int dport) {
 		
 		this(buffer);
 		
@@ -54,7 +54,7 @@ public class SmallRtpSocket {
 	
 	
 	
-	public SmallRtpSocket(byte[] buffer) {
+	public RtpSocket(byte[] buffer) {
 		
 		this.buffer = buffer;
 		
