@@ -33,12 +33,12 @@ public class MP4Config {
 	private final StsdBox stsdBox; 
 	private final MP4Parser mp4Parser;
 	
-	/*
-	 * fis: proper mp4 file
-	 * pos: stsd box's position in the file
-	 * 
+	/**
+	 * Finds sps & pps parameters inside a .mp4
+	 * @param path Path to the file to analyze
+	 * @throws IOException
+	 * @throws FileNotFoundException
 	 */
-	
 	public MP4Config (String path) throws IOException, FileNotFoundException {
 		
 		// We open the mp4 file

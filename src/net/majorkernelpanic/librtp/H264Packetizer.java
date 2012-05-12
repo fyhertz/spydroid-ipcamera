@@ -287,7 +287,7 @@ public class H264Packetizer extends AbstractPacketizer {
 	}
 	
 	/********************************************************************************/
-	/******** Simple fifo that will contain the NAL untis waiting to be sent ********/
+	/******** Simple fifo that will contain the NAL units waiting to be sent ********/
 	/********************************************************************************/
 	public class SimpleFifo {
 
