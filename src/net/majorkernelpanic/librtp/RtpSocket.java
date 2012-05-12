@@ -37,26 +37,20 @@ public class RtpSocket {
 	private DatagramSocket usock;
 	private DatagramPacket upack;
 	
-	private byte[] buffer;
+	private byte[] buffer = new byte[MTU];
 	private int seq = 0;
 	private boolean upts = false;
+	private int ssrc;
 	
 	public static final int headerLength = 12;
+	public static final int MTU = 1500;
 	
 	public RtpSocket(byte[] buffer, InetAddress dest, int dport) {
-		
-		this(buffer);
-		
 		upack.setPort(dport);
 		upack.setAddress(dest);
-		
 	}
 	
-	
-	
-	public RtpSocket(byte[] buffer) {
-		
-		this.buffer = buffer;
+	public RtpSocket() {
 		
 		/*							     Version(2)  Padding(0)					 					*/
 		/*									 ^		  ^			Extension(0)						*/
@@ -74,7 +68,7 @@ public class RtpSocket {
 		/* Byte 4,5,6,7    ->  Timestamp                         */
 		
 		/* Byte 8,9,10,11  ->  Sync Source Identifier            */
-		setLong((new Random()).nextLong(),8,12);
+		setLong((ssrc=(new Random()).nextInt()),8,12);
 		
 		try {
 			usock = new DatagramSocket();
@@ -89,8 +83,13 @@ public class RtpSocket {
 		usock.close();
 	}
 	
-	public void setSSRC(long ssrc) {
+	public void setSSRC(int ssrc) {
+		this.ssrc= ssrc; 
 		setLong(ssrc,8,12);
+	}
+	
+	public int getSSRC() {
+		return ssrc;
 	}
 	
 	public void setDestination(InetAddress dest, int dport) {

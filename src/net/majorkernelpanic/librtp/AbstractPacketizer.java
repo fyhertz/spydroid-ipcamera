@@ -22,6 +22,8 @@ package net.majorkernelpanic.librtp;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.InetAddress;
+
 import android.util.Log;
 
 /**
@@ -29,7 +31,7 @@ import android.util.Log;
  * Each packetizer inherits from this one and therefore uses RTP and UDP
  *
  */
-abstract public class AbstractPacketizer {
+abstract public class AbstractPacketizer implements Runnable{
 	
 	protected RtpSocket rsock = null;
 	protected InputStream fis = null;
@@ -40,22 +42,13 @@ abstract public class AbstractPacketizer {
 	protected final int rtphl = 12; // Rtp header length
 	
 
-	public AbstractPacketizer() {}	
+	public AbstractPacketizer() {
+		rsock = new RtpSocket();
+		buffer = rsock.getBuffer();
+	}	
 	
-	public AbstractPacketizer(RtpSocket rtpSocket) {
-		this.rsock = rtpSocket;
-		this.buffer = rsock.getBuffer();
-	}
-	
-	public AbstractPacketizer(RtpSocket rsock, InputStream fis) {
-		this.rsock = rsock;
+	public AbstractPacketizer(InputStream fis) {
 		this.fis = fis;
-		this.buffer = rsock.getBuffer();
-	}
-	
-	public void setRtpSocket(RtpSocket rsock) {
-		this.rsock = rsock;
-		this.buffer = rsock.getBuffer();
 	}
 	
 	public RtpSocket getRtpSocket() {
@@ -66,16 +59,13 @@ abstract public class AbstractPacketizer {
 		this.fis = fis;
 	}
 	
+	public void setDestination(InetAddress dest, int dport) {
+		rsock.setDestination(dest, dport);
+	}
+	
 	public void start() {
 		running = true;
-		new Thread(new Runnable () {
-			public void run() {
-				if (rsock==null) {
-					Log.e("LIBRTP","You must call setRtpSocket before calling start !");
-				}
-				AbstractPacketizer.this.run();
-			}
-		}).start();
+		new Thread(this).start();
 	}
 
 	public void stop() {
@@ -86,9 +76,9 @@ abstract public class AbstractPacketizer {
 	
     // Useful for debug
     protected String printBuffer(int start,int end) {
-            String str = "";
-            for (int i=start;i<end;i++) str+=","+Integer.toHexString(buffer[i]&0xFF);
-            return str;
+    	String str = "";
+    	for (int i=start;i<end;i++) str+=","+Integer.toHexString(buffer[i]&0xFF);
+    	return str;
     }
 	
 }

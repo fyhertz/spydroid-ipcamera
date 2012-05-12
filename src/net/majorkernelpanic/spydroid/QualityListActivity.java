@@ -6,6 +6,7 @@ import java.util.regex.Pattern;
 import android.app.ListActivity;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -21,7 +22,6 @@ import android.widget.TextView;
 
 public class QualityListActivity extends ListActivity {
 
-	public static int DefaultBitRate = -1;
 	private ListView listView;
 	
 	private int fps, br, resX, resY;
@@ -39,7 +39,6 @@ public class QualityListActivity extends ListActivity {
     		"8 fps"
     };
     private String[] bitrates = new String[] {
-    		"Default",
     		"1000 kb/s",
     		"500 kb/s",
     		"100 kb/s",
@@ -49,6 +48,12 @@ public class QualityListActivity extends ListActivity {
     
     protected void onCreate(Bundle savedInstanceState){
         super.onCreate(savedInstanceState);
+        
+        SharedPreferences settings = getSharedPreferences("spydroid-ipcamera-prefs", 0);
+        fps = settings.getInt("fps", 15);
+        resX = settings.getInt("resX", 640);
+        resY = settings.getInt("resY", 480);
+        br = settings.getInt("br", 1000);
         
         setListAdapter(new CustomAdapter(this, new String[] {"Resolution","Framerate","Bitrate"}, new String[][] {resolutions,framerates,bitrates}));
         
@@ -60,20 +65,13 @@ public class QualityListActivity extends ListActivity {
     
     protected void onResume() {
     	super.onResume();
-
-    	Intent data = getIntent();
-    	
-		resX = data.getIntExtra("net.majorkernelpanic.spydroid.resX", 0);
-		resY = data.getIntExtra("net.majorkernelpanic.spydroid.resY", 0);
-		fps = data.getIntExtra("net.majorkernelpanic.spydroid.fps", 0);
-		br = data.getIntExtra("net.majorkernelpanic.spydroid.br", 0);
-		
 		updateSelection();
-    	
     }
     
     public void onListItemClick(ListView l, View v, int position, long id) {
     	
+    	SharedPreferences settings = getSharedPreferences("spydroid-ipcamera-prefs", 0);
+    	SharedPreferences.Editor editor = settings.edit();
     	Adapter a = listView.getAdapter();
     	Pattern p;
     	Matcher m;
@@ -86,6 +84,8 @@ public class QualityListActivity extends ListActivity {
     		m = p.matcher((String) a.getItem(position)); m.find();
     		resX = Integer.parseInt(m.group(1));
     		resY = Integer.parseInt(m.group(2));
+    		editor.putInt("resX", resX);
+    		editor.putInt("resY", resY);
     		break;
     		
     	// User changes framerate
@@ -93,27 +93,21 @@ public class QualityListActivity extends ListActivity {
     		p = Pattern.compile("(\\d+)[^\\d]+");
     		m = p.matcher((String) a.getItem(position)); m.find();
     		fps = Integer.parseInt(m.group(1));
+    		editor.putInt("fps", fps);
     		break;
     		
     	// User changes bitrate
     	case 2:
     		p = Pattern.compile("(\\d+)[^\\d]+");
-    		m = p.matcher((String) a.getItem(position));
-    		br = m.find()?Integer.parseInt(m.group(1)):DefaultBitRate;
+    		m = p.matcher((String) a.getItem(position)); m.find();
+    		br = Integer.parseInt(m.group(1));
+    		editor.putInt("br", br);
     		break;
     	
     	}
     	
+    	editor.commit();
     	updateSelection();
-    	
-    	setResult(
-    			1000,
-    			new Intent().putExtra("net.majorkernelpanic.spydroid.resX", resX)
-        			.putExtra("net.majorkernelpanic.spydroid.resY", resY)
-        			.putExtra("net.majorkernelpanic.spydroid.fps", fps)
-        			.putExtra("net.majorkernelpanic.spydroid.br", br)
-    	);
-    	
     	finish();
 
     }
@@ -124,7 +118,7 @@ public class QualityListActivity extends ListActivity {
     	
 		listView.setItemChecked(getId(resX+"x"+resY),true);
 		listView.setItemChecked(getId(fps+" fps"),true);
-		listView.setItemChecked(getId(br==DefaultBitRate?"Default":br+" kb/s"),true);
+		listView.setItemChecked(getId(br+" kb/s"),true);
     	
     }
     

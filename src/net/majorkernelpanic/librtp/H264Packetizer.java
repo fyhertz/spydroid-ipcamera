@@ -174,7 +174,7 @@ public class H264Packetizer extends AbstractPacketizer {
 		delay = (newDelay>100) ? delay:newDelay;
 		ts += delay;
 		
-		Log.d(TAG,"- Nal unit length: " + naluLength+" cursor: "+cursor+" delay: "+delay);
+		//Log.d(TAG,"- Nal unit length: " + naluLength+" cursor: "+cursor+" delay: "+delay);
 
 		try {
 			Thread.sleep(5*delay/6);

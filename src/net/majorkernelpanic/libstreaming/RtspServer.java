@@ -29,7 +29,7 @@ import java.net.Socket;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-
+import android.content.Context;
 import android.media.MediaRecorder;
 import android.os.Handler;
 import android.util.Log;
@@ -50,14 +50,13 @@ public class RtspServer  extends Thread implements Runnable {
 	private static final String STATUS_BAD_REQUEST = "400 Bad Request";
 	private static final String STATUS_NOT_FOUND = "404 Not Found";
 	
-	// Message types
-	public static final int MESSAGE_H264_TEST = 1;
+	// Message types for UI thread
 	public static final int MESSAGE_LOG = 2;
 	public static final int MESSAGE_START = 3;
 	public static final int MESSAGE_STOP = 4;
 	
 	// The RTSP server his just an interface for the streamingManager
-	public StreamingManager streamingManager = new StreamingManager();
+	public final StreamingManager streamingManager;
 	
 	private ServerSocket server = null; 
 	private Socket client = null;
@@ -67,12 +66,15 @@ public class RtspServer  extends Thread implements Runnable {
 	private String request, response;
 	private byte[] buffer = new byte[4096];
 	private int port, seqid = 1;
+	private VideoQuality defaultVideoQuality = null;
+	private SurfaceHolder surfaceHolder = null;
 	
-	public RtspServer(int port, Handler handler) {
+	public RtspServer(Context context, int port, Handler handler) {
 		this.port = port;
 		this.handler = handler;
+		this.streamingManager = new StreamingManager(context);
 	}
-	
+
 	public void run() {
 		
 		try {
@@ -157,29 +159,25 @@ public class RtspServer  extends Thread implements Runnable {
 	/* ********************************************************************************** */
 	private void commandDescribe() {
 		
-		// Can't run H264Test from this thread because it has no Looper
-		// UI Thread then adds H264 Track
-		handler.obtainMessage(MESSAGE_H264_TEST).sendToTarget();
+		if (surfaceHolder==null) {
+			log("setSurfaceHolder() should be called before a client connects");
+			return;
+		}
 		
-		streamingManager.addAMRNBTrack(MediaRecorder.AudioSource.CAMCORDER, 5004);
-		//respondDescribe();
-
-	}
-	
-	public void h264TestResult(VideoQuality videoQuality, String[] params, SurfaceHolder holder) {
-		streamingManager.addH264Track(MediaRecorder.VideoSource.CAMERA, 5006, params, videoQuality, holder);
-		respondDescribe();
-		
-	}
-	
-	private void respondDescribe() {
-		
-		boolean error = false;
+		try {
+			streamingManager.addH264Track(MediaRecorder.VideoSource.CAMERA, 5006, defaultVideoQuality, surfaceHolder);
+		} catch (IllegalStateException e1) {
+			log(e1.getMessage());
+			return;
+		} catch (IOException e1) {
+			log(e1.getMessage());
+			return;
+		}
+		//streamingManager.addAMRNBTrack(5004);
 		
 		String requestContent = streamingManager.getSessionDescriptor();
 		String requestAttributes = "Content-Base: "+getServerAddress()+":"+port+"/\r\n" +
 								   "Content-Type: application/sdp\r\n";
-		
 		writeHeader(STATUS_OK,requestContent.length(),requestAttributes);
 		writeContent(requestContent);
 		
@@ -187,22 +185,19 @@ public class RtspServer  extends Thread implements Runnable {
 			streamingManager.prepareAll();
 			streamingManager.startAll();
 		} catch (IllegalStateException e) {
-			error = true;
-		} catch (IOException e) {
-			error = true;
+			log(e.getMessage());
+			return;
 		} catch (RuntimeException e) {
-			error = true;
+			log(e.getMessage());
+			return;
+		} catch (IOException e) {
+			log(e.getMessage());
+			return;
 		}
 		
-		if (error) {
-			streamingManager.stopAll();
-			log("Something went wrong when starting streaming :/");
-		}
-		else {
-			handler.obtainMessage(MESSAGE_START).sendToTarget();
-		}
+		handler.obtainMessage(MESSAGE_START).sendToTarget();
 		
-		
+
 	}
 			
 
@@ -322,7 +317,6 @@ public class RtspServer  extends Thread implements Runnable {
 	private void writeContent(String requestContent) {
 		
 		response += requestContent;
-				
 		Log.d(TAG, response);
 		
 		try {
@@ -331,6 +325,14 @@ public class RtspServer  extends Thread implements Runnable {
 
 		}
 		
+	}
+	
+	public void setDefaultVideoQuality(VideoQuality quality) {
+		defaultVideoQuality = quality;
+	}
+	
+	public void setSurfaceHolder(SurfaceHolder sh) {
+		surfaceHolder = sh;
 	}
 	
 	/**

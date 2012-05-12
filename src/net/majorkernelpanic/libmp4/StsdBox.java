@@ -30,8 +30,8 @@ public class StsdBox {
 	private byte[] buffer = new byte[4];
 	private long pos = 0;
 	
-	private byte[] pps = new byte[5];
-	private byte[] sps = new byte[11];
+	private byte[] pps;
+	private byte[] sps;
 	private int spsLength, ppsLength;
 	
 	/*
@@ -101,10 +101,12 @@ public class StsdBox {
 			// Here we extract the SPS parameter
 			fis.skipBytes(7);
 			spsLength  = 0xFF&fis.readByte();
+			sps = new byte[spsLength];
 			fis.read(sps,0,spsLength);
 			// Here we extract the PPS parameter
 			fis.skipBytes(2);
 			ppsLength = 0xFF&fis.readByte();
+			pps = new byte[ppsLength];
 			fis.read(pps,0,ppsLength);
 			
 			

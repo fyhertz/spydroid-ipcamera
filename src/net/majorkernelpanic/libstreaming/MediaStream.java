@@ -22,13 +22,13 @@ package net.majorkernelpanic.libstreaming;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.InetAddress;
+
 import net.majorkernelpanic.librtp.AbstractPacketizer;
-import net.majorkernelpanic.spydroid.SpydroidActivity;
 import android.media.MediaRecorder;
 import android.net.LocalServerSocket;
 import android.net.LocalSocket;
 import android.net.LocalSocketAddress;
-import android.util.Log;
 
 /**
  *  
@@ -36,15 +36,25 @@ import android.util.Log;
  *  specified with setPacketizer 
  * 
  */
-public class MediaStreamer extends MediaRecorder {
+public class MediaStream extends MediaRecorder {
 
-	private static int id = 0;
+	protected static final String TAG = "MediaStream";
 	
+	private static int id = 0;
 	private LocalServerSocket lss = null;
 	private LocalSocket receiver, sender = null;
-	private AbstractPacketizer packetizer = null;
+	protected AbstractPacketizer packetizer = null;
+	protected boolean streaming = false;
+	protected String sdpDescriptor;
+
+	// If you mode==MODE_DEFAULT the MediaStream will just act as a regular MediaRecorder
+	// By default mode = MODE_STREAMING and MediaStream sends every data he receives to the packetizer
+	public static final int MODE_STREAMING = 0;
+	public static final int MODE_DEFAULT = 1;
+	private int mode = MODE_STREAMING;
 	
-	public MediaStreamer() {
+	public MediaStream() {
+		super();
 		
 		receiver = new LocalSocket();
 		try {
@@ -61,52 +71,60 @@ public class MediaStreamer extends MediaRecorder {
 		id++;
 		
 	}
-	
-	public void setPacketizer(AbstractPacketizer packetizer) {
-		this.packetizer = packetizer;
-	}
 
+	public void setDestination(InetAddress dest, int dport) {
+		this.packetizer.setDestination(dest, dport);
+	}
+	
+	public void setMode(int mode) throws IllegalStateException {
+		if (!streaming) {
+			this.mode = mode;
+		}
+		else {
+			throw new IllegalStateException("Can't call setMode() while streaming !");
+		}
+	}
+	
 	public AbstractPacketizer getPacketizer() {
 		return packetizer;
 	}
 	
 	public void prepare() throws IllegalStateException,IOException {
-		
-		setOutputFile(sender.getFileDescriptor());
-		
-		try {
-			super.prepare();
-		} catch (IllegalStateException e) {
-			throw e;
-		} catch (IOException e) {
-			throw e;
-		}
-		
+		if (mode==MODE_STREAMING) setOutputFile(sender.getFileDescriptor());
+		super.prepare();
 	}
 	
-	public InputStream getInputStream() {
-		
-		InputStream in = null;
-		
-		try {
-			in = receiver.getInputStream();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-
-		return in;
-		
+	public InputStream getInputStream() throws IOException {
+		return receiver.getInputStream();
 	}
 
-	public void start() {
-		super.start();
-		packetizer.setInputStream(getInputStream());
-		packetizer.start();
+	public void start() throws IllegalStateException {
+		try {
+			super.start();
+			if (mode==MODE_STREAMING) {
+				packetizer.setInputStream(getInputStream());
+				packetizer.start();
+			}
+			streaming = true;
+		} catch (IOException e) {
+			throw new IllegalStateException("Something happened with the local sockets :/ Start failed");
+		} catch (NullPointerException e) {
+			throw new IllegalStateException("setPacketizer() should be called before start(). Start failed");
+		}
 	}
 	
 	public void stop() {
-		packetizer.stop();
-		super.stop();
+		if (mode==MODE_STREAMING) packetizer.stop();
+		if (streaming) {
+			try {
+				super.stop();
+			}
+			catch (IllegalStateException ignore) {}
+			finally {
+				super.reset();
+				streaming = false;
+			}
+		}
 	}
 	
 	protected void finalize() {
@@ -115,9 +133,7 @@ public class MediaStreamer extends MediaRecorder {
 			receiver.close();
 			lss.close();
 		}
-		catch (IOException e) {
-			Log.e(SpydroidActivity.TAG,"Error while attempting to close local sockets");
-		}
+		catch (IOException ignore) {}
 	}
 	
 }

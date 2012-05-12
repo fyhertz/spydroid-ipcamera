@@ -26,95 +26,79 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.Random;
-import net.majorkernelpanic.librtp.AMRNBPacketizer;
-import net.majorkernelpanic.librtp.AbstractPacketizer;
-import net.majorkernelpanic.librtp.H264Packetizer;
-import net.majorkernelpanic.librtp.RtpSocket;
-import android.media.MediaRecorder;
+
+import net.majorkernelpanic.libmp4.MP4Config;
+import android.content.Context;
+import android.util.Log;
 import android.view.SurfaceHolder;
 
 /**
  * 
- * 
- * 
- *
  */
 public class StreamingManager {
 
 	public final static String TAG = "StreamingManager";
 	 
-	public StreamingManager() {
-		
+	private final Context context;
+	private InetAddress destination;
+	
+	private class Track {
+		public String descriptor;
+		public MediaStream stream;
+	}
+	
+	public StreamingManager(Context context) {
+		this.context = context;
 	}
 	
 	// Contains a list of all the tracks that has been added
 	private HashMap<Integer,Track> trackList = new HashMap<Integer,Track>();
 	
-	private InetAddress destination;
-	
-	private class Track {
-		public static final int TYPE_AUDIO = 1;
-		public static final int TYPE_VIDEO = 2;
-		public Track(MediaStreamer mediaStreamer, int trackType) {
-			streamer = mediaStreamer;
-			type = trackType;
-		}
-		AbstractPacketizer packetizer;
-		public int type, encoder, format, port, ssrc;
-		public MediaStreamer streamer;
-		public VideoQuality videoQuality;
-		public SurfaceHolder surfaceHolder;
-		public String descriptor;
+	public void addH264Track(int videoSource, int destinationPort, VideoQuality videoQuality, SurfaceHolder surfaceHolder) throws IllegalStateException, IOException {
+		
+		H264Stream stream = new H264Stream(context);
+		stream.setDestination(destination, destinationPort);
+		stream.setVideoQuality(videoQuality);
+		stream.setPreviewDisplay(surfaceHolder);
+		stream.testH264();
+		
+		Track track = new Track();
+		track.stream = stream;
+		
+		MP4Config config = stream.getMP4Config();
+		track.descriptor = "m=video "+String.valueOf(destinationPort)+" RTP/AVP 96\r\n" +
+				   "b=RR:0\r\n" +
+				   "a=rtpmap:96 H264/90000\r\n" +
+				   "a=fmtp:96 packetization-mode=1;profile-level-id="+config.getProfileLevel()+";sprop-parameter-sets="+config.getB64SPS()+","+config.getB64PPS()+";\r\n";
+		
+		trackList.put(generateId(), track);
+		
 	}
 	
-	public int addH264Track(int videoSource, int destinationPort, String[] params, VideoQuality videoQuality, SurfaceHolder surfaceHolder) {
+	public void addAMRNBTrack(int destinationPort) {
 		
-		Track track = new Track(new MediaStreamer(),Track.TYPE_VIDEO);
-
-		track.packetizer = new H264Packetizer();
-		track.encoder = MediaRecorder.VideoEncoder.H264;
-		track.format = MediaRecorder.OutputFormat.THREE_GPP;
-		track.port = destinationPort;
-		track.surfaceHolder = surfaceHolder;
-		track.videoQuality = videoQuality;
+		AMRNBStream stream = new AMRNBStream();
+		stream.setDestination(destination, destinationPort);
 		
-		track.descriptor = "m=video "+String.valueOf(track.port)+" RTP/AVP 96\r\n" +
-						   "b=RR:0\r\n" +
-						   "a=rtpmap:96 H264/90000\r\n" +
-						   "a=fmtp:96 packetization-mode=1;profile-level-id="+params[0]+";sprop-parameter-sets="+params[2]+","+params[1]+";\r\n";
+		Track track = new Track();
+		track.stream = new AMRNBStream();
+		track.descriptor = "m=audio "+String.valueOf(destinationPort)+" RTP/AVP 96\r\n" +
+				   "b=AS:128\r\n" +
+				   "b=RR:0\r\n" +
+				   "a=rtpmap:96 AMR/8000\r\n" +
+				   "a=fmtp:96 octet-align=1;\r\n";
 		
-		configureTrack(track);
-		
-		return 0;
-	}
-	
-	public void addAMRNBTrack(int audioSource, int destinationPort) {
-		
-		Track track = new Track(new MediaStreamer(),Track.TYPE_AUDIO);
-
-		track.packetizer = new AMRNBPacketizer();
-		track.encoder = MediaRecorder.AudioEncoder.AMR_NB;
-		track.format = MediaRecorder.OutputFormat.RAW_AMR;
-		track.port = destinationPort;
-		
-		track.descriptor = "m=audio "+String.valueOf(track.port)+" RTP/AVP 96\r\n" +
-						   "b=AS:128\r\n" +
-						   "b=RR:0\r\n" +
-						   "a=rtpmap:96 AMR/8000\r\n" +
-						   "a=fmtp:96 octet-align=1;\r\n";
-		
-		configureTrack(track);
+		trackList.put(generateId(), track);
 		
 	}
 	
 
 	public int getTrackPort(int trackId) {
-		return trackList.get(trackId).port;
+		return trackList.get(trackId).stream.getPacketizer().getRtpSocket().getLocalPort();
 	}
 	
 	public int getTrackSSRC(int trackId) {
-		return trackList.get(trackId).ssrc;
+		return trackList.get(trackId).stream.getPacketizer().getRtpSocket().getSSRC();
 	}
 	
 	public String getTrackDescriptor(int trackId) {
@@ -123,9 +107,13 @@ public class StreamingManager {
 	
 	public String getSessionDescriptor() {
 		String sdp = "";
-		Iterator<Track> it = trackList.values().iterator();
+		Track t;
+		int i;
+		Iterator<Integer> it = trackList.keySet().iterator();
 		while (it.hasNext()) {
-			sdp += it.next().descriptor;
+			i = it.next(); t = trackList.get(i);
+			sdp += t.descriptor;
+			sdp += "a=control:trackID="+i;
 		}
 		return sdp;
 	}
@@ -143,95 +131,36 @@ public class StreamingManager {
 		this.destination =  destination;
 	}
 
-	public synchronized void prepareAll() throws IllegalStateException, IOException {
-		
+	public void prepareAll() throws IllegalStateException, IOException {
 		Iterator<Track> it = trackList.values().iterator();
 		
-		// Let's start all MediaStreamers
+		// Let's prepare all MediaStreamers
 		while (it.hasNext()) {
-			MediaStreamer streamer = it.next().streamer;
-			streamer.prepare();
+			MediaStream stream = it.next().stream;
+			stream.prepare();
 		}
 		
 	}
 	
-	public synchronized void startAll() throws RuntimeException, IllegalStateException {
-		
+	public void startAll() throws RuntimeException, IllegalStateException {
 		Iterator<Track> it = trackList.values().iterator();
 		
 		// Let's start all MediaStreamers
 		while (it.hasNext()) {
-			MediaStreamer streamer = it.next().streamer;
-			streamer.start();
+			MediaStream stream = it.next().stream;
+			stream.start();
 		}
 		
 	}
 	
-	public synchronized void stopAll() {
-		
+	public void stopAll() {
 		Iterator<Track> it = trackList.values().iterator();
 		
 		// Let's stop all MediaStreamers
 		while (it.hasNext()) {
-			MediaStreamer streamer = it.next().streamer;
-			streamer.reset();
+			MediaStream stream = it.next().stream;
+			stream.stop();
 		}
-		
-	}
-	
-	private synchronized void configureTrack(Track track) {
-		
-		final MediaStreamer streamer = track.streamer;
-		int id = generateId();
-		
-		switch (track.type) {
-			
-		case Track.TYPE_AUDIO:
-			
-			streamer.setAudioSource(MediaRecorder.AudioSource.CAMCORDER);
-			streamer.setOutputFormat(track.format);
-			streamer.setAudioEncoder(track.encoder);
-			streamer.setAudioChannels(1);
-			break;
-			
-		case Track.TYPE_VIDEO:
-			
-			streamer.setVideoSource(MediaRecorder.VideoSource.CAMERA);
-			streamer.setOutputFormat(track.format);
-			streamer.setVideoFrameRate(track.videoQuality.frameRate);
-			streamer.setVideoSize(track.videoQuality.resX,track.videoQuality.resY);
-			streamer.setVideoEncodingBitRate(track.videoQuality.bitRate);
-			streamer.setVideoEncoder(track.encoder);
-			streamer.setPreviewDisplay(track.surfaceHolder.getSurface());
-			
-			track.surfaceHolder.addCallback(new SurfaceHolder.Callback() {
-				public void surfaceChanged(SurfaceHolder holder, int format,
-						int width, int height) {
-					// TODO Auto-generated method stub
-					
-				}
-				public void surfaceCreated(SurfaceHolder holder) {
-					// TODO Auto-generated method stub
-					
-				}
-				public void surfaceDestroyed(SurfaceHolder holder) {
-					synchronized (streamer) {
-						streamer.reset();
-					}
-				}
-			});
-			
-			break;
-			
-		}
-		
-		track.ssrc = new Random().nextInt();
-		track.descriptor += "a=control:trackID="+id+"\r\n";
-		track.streamer.setPacketizer(track.packetizer);
-		track.packetizer.setRtpSocket(new RtpSocket(new byte[65536],destination,track.port));		
-		track.packetizer.getRtpSocket().setSSRC(track.ssrc);
-		
-		trackList.put(id, track);
 		
 	}
 	

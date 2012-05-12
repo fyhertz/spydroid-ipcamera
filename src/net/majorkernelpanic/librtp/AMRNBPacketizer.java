@@ -30,7 +30,6 @@ import android.util.Log;
  *   
  *   AMR Streaming over RTP
  *   
- *   
  *   Must be fed with an InputStream containing raw amr nb
  *   Stream must begin with a 6 bytes long header: "#!AMR\n", it will be skipped
  *   
@@ -46,10 +45,6 @@ public class AMRNBPacketizer extends AbstractPacketizer {
 	
 	public AMRNBPacketizer() {
 		super();
-	}
-	
-	public AMRNBPacketizer(RtpSocket rtpSocket) {
-		super(rtpSocket);
 	}
 
 	public void run() {

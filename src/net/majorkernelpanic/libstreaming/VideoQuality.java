@@ -22,6 +22,8 @@ package net.majorkernelpanic.libstreaming;
 
 public class VideoQuality {
 
+	public VideoQuality() {}
+	
 	public VideoQuality(int resX, int resY, int frameRate, int bitRate) {
 		
 		this.frameRate = frameRate;
@@ -31,9 +33,17 @@ public class VideoQuality {
 		
 	}
 	
-	public int frameRate;
-	public int bitRate;
-	public int resX;
-	public int resY;
+	public int frameRate = 0;
+	public int bitRate = 0;
+	public int resX = 0;
+	public int resY = 0;
+	
+	public boolean equals(VideoQuality quality) {
+		if (quality==null) return false;
+		return (quality.resX == this.resX 				&
+				 quality.resY == this.resY 				&
+				 quality.frameRate == this.frameRate	&
+				 quality.bitRate == this.bitRate 		);
+	}
 	
 }
