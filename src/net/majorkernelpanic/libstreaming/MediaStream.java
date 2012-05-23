@@ -29,6 +29,7 @@ import android.media.MediaRecorder;
 import android.net.LocalServerSocket;
 import android.net.LocalSocket;
 import android.net.LocalSocketAddress;
+import android.util.Log;
 
 /**
  *  
@@ -36,11 +37,12 @@ import android.net.LocalSocketAddress;
  *  specified with setPacketizer 
  * 
  */
-public class MediaStream extends MediaRecorder {
+public abstract class MediaStream extends MediaRecorder {
 
 	protected static final String TAG = "MediaStream";
 	
 	private static int id = 0;
+	private int socketId;
 	private LocalServerSocket lss = null;
 	private LocalSocket receiver, sender = null;
 	protected AbstractPacketizer packetizer = null;
@@ -56,24 +58,22 @@ public class MediaStream extends MediaRecorder {
 	public MediaStream() {
 		super();
 		
-		receiver = new LocalSocket();
 		try {
 			lss = new LocalServerSocket("net.majorkernelpanic.librtp-"+id);
-			receiver.connect(new LocalSocketAddress("net.majorkernelpanic.librtp-"+id));
-			receiver.setReceiveBufferSize(500000);
-			receiver.setSendBufferSize(500000);
-			sender = lss.accept();
-			sender.setReceiveBufferSize(500000);
-			sender.setSendBufferSize(500000); 
 		} catch (IOException e1) {
 			//throw new IOException("Can't create local socket !");
 		}
+		socketId = id;
 		id++;
 		
 	}
 
 	public void setDestination(InetAddress dest, int dport) {
 		this.packetizer.setDestination(dest, dport);
+	}
+	
+	public int getDestinationPort() {
+		return this.packetizer.getRtpSocket().getPort();
 	}
 	
 	public void setMode(int mode) throws IllegalStateException {
@@ -89,20 +89,23 @@ public class MediaStream extends MediaRecorder {
 		return packetizer;
 	}
 	
+	public boolean isStreaming() {
+		return streaming;
+	}
+	
 	public void prepare() throws IllegalStateException,IOException {
-		if (mode==MODE_STREAMING) setOutputFile(sender.getFileDescriptor());
+		if (mode==MODE_STREAMING) {
+			createSockets();
+			setOutputFile(sender.getFileDescriptor());
+		}
 		super.prepare();
 	}
 	
-	public InputStream getInputStream() throws IOException {
-		return receiver.getInputStream();
-	}
-
 	public void start() throws IllegalStateException {
 		try {
 			super.start();
 			if (mode==MODE_STREAMING) {
-				packetizer.setInputStream(getInputStream());
+				packetizer.setInputStream(receiver.getInputStream());
 				packetizer.start();
 			}
 			streaming = true;
@@ -123,14 +126,32 @@ public class MediaStream extends MediaRecorder {
 			finally {
 				super.reset();
 				streaming = false;
+				closeSockets();
 			}
 		}
 	}
 	
-	protected void finalize() {
+	public abstract String generateSdpDescriptor()  throws IllegalStateException, IOException;
+	
+	private void createSockets() throws IOException {
+		receiver = new LocalSocket();
+		receiver.connect( new LocalSocketAddress("net.majorkernelpanic.librtp-" + socketId ) );
+		receiver.setReceiveBufferSize(500000);
+		receiver.setSendBufferSize(500000);
+		sender = lss.accept();
+		sender.setReceiveBufferSize(500000);
+		sender.setSendBufferSize(500000); 
+	}
+	
+	private void closeSockets() {
 		try {
 			sender.close();
 			receiver.close();
+		} catch (IOException ignore) {}
+	}
+	
+	protected void finalize() {
+		try {
 			lss.close();
 		}
 		catch (IOException ignore) {}

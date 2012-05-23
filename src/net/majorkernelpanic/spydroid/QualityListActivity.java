@@ -8,6 +8,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -26,7 +27,9 @@ public class QualityListActivity extends ListActivity {
 	
 	private int fps, br, resX, resY;
 	
-    /* User can choose a quality among those */
+    // User can choose a quality among those
+	// Can be modified as you want: add "17 fps" in "framerates" and it will be supported
+	// Regular expressions are used to parse the strings
     private String[] resolutions = new String[] {
     		"640x480",
     		"320x240",
@@ -40,6 +43,7 @@ public class QualityListActivity extends ListActivity {
     };
     private String[] bitrates = new String[] {
     		"1000 kb/s",
+    		"700 kb/s",
     		"500 kb/s",
     		"100 kb/s",
     		"50 kb/s",
@@ -49,11 +53,11 @@ public class QualityListActivity extends ListActivity {
     protected void onCreate(Bundle savedInstanceState){
         super.onCreate(savedInstanceState);
         
-        SharedPreferences settings = getSharedPreferences("spydroid-ipcamera-prefs", 0);
+        SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(this);
         fps = settings.getInt("fps", 15);
         resX = settings.getInt("resX", 640);
         resY = settings.getInt("resY", 480);
-        br = settings.getInt("br", 1000);
+        br = settings.getInt("br", 500);
         
         setListAdapter(new CustomAdapter(this, new String[] {"Resolution","Framerate","Bitrate"}, new String[][] {resolutions,framerates,bitrates}));
         
@@ -70,7 +74,7 @@ public class QualityListActivity extends ListActivity {
     
     public void onListItemClick(ListView l, View v, int position, long id) {
     	
-    	SharedPreferences settings = getSharedPreferences("spydroid-ipcamera-prefs", 0);
+    	SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(this);
     	SharedPreferences.Editor editor = settings.edit();
     	Adapter a = listView.getAdapter();
     	Pattern p;
@@ -101,7 +105,7 @@ public class QualityListActivity extends ListActivity {
     		p = Pattern.compile("(\\d+)[^\\d]+");
     		m = p.matcher((String) a.getItem(position)); m.find();
     		br = Integer.parseInt(m.group(1));
-    		editor.putInt("br", br);
+    		editor.putInt("br", br*1000); // conversion to bit/s
     		break;
     	
     	}

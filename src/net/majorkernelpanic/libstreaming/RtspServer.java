@@ -20,16 +20,24 @@
 
 package net.majorkernelpanic.libstreaming;
 
+import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketException;
+import java.net.URI;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import android.content.Context;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.utils.URLEncodedUtils;
+
 import android.media.MediaRecorder;
 import android.os.Handler;
 import android.util.Log;
@@ -41,323 +49,394 @@ import android.view.SurfaceHolder;
  *   One client handled at a time only
  * 
  */
-public class RtspServer  extends Thread implements Runnable {
+public class RtspServer implements Runnable {
 	
-	private final String TAG = "RTSPServer";
+	private final static String TAG = "RTSPServer";
 
-	// Status code definitions
-	private static final String STATUS_OK = "200 OK";
-	private static final String STATUS_BAD_REQUEST = "400 Bad Request";
-	private static final String STATUS_NOT_FOUND = "404 Not Found";
-	
 	// Message types for UI thread
 	public static final int MESSAGE_LOG = 2;
 	public static final int MESSAGE_START = 3;
 	public static final int MESSAGE_STOP = 4;
 	
-	// The RTSP server his just an interface for the streamingManager
+	// The RTSP server his just a remote interface for controlling a streamingManager
 	public final StreamingManager streamingManager;
 	
 	private ServerSocket server = null; 
 	private Socket client = null;
-	private InputStream is = null;
-	private OutputStream os = null;
 	private Handler handler = null;
-	private String request, response;
-	private byte[] buffer = new byte[4096];
-	private int port, seqid = 1;
+	private int port;
 	private VideoQuality defaultVideoQuality = null;
 	private SurfaceHolder surfaceHolder = null;
+	private boolean running = false, defaultSoundEnabled = true;
+	private OutputStream output = null;
 	
-	public RtspServer(Context context, int port, Handler handler) {
+	public RtspServer(StreamingManager streamingManager, int port, Handler handler) {
 		this.port = port;
 		this.handler = handler;
-		this.streamingManager = new StreamingManager(context);
+		this.streamingManager = streamingManager;
 	}
 
-	public void run() {
-		
-		try {
-			server = new ServerSocket(port);
-		} catch (IOException e) {
-			Log.e(TAG,e.getMessage());
-			log(e.getMessage());
-			return;
-		}
-		
-		while (handleClient());
-		
-	}
-	
-	public boolean handleClient() {
-		
-		int len = 0;
-		
-		try {
-			client = server.accept();
-			is = client.getInputStream();
-			os = client.getOutputStream();
-		} catch (IOException e) {
-			Log.e(TAG,e.getMessage());
-			log(e.getMessage());
-			return true;
-		}
-		
-		streamingManager.setDestination(getClientAddress());
-		streamingManager.flush();
-		
-		log("Connection from "+getClientAddress().getHostAddress());
-		
-		while (true) {
-			
-			try {
-				len = is.read(buffer,0,buffer.length);
-			} catch (IOException e) {
-				break;
-			}
-			if (len<=0) break;
-			
-			request = new String(buffer,0,len);
-						
-			Log.d(TAG, request);
-			
-			/* Command Describe */
-			if (request.startsWith("DESCRIBE")) commandDescribe();
-			/* Command Options */
-			else if (request.startsWith("OPTIONS")) commandOptions();
-			/* Command Setup */
-			else if (request.startsWith("SETUP")) commandSetup();
-			/* Command Play */
-			else if (request.startsWith("PLAY")) commandPlay();
-			/* Command Pause */
-			else if (request.startsWith("PAUSE")) commandPause();
-			/* Command Teardown */
-			else if (request.startsWith("TEARDOWN")) {commandTeardown();break;}
-			/* Command Unknown */
-			else commandUnknown();
-			
-		}
-		
-		// Streaming stop when client disconnect
-		streamingManager.stopAll();
-		// Inform the UI Thread that streaming has stopped
-		handler.obtainMessage(MESSAGE_STOP).sendToTarget();
-		
-		try {
-			client.close();
-			log("Client disconnected");
-		} catch (IOException e) {
-			return true;
-		}
-		
-		return true;
-		
-	}
-	
-	/* ********************************************************************************** */
-	/* ******************************** Command DESCRIBE ******************************** */
-	/* ********************************************************************************** */
-	private void commandDescribe() {
-		
-		if (surfaceHolder==null) {
-			log("setSurfaceHolder() should be called before a client connects");
-			return;
-		}
-		
-		try {
-			streamingManager.addH264Track(MediaRecorder.VideoSource.CAMERA, 5006, defaultVideoQuality, surfaceHolder);
-		} catch (IllegalStateException e1) {
-			log(e1.getMessage());
-			return;
-		} catch (IOException e1) {
-			log(e1.getMessage());
-			return;
-		}
-		//streamingManager.addAMRNBTrack(5004);
-		
-		String requestContent = streamingManager.getSessionDescriptor();
-		String requestAttributes = "Content-Base: "+getServerAddress()+":"+port+"/\r\n" +
-								   "Content-Type: application/sdp\r\n";
-		writeHeader(STATUS_OK,requestContent.length(),requestAttributes);
-		writeContent(requestContent);
-		
-		try {
-			streamingManager.prepareAll();
-			streamingManager.startAll();
-		} catch (IllegalStateException e) {
-			log(e.getMessage());
-			return;
-		} catch (RuntimeException e) {
-			log(e.getMessage());
-			return;
-		} catch (IOException e) {
-			log(e.getMessage());
-			return;
-		}
-		
-		handler.obtainMessage(MESSAGE_START).sendToTarget();
-		
-
-	}
-			
-
-	/* ********************************************************************************** */
-	/* ******************************** Command OPTIONS ********************************* */
-	/* ********************************************************************************** */
-	private void commandOptions() {
-		writeHeader(STATUS_OK,0,"Public: DESCRIBE,SETUP,TEARDOWN,PLAY,PAUSE\r\n");
-		writeContent("");
-	}
-		
-	/* ********************************************************************************** */
-	/* ********************************** Command SETUP ********************************* */
-	/* ********************************************************************************** */
-	private void commandSetup() {
-			
-		String p2,p1;
-		Pattern p; Matcher m;
-		int ssrc, trackId;
-		
-		p = Pattern.compile("trackID=(\\w+)",Pattern.CASE_INSENSITIVE);
-		m = p.matcher(request);
-		
-		if (!m.find()) {
-			writeHeader(STATUS_BAD_REQUEST,0,"");
-			writeContent("");
-			return;
-		} 
-		
-		trackId = Integer.parseInt(m.group(1));
-		
-		if (!streamingManager.trackExists(trackId)) {
-			writeHeader(STATUS_NOT_FOUND,0,"");
-			writeContent("");
-			return;
-		}
-		
-		p = Pattern.compile("client_port=(\\d+)-(\\d+)",Pattern.CASE_INSENSITIVE);
-		m = p.matcher(request);
-		
-		if (!m.find()) {
-			int port = streamingManager.getTrackPort(trackId);
-			p1 = String.valueOf(port);
-			p2 = String.valueOf(port+1);
-		}
-		else {
-			p1 = m.group(1); p2 = m.group(2);
-		}
-		
-		ssrc = streamingManager.getTrackSSRC(trackId);
-		
-		String attributes = "Transport: RTP/AVP/UDP;unicast;client_port="+p1+"-"+p2+";server_port=54782-54783;ssrc="+Integer.toHexString(ssrc)+";mode=play\r\n" +
-							"Session: "+ "1185d20035702ca" + "\r\n" +
-							"Cache-Control: no-cache\r\n";
-		
-		writeHeader(STATUS_OK,0,attributes);
-		writeContent("");
-		
-	}
-		
-	/* ********************************************************************************** */
-	/* ********************************** Command PLAY ********************************** */
-	/* ********************************************************************************** */
-	private void commandPlay() {
-		
-		String requestAttributes = "RTP-Info: ";
-		requestAttributes += "url=rtsp://"+getServerAddress()+":"+port+"/trackID="+0+";seq=0;rtptime=0,";
-		requestAttributes = requestAttributes.substring(0, requestAttributes.length()-1) + "\r\nSession: 1185d20035702ca\r\n";
-		
-		writeHeader(STATUS_OK,0,requestAttributes);
-		writeContent("");
-		
-	}
-	
-	/* ********************************************************************************** */
-	/* ********************************* Command PAUSE ********************************** */
-	/* ********************************************************************************** */
-	private void commandPause() {
-		writeHeader(STATUS_OK,0,"");
-		writeContent("");
-	}
-	
-	/* ********************************************************************************** */
-	/* ******************************** Command TEARDOWN ******************************** */
-	/* ********************************************************************************** */
-	private void commandTeardown() {
-		writeHeader(STATUS_OK,0,"");
-		writeContent("");
-	}
-	
-	/* ********************************************************************************** */
-	/* ******************************* Command Unknown !? ******************************* */
-	/* ********************************************************************************** */	
-	private void commandUnknown() {
-		Log.e(TAG,"Command unknown: "+request);
-		writeHeader(STATUS_BAD_REQUEST,0,"");
-		writeContent("");
-	}
-
-	private void writeHeader(String requestStatus, int requestLength,String requestAttributes) {
-		
-		boolean match;
-		Pattern p = Pattern.compile("CSeq: (\\d+)",Pattern.CASE_INSENSITIVE);
-		Matcher m = p.matcher(request); 
-		
-		match = m.find();
-		if (match) seqid = Integer.parseInt(m.group(1));
-		
-		response = 	"RTSP/1.0 "+requestStatus+"\r\n" +
-					(match?("Cseq: " + seqid + "\r\n"):"") +
-					"Content-Length: " + requestLength + "\r\n" +
-					requestAttributes +
-					"\r\n";
-				
-	}
-	
-	private void writeContent(String requestContent) {
-		
-		response += requestContent;
-		Log.d(TAG, response);
-		
-		try {
-			os.write(response.getBytes(),0, response.length());
-		} catch (IOException e) {
-
-		}
-		
-	}
-	
+	/** */
 	public void setDefaultVideoQuality(VideoQuality quality) {
 		defaultVideoQuality = quality;
 	}
 	
+	/** */
 	public void setSurfaceHolder(SurfaceHolder sh) {
 		surfaceHolder = sh;
 	}
 	
-	/**
-	 * 
-	 * @return Returns local address
-	 */
+	/** */
+	public void setDefaultSoundOption(boolean enable) {
+		defaultSoundEnabled = enable;
+	}
+	
+	public void start() {
+		if (!running) {
+			try {
+				server = new ServerSocket(port);
+				new Thread(this).start();
+				running = true;
+			} catch (IOException e) {
+				log(e.getMessage());
+			}
+		}
+	}
+	
+	public void stop() {
+		if (running) {
+			running = false;
+			try {
+				client.close();
+				server.close();
+				streamingManager.flush();
+			} catch (IOException ignore) {}
+		}
+	}
+	
+	public void run() {
+		
+		BufferedReader input = null;
+		Request request;
+		Response response;
+		
+		Log.i(TAG,"RTSP Server started");
+		
+		while (running) {
+			
+			try {
+				client = server.accept();
+				input = new BufferedReader(new InputStreamReader(client.getInputStream()));
+				output = client.getOutputStream();
+			} catch (SocketException e) {
+				break;
+			} catch (IOException e) {
+				log(e.getMessage());
+				continue;
+			}
+			
+			streamingManager.startNewSession();
+			streamingManager.setDestination(getClientAddress());
+			
+			log("Connection from "+getClientAddress().getHostAddress());
+			
+			while (true) {
+				
+				try {
+					// Parse the request
+					request = Request.parseRequest(input);
+					// Do something accordingly
+					response = processRequest(request);
+					// Send response
+					response.send(output);
+				} catch (SocketException e) {
+					// Client disconnected, we can now wait for another client to connect
+					break;
+				} catch (IllegalStateException e) {
+					// Invalid request
+					Log.e(TAG,"Bad request");
+					continue;
+				} catch (IOException e) {
+					// Invalid request
+					Log.e(TAG,"Bad request");
+					continue;
+				} 
+				
+			}
+			
+			// Streaming stop when client disconnect
+			streamingManager.stopAll();
+			// Inform the UI Thread that streaming has stopped
+			handler.obtainMessage(MESSAGE_STOP).sendToTarget();
+			
+			try {
+				client.close();
+			} catch (IOException ignore) {
+				
+			} finally {
+				log("Client disconnected");
+			}
+			
+		}
+		Log.i(TAG,"RTSP Server stopped");
+		
+	}
+	
+	public Response processRequest(Request request) throws IllegalStateException, IOException{
+		Response response = new Response(request);
+		
+		/* ********************************************************************************** */
+		/* ********************************* Method DESCRIBE ******************************** */
+		/* ********************************************************************************** */
+		if (request.method.toUpperCase().equals("DESCRIBE")) {
+			
+			if (surfaceHolder==null) {
+				throw new IllegalStateException("setSurfaceHolder() should be called before a client connects");
+			}
+			
+			// Here we parse the requested URI
+			List<NameValuePair> params = URLEncodedUtils.parse(URI.create(request.uri),"UTF-8");
+			if (params.size()>0) {
+				for (Iterator<NameValuePair> it = params.iterator();it.hasNext();) {
+					NameValuePair param = it.next();
+					
+					// H264
+					if (param.getName().equals("h264")) {
+						VideoQuality quality = defaultVideoQuality.clone();
+						String[] config = param.getValue().split("-");
+						try {
+							quality.bitRate = Integer.parseInt(config[0])*1000; // conversion to bit/s
+							quality.frameRate = Integer.parseInt(config[1]);
+							quality.resX = Integer.parseInt(config[2]);
+							quality.resY = Integer.parseInt(config[3]);
+						}
+						catch (IndexOutOfBoundsException ignore) {}
+						log("H264: "+quality.resX+"x"+quality.resY+", "+quality.frameRate+" fps, "+quality.bitRate+" bps");
+						streamingManager.addH264Track(MediaRecorder.VideoSource.CAMERA, 5006, quality, surfaceHolder);
+					}
+					
+					// AMRNB
+					else if (param.getName().equals("amrnb")) {
+						log("ARMNB");
+						streamingManager.addAMRNBTrack(5004);
+					}
+					
+					// FLASH ON/OFF
+					else if (param.getName().equals("flash")) {
+						if (param.getValue().equals("on")) {
+							streamingManager.setFlashState(true);
+						} 
+						else {
+							streamingManager.setFlashState(false);
+						}
+					}
+					
+					// ROTATION
+					else if (param.getName().equals("rotation")) {
+						defaultVideoQuality.orientation = Integer.parseInt(param.getValue());
+					}
+					
+				}
+			} 
+			// Uri has no parameters: the default behaviour is to add one h264 track and one amrnb track
+			else {
+				streamingManager.addH264Track(MediaRecorder.VideoSource.CAMERA, 5006, defaultVideoQuality, surfaceHolder);
+				if (defaultSoundEnabled) {
+					streamingManager.addAMRNBTrack(5004);
+				}
+			}
+			
+			String requestContent = streamingManager.getSessionDescriptor();
+			String requestAttributes = "Content-Base: "+getServerAddress()+":"+port+"/\r\n" +
+					"Content-Type: application/sdp\r\n";
+			
+			streamingManager.startAll();
+			
+			handler.obtainMessage(MESSAGE_START).sendToTarget();
+			
+			response.status = Response.STATUS_OK;
+			response.attributes = requestAttributes;
+			response.content = requestContent;
+			
+		}
+		
+		/* ********************************************************************************** */
+		/* ********************************* Method OPTIONS ********************************* */
+		/* ********************************************************************************** */
+		else if (request.method.toUpperCase().equals("OPTIONS")) {
+			response.status = Response.STATUS_OK;
+			response.attributes = "Public: DESCRIBE,SETUP,TEARDOWN,PLAY,PAUSE\r\n";
+		}
+
+		/* ********************************************************************************** */
+		/* ********************************** Method SETUP ********************************** */
+		/* ********************************************************************************** */
+		else if (request.method.toUpperCase().equals("SETUP")) {
+			String p2,p1;
+			Pattern p; Matcher m;
+			int ssrc, trackId;
+			
+			p = Pattern.compile("trackID=(\\w+)",Pattern.CASE_INSENSITIVE);
+			m = p.matcher(request.uri);
+			
+			if (!m.find()) {
+				response.status = Response.STATUS_BAD_REQUEST;
+				return response;
+			} 
+			
+			trackId = Integer.parseInt(m.group(1));
+			
+			if (!streamingManager.trackExists(trackId)) {
+				response.status = Response.STATUS_NOT_FOUND;
+				return response;
+			}
+			
+			p = Pattern.compile("client_port=(\\d+)-(\\d+)",Pattern.CASE_INSENSITIVE);
+			m = p.matcher(request.headers.get("Transport"));
+			
+			if (!m.find()) {
+				int port = streamingManager.getTrackPort(trackId);
+				p1 = String.valueOf(port);
+				p2 = String.valueOf(port+1);
+			}
+			else {
+				p1 = m.group(1); p2 = m.group(2);
+			}
+			
+			ssrc = streamingManager.getTrackSSRC(trackId);
+			
+			String attributes = "Transport: RTP/AVP/UDP;unicast;client_port="+p1+"-"+p2+";server_port=54782-54783;ssrc="+Integer.toHexString(ssrc)+";mode=play\r\n" +
+								"Session: "+ "1185d20035702ca" + "\r\n" +
+								"Cache-Control: no-cache\r\n";
+			
+			response.status = Response.STATUS_OK;
+			response.attributes = attributes;
+		}
+
+		/* ********************************************************************************** */
+		/* ********************************** Method PLAY *********************************** */
+		/* ********************************************************************************** */
+		else if (request.method.toUpperCase().equals("PLAY")) {
+			String requestAttributes = "RTP-Info: ";
+			requestAttributes += "url=rtsp://"+getServerAddress()+":"+port+"/trackID="+0+";seq=0;rtptime=0,";
+			requestAttributes = requestAttributes.substring(0, requestAttributes.length()-1) + "\r\nSession: 1185d20035702ca\r\n";
+			
+			response.status = Response.STATUS_OK;
+			response.attributes = requestAttributes;
+		}
+
+
+		/* ********************************************************************************** */
+		/* ********************************** Method PAUSE ********************************** */
+		/* ********************************************************************************** */
+		else if (request.method.toUpperCase().equals("PAUSE")) {
+			response.status = Response.STATUS_OK;
+		}
+
+		/* ********************************************************************************** */
+		/* ********************************* Method TEARDOWN ******************************** */
+		/* ********************************************************************************** */
+		else if (request.method.toUpperCase().equals("TEARDOWN")) {
+			response.status = Response.STATUS_OK;
+		}
+		
+		/* Method Unknown */
+		else {
+			Log.e(TAG,"Command unknown: "+request);
+			response.status = Response.STATUS_BAD_REQUEST;
+		}
+		
+		return response;
+		
+	}
+	
 	private String getServerAddress() {
 		return client.getLocalAddress().getHostAddress();
 	}
 	
-	/**
-	 * 
-	 * @return Returns client address
-	 */
 	private InetAddress getClientAddress() {
 		return client.getInetAddress();
 	}
 	 
-	/**
-	  * 
-	  * @param msg String to send to the UI Thread
-	  */
 	private void log(String msg) {
 		handler.obtainMessage(MESSAGE_LOG, msg).sendToTarget();
+		Log.i(TAG,msg);
 	}
+	
+	private static class Request {
+		
+		// Parse method & uri
+		public static final Pattern regexMethod = Pattern.compile("(\\w+) (\\S+) RTSP",Pattern.CASE_INSENSITIVE);
+		// Parse a request header
+		public static final Pattern rexegHeader = Pattern.compile("(\\S+):(.+)",Pattern.CASE_INSENSITIVE);
+		
+		public String method;
+		public String uri;
+		public HashMap<String,String> headers = new HashMap<String,String>();
+		
+		/** Parse the method, uri & headers of a RTSP request */
+		public static Request parseRequest(BufferedReader input) throws IOException, IllegalStateException, SocketException {
+			Request request = new Request();
+			String line;
+			Matcher matcher;
+
+			// Parsing request method & uri
+			if ((line = input.readLine())==null) throw new SocketException();
+			matcher = regexMethod.matcher(line);
+			matcher.find();
+			request.method = matcher.group(1);
+			request.uri = matcher.group(2);
+
+			// Parsing headers of the request
+			while ( (line = input.readLine()) != null && line.length()>3 ) {
+				matcher = rexegHeader.matcher(line);
+				matcher.find();
+				request.headers.put(matcher.group(1),matcher.group(2));
+			}
+			if (line==null) throw new SocketException();
+			
+			Log.e(TAG,request.method+" "+request.uri);
+			
+			return request;
+		}
+	}
+	
+	private static class Response {
+		
+		// Status code definitions
+		public static final String STATUS_OK = "200 OK";
+		public static final String STATUS_BAD_REQUEST = "400 Bad Request";
+		public static final String STATUS_NOT_FOUND = "404 Not Found";
+		
+		public String status = STATUS_OK;
+		public String content = "";
+		public String attributes = "";
+		private final Request request;
+		
+		public Response(Request request) {
+			this.request = request;
+		}
+		
+		public void send(OutputStream output) throws IOException {
+			int seqid = -1;
+			
+			try {
+				seqid = Integer.parseInt(request.headers.get("Cseq"));
+			} catch (Exception ignore) {}
+			
+			String response = 	"RTSP/1.0 "+status+"\r\n" +
+					(seqid>=0?("Cseq: " + seqid + "\r\n"):"") +
+					"Content-Length: " + content.length() + "\r\n" +
+					attributes +
+					"\r\n" + 
+					content;
+			
+			Log.d(TAG,response);
+			
+			output.write(response.getBytes());
+		}
+	}
+		
 	
 	
 }

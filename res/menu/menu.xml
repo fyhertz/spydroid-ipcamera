@@ -3,4 +3,7 @@
     <item android:id="@+id/quality"
           android:icon="@drawable/options"
           android:title="Quality" />
+    <item android:id="@+id/options"
+          android:icon="@drawable/options"
+          android:title="Options" />
 </menu>

@@ -21,6 +21,7 @@
 package net.majorkernelpanic.spydroid;
 
 import net.majorkernelpanic.libstreaming.RtspServer;
+import net.majorkernelpanic.libstreaming.StreamingManager;
 import net.majorkernelpanic.libstreaming.VideoQuality;
 import android.app.Activity;
 import android.content.Context;
@@ -34,21 +35,19 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.os.PowerManager;
+import android.preference.PreferenceManager;
 import android.text.Html;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
-import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
 /**
- * 
- * Main activity
- * It will test H.264 support on the phone and then launch the RTSP Server
+ * The application Spydroid, is basically just an interface for net.majorkernelpanic.libstreaming
+ * It creates a StreamingManger and launches an RtspServer
  * 
  */
 public class SpydroidActivity extends Activity implements OnSharedPreferenceChangeListener {
@@ -62,7 +61,8 @@ public class SpydroidActivity extends Activity implements OnSharedPreferenceChan
     private VideoQuality defaultVideoQuality = new VideoQuality();
     private PowerManager.WakeLock wl;
     
-    private static RtspServer rtspServer;
+    private static RtspServer rtspServer = null;
+    private static StreamingManager streamingManager = null;
     
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -74,11 +74,11 @@ public class SpydroidActivity extends Activity implements OnSharedPreferenceChan
         console = (TextView) findViewById(R.id.console);
         ip = (TextView) findViewById(R.id.ip);
         
-        SharedPreferences settings = getSharedPreferences("spydroid-ipcamera-prefs", 0);
+        SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(this);
         defaultVideoQuality.resX = settings.getInt("resX", 640);
         defaultVideoQuality.resY = settings.getInt("resY", 480);
         defaultVideoQuality.frameRate = settings.getInt("fps", 15);
-        defaultVideoQuality.bitRate = settings.getInt("br", 1000);
+        defaultVideoQuality.bitRate = settings.getInt("br", 500*1000); // 500 kb/s
         
         settings.registerOnSharedPreferenceChangeListener(this);
        	
@@ -95,19 +95,37 @@ public class SpydroidActivity extends Activity implements OnSharedPreferenceChan
 			log("<b>Spydroid</b>");
 		}
         
-    	rtspServer = new RtspServer(this.getApplicationContext(), 8086, handler);
-    	rtspServer.setSurfaceHolder(holder);
-    	rtspServer.setDefaultVideoQuality(defaultVideoQuality);
-    	rtspServer.start();
+        if (streamingManager == null) {
+	        streamingManager = new StreamingManager(this.getApplicationContext());
+	    	rtspServer = new RtspServer(streamingManager, 8086, handler);
+	    	rtspServer.setSurfaceHolder(holder);
+	    	rtspServer.setDefaultVideoQuality(defaultVideoQuality);
+	    	rtspServer.setDefaultSoundOption(settings.getBoolean("stream_sound", true));
+        }
         
     }
     
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
-    	defaultVideoQuality.resX = sharedPreferences.getInt("resX", 640);
-    	defaultVideoQuality.resY = sharedPreferences.getInt("resY", 480);
-    	defaultVideoQuality.frameRate = sharedPreferences.getInt("fps", 15);
-    	defaultVideoQuality.bitRate = sharedPreferences.getInt("br", 1000);
-    	rtspServer.setDefaultVideoQuality(defaultVideoQuality);
+    	if (key.equals("resX")) {
+    		defaultVideoQuality.resX = sharedPreferences.getInt("resX", 640);
+    		rtspServer.setDefaultVideoQuality(defaultVideoQuality);
+    	}
+    	else if (key.equals("resY"))  {
+    		defaultVideoQuality.resY = sharedPreferences.getInt("resY", 480);
+    		rtspServer.setDefaultVideoQuality(defaultVideoQuality);
+    	}
+    	else if (key.equals("fps")) {
+    		defaultVideoQuality.frameRate = sharedPreferences.getInt("fps", 15);
+    		rtspServer.setDefaultVideoQuality(defaultVideoQuality);
+    	}
+    	else if (key.equals("br")) {
+    		defaultVideoQuality.bitRate = sharedPreferences.getInt("br", 1000);
+    		rtspServer.setDefaultVideoQuality(defaultVideoQuality);
+    	}
+    	else if (key.equals("stream_sound")) {
+    		rtspServer.setDefaultSoundOption(sharedPreferences.getBoolean("stream_sound", true));
+    	}
+    	
     }
     
     public void onResume() {
@@ -127,11 +145,14 @@ public class SpydroidActivity extends Activity implements OnSharedPreferenceChan
     		ip.setText("Wifi should be enabled !");
     	}
     	
+    	rtspServer.start();
+    	
     }
     
     public void onPause() {
     	super.onPause();
     	wl.release();
+    	rtspServer.stop();
     }
     
     // The Handler that gets information back from the RtspServer
@@ -169,12 +190,19 @@ public class SpydroidActivity extends Activity implements OnSharedPreferenceChan
     }
     
     public boolean onOptionsItemSelected(MenuItem item) {
+    	Intent intent;
+    	
         switch (item.getItemId()) {
         case R.id.quality:
-                // Starts QualityListActivity where user can change the streaming quality
-                Intent intent = new Intent(this.getBaseContext(),QualityListActivity.class);
-                startActivityForResult(intent, 0);
-                return true;
+        	// Starts QualityListActivity where user can change the streaming quality
+        	intent = new Intent(this.getBaseContext(),QualityListActivity.class);
+        	startActivityForResult(intent, 0);
+        	return true;
+        case R.id.options:
+            // Starts QualityListActivity where user can change the streaming quality
+            intent = new Intent(this.getBaseContext(),OptionsActivity.class);
+            startActivityForResult(intent, 0);
+            return true;
         default:
             return super.onOptionsItemSelected(item);
         }

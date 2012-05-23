@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2011 GUIGUI Simon, fyhertz@gmail.com
+ * With the help of Havlena Petr, havlenapetr@gmail.com
  * 
  * This file is part of Spydroid (http://code.google.com/p/spydroid-ipcamera/)
  * 
@@ -38,9 +39,15 @@ public class AMRNBPacketizer extends AbstractPacketizer {
 	
 	private final static String TAG = "AMRNBPacketizer";
 	
-	private final int amrhl = 6; // Header length
-	private final int amrps = 32;   // Packet size
+	private final int AMR_HEADER_LENGTH = 6; // "#!AMR\n"
+    private static final int AMR_FRAME_HEADER_LENGTH = 1; // Each frame has a short header
 
+    private static final int[] sBitrates = {
+        4750, 5150, 5900, 6700, 7400, 7950, 1020, 1220
+    };
+
+    private static final int[] sFrameBits = {95, 103, 118, 134, 148, 159, 204, 244};
+	
 	private long ts = 0;
 	
 	public AMRNBPacketizer() {
@@ -49,22 +56,33 @@ public class AMRNBPacketizer extends AbstractPacketizer {
 
 	public void run() {
 	
+		int frameLength, frameType;
+		
 		// Skip raw amr header
-		fill(rtphl,amrhl);
+		fill(rtphl,AMR_HEADER_LENGTH);
 		
 		buffer[rtphl] = (byte) 0xF0;
-		rsock.markAllPackets();
 		
 		while (running) {
 			
-			fill(rtphl+1,amrps);
+			// First we read the frame header
+			fill(rtphl+1,AMR_FRAME_HEADER_LENGTH);
+			
+			// Then we calculate the frame payload length
+			frameType = (Math.abs(buffer[rtphl + 1]) >> 3) & 0x0f;
+			frameLength = (sFrameBits[frameType]+7)/8;
+			
+			// And we read the payload
+			fill(rtphl+2,frameLength);
+			
+			Log.d(TAG,"Frame length: "+frameLength+" frameType: "+frameType);
 			
 			// RFC 3267 Page 14: 
 			// "For AMR, the sampling frequency is 8 kHz, corresponding to
 			// 160 encoded speech samples per frame from each channel."
 			rsock.updateTimestamp(ts); ts+=160;
-			
-			rsock.send(rtphl+amrps+1);
+			rsock.markNextPacket();
+			rsock.send(rtphl+1+AMR_FRAME_HEADER_LENGTH+frameLength);
 			
 		}
 		
@@ -79,7 +97,7 @@ public class AMRNBPacketizer extends AbstractPacketizer {
 			try { 
 				len = fis.read(buffer, offset+sum, length-sum);
 				if (len<0) {
-					Log.e(TAG,"Read error");
+					Log.e(TAG,"End of stream");
 				}
 				else sum+=len;
 			} catch (IOException e) {

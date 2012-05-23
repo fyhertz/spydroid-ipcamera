@@ -20,11 +20,8 @@
 
 package net.majorkernelpanic.librtp;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.net.InetAddress;
-
-import android.util.Log;
 
 /**
  * 
@@ -39,7 +36,7 @@ abstract public class AbstractPacketizer implements Runnable{
 	
 	protected byte[] buffer;	
 	
-	protected final int rtphl = 12; // Rtp header length
+	protected final int rtphl = RtpSocket.RTP_HEADER_LENGTH;
 	
 
 	public AbstractPacketizer() {
@@ -64,8 +61,10 @@ abstract public class AbstractPacketizer implements Runnable{
 	}
 	
 	public void start() {
-		running = true;
-		new Thread(this).start();
+		if (!running) {
+			running = true;
+			new Thread(this).start();
+		}
 	}
 
 	public void stop() {

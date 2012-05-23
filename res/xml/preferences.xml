@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen
+        xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <PreferenceCategory
+            android:title="Sound streaming">
+
+        <CheckBoxPreference
+                android:key="stream_sound"
+                android:title="Sound streaming"
+                android:defaultValue="true"
+                android:summary="AMRNB seems buggy on VLC 2, you might need to disable sound streaming" />
+
+    </PreferenceCategory>
+
+</PreferenceScreen>

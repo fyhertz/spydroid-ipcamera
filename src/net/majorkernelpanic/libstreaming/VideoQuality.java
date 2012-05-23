@@ -37,6 +37,7 @@ public class VideoQuality {
 	public int bitRate = 0;
 	public int resX = 0;
 	public int resY = 0;
+	public int orientation = 90;
 	
 	public boolean equals(VideoQuality quality) {
 		if (quality==null) return false;
@@ -44,6 +45,10 @@ public class VideoQuality {
 				 quality.resY == this.resY 				&
 				 quality.frameRate == this.frameRate	&
 				 quality.bitRate == this.bitRate 		);
+	}
+	
+	public VideoQuality clone() {
+		return new VideoQuality(resX,resY,frameRate,bitRate);
 	}
 	
 }

@@ -44,14 +44,13 @@ public class H264Packetizer extends AbstractPacketizer {
 	
 	private final int MAXPACKETSIZE = 1400;
 	
-	private long oldtime = SystemClock.elapsedRealtime(), duration, delay = 10, newDelay, ts = oldtime;
-	private int available = 0, oldavailable = 0, size, naluLength = 0, cursor = 0;
-	private SimpleFifo fifo = new SimpleFifo(500000);
-	private Semaphore nbChunks = new Semaphore(0);
-	private LinkedList<Chunk> chunks = new LinkedList<Chunk>();
+	private long oldtime, duration, newDelay, ts, delay = 10;
+	private int available, oldavailable, size, cursor, naluLength = 0;
+	private LinkedList<Chunk> chunks;
 	private Chunk chunk = null, tmpChunk = null;
-	boolean splitNal = false;
-	
+	private SimpleFifo fifo = new SimpleFifo(500000);
+	private Semaphore nbChunks;
+	boolean splitNal;
 	
 	private class Chunk {
 		public Chunk(int size,long duration) {
@@ -69,6 +68,16 @@ public class H264Packetizer extends AbstractPacketizer {
 	
 	public void run() {
 		
+		// We reinitialize everything so that the packetizer can be reused
+		fifo.flush();
+		nbChunks = new Semaphore(0);
+		splitNal = false;
+		chunks = new LinkedList<Chunk>();
+		oldtime = SystemClock.elapsedRealtime();
+		oldavailable = available = 0;
+		cursor = 0;
+		ts = 0;
+		
 		try {
 			// This will skip the MPEG4 header
 			skipHeader();
@@ -82,38 +91,29 @@ public class H264Packetizer extends AbstractPacketizer {
 		 */
 		new Thread(new Runnable() {
 			public void run() {
-				
 				int len = 0; 
 				chunks.add(new Chunk(0,0));
 				
 				while (running) {
-
 					try {
 						nbChunks.acquire(1);
 					} catch (InterruptedException e1) {
 						e1.printStackTrace();
 					}
-					
 					if (splitNal) {
-						
-						//Log.e(TAG,"nal unit cut: cursor: "+cursor+" naluLength: "+naluLength+" len: "+(naluLength-(chunk.size-cursor)));
-						
+						//Log.d(TAG,"nal unit cut: cursor: "+cursor+" naluLength: "+naluLength+" len: "+(naluLength-(chunk.size-cursor)));
 						len = naluLength-(cursor-chunk.size);
-						
 						tmpChunk = chunks.get(1);
 						tmpChunk.duration += chunk.duration*len/chunk.size;
 						tmpChunk.size += len;
-						
 						splitNal = false;
-						
 					}
-					
 					chunks.pop(); cursor = 0;
-					
 					chunk = chunks.getFirst();
+					//Log.d(TAG,"Sending chunk: "+chunk.size);
 					while (cursor<chunk.size) send();
-
 				}
+				Log.d(TAG,"H264 packetizer stopped !");
 			}
 		}).start();
 		
@@ -122,31 +122,27 @@ public class H264Packetizer extends AbstractPacketizer {
 		 * queue work for the first thread
 		 */
 		while (running) { 
-			
 			try {
-				
 				oldtime = SystemClock.elapsedRealtime();
 				oldavailable = available = fis.available();
+				
 				while (available<=oldavailable) {
 					Thread.sleep(10);
 					available = fis.available();
-				}					
+				}			
 				
 				duration = SystemClock.elapsedRealtime() - oldtime;
 				size = fillFifo(available);
-				//Log.e(TAG,"New chunk -> delay: "+duration+" s1: "+size+" s2: "+available+" available: "+fifo.available()+" chunks: "+chunks.size());
+				//Log.d(TAG,"New chunk -> delay: "+duration+" s1: "+size+" s2: "+available+" available: "+fifo.available()+" chunks: "+chunks.size());
 				chunks.add(new Chunk(size,duration));
 				nbChunks.release();
-
+				
 			} catch (InterruptedException e1) {
 				e1.printStackTrace();
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
-			
 		}
-		
-		
 	}
 	
 	/**
@@ -154,7 +150,6 @@ public class H264Packetizer extends AbstractPacketizer {
 	 * If it is too big, we split it in FU-A units (RFC 3984)
 	 */
 	private void send() {
-
 		int sum = 1, len = 0;
 		
 		// Read nal unit length (4 bytes) and nal unit header (1 byte)
@@ -231,7 +226,6 @@ public class H264Packetizer extends AbstractPacketizer {
 
 			}
 
-
 		}
 		
 	}
@@ -240,9 +234,7 @@ public class H264Packetizer extends AbstractPacketizer {
 	 *  Writes <i>length</i> bytes from the InputStream in the FIFO
 	 */
 	private int fillFifo(int length) {
-		
 		int sum = 0, len = 0;
-		
 		try {
 			while (sum<length) {
 				len = fifo.write(fis, length-sum);
@@ -252,13 +244,11 @@ public class H264Packetizer extends AbstractPacketizer {
 		} catch (IOException e) {
 			return -1;
 		}
-		
 		return sum;
-		
 	}
 	
 	/**
-	 * The InputStream may start with a header (moov atom or maybe some other atoms) that we need to skip
+	 * The InputStream may start with a header that we need to skip
 	 */
 	private void skipHeader() throws IOException {
 
@@ -269,8 +259,11 @@ public class H264Packetizer extends AbstractPacketizer {
 			fis.read(buffer,rtphl,8);
 			if (buffer[rtphl+4] == 'm' && buffer[rtphl+5] == 'd' && buffer[rtphl+6] == 'a' && buffer[rtphl+7] == 't') break;
 			len = (buffer[rtphl+3]&0xFF) + (buffer[rtphl+2]&0xFF)*256 + (buffer[rtphl+1]&0xFF)*65536;
-			if (len<=7) break;
-			//Log.e(TAG,"Atom skipped: "+printBuffer(rtphl+4,rtphl+8)+" size: "+len);
+			if (len<8 || len>1000) {
+				Log.e(TAG,"Malformed header :/ len: "+len+" available: "+fis.available());
+				break;
+			}
+			Log.d(TAG,"Atom skipped: "+printBuffer(rtphl+4,rtphl+8)+" size: "+len);
 			fis.read(buffer,rtphl,len-8);
 		}
 		
@@ -289,10 +282,9 @@ public class H264Packetizer extends AbstractPacketizer {
 	/********************************************************************************/
 	/******** Simple fifo that will contain the NAL units waiting to be sent ********/
 	/********************************************************************************/
-	public class SimpleFifo {
+	private static class SimpleFifo {
 
 		private final static String TAG = "SimpleFifo";
-		
 		private int length = 0, tail = 0, head = 0;
 		private byte[] buffer;
 		private Object mutex = new Object();
@@ -301,32 +293,11 @@ public class H264Packetizer extends AbstractPacketizer {
 			this.length = length;
 			buffer = new byte[length];
 		}
-		
-		public void write(byte[] buffer, int offset, int length) {
-			
-			synchronized (mutex) {
-			
-				if (tail+length<this.length) {
-					System.arraycopy(buffer, offset, this.buffer, tail, length);
-					tail += length;
-				}
-				else {
-					int u = this.length-tail;
-					System.arraycopy(buffer, offset, this.buffer, tail, u);
-					System.arraycopy(buffer, offset+u, this.buffer, 0, length-u);
-					tail = length-u;
-				}
-
-			}
-			
-		}
 
 		public int write(InputStream fis, int length) throws IOException {
-			
 			int len = 0;
 			
 			synchronized (mutex) {
-			
 				if (tail+length<this.length) {
 					if ((len = fis.read(buffer,tail,length)) == -1) return -1;
 					tail += len;
@@ -342,19 +313,13 @@ public class H264Packetizer extends AbstractPacketizer {
 						len = length;
 					}
 				}
-
 			}
-			
 			return len;
-			
 		}
 		
 		public int read(byte[] buffer, int offset, int length) {
-			
 			synchronized (mutex) {
-
 				length = length>available() ? available() : length;
-
 				if (head+length<this.length) {
 					System.arraycopy(this.buffer, head, buffer, offset, length);
 					head += length;
@@ -365,12 +330,14 @@ public class H264Packetizer extends AbstractPacketizer {
 					System.arraycopy(this.buffer, 0, buffer, offset+u, length-u);
 					head = length-u;
 				}
-
 			}
-
 			return length;
 		}
 
+		public void flush() {
+			tail = head = 0;
+		}
+		
 		public int available() {
 			int av = 0;
 			synchronized (mutex) {

@@ -41,8 +41,9 @@ public class RtpSocket {
 	private int seq = 0;
 	private boolean upts = false;
 	private int ssrc;
+	private int port = -1;
 	
-	public static final int headerLength = 12;
+	public static final int RTP_HEADER_LENGTH = 12;
 	public static final int MTU = 1500;
 	
 	public RtpSocket(byte[] buffer, InetAddress dest, int dport) {
@@ -93,6 +94,7 @@ public class RtpSocket {
 	}
 	
 	public void setDestination(InetAddress dest, int dport) {
+		port = dport;
 		upack.setPort(dport);
 		upack.setAddress(dest);
 	}
@@ -101,6 +103,10 @@ public class RtpSocket {
 		return buffer;
 	}
 	
+	public int getPort() {
+		return port;
+	}
+
 	public int getLocalPort() {
 		return usock.getLocalPort();
 	}
@@ -135,15 +141,6 @@ public class RtpSocket {
 	public void markNextPacket() {
 		upts = true;
 		buffer[1] += 0x80; // Mark next packet
-	}
-	
-	public boolean isMarked() {
-		return upts;
-	}
-	
-	// Call this only one time !
-	public void markAllPackets() {
-		buffer[1] += 0x80;
 	}
 	
 	private void setLong(long n, int begin, int end) {

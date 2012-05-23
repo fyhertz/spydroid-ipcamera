@@ -27,7 +27,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 
-import net.majorkernelpanic.libmp4.MP4Config;
 import android.content.Context;
 import android.util.Log;
 import android.view.SurfaceHolder;
@@ -43,8 +42,12 @@ public class StreamingManager {
 	private InetAddress destination;
 	
 	private class Track {
-		public String descriptor;
-		public MediaStream stream;
+		public Track(MediaStream stream, boolean enabled) {
+			this.enabled = enabled;
+			this.stream = stream;
+		}
+		MediaStream stream;
+		boolean enabled = true;
 	}
 	
 	public StreamingManager(Context context) {
@@ -54,72 +57,93 @@ public class StreamingManager {
 	// Contains a list of all the tracks that has been added
 	private HashMap<Integer,Track> trackList = new HashMap<Integer,Track>();
 	
+	/** 
+	 * Starts a new session: all previous tracks are removed from the current session, 
+	 * you can then call "add" methods to add some tracks to the new session
+	 */
+	public void startNewSession() {
+		Iterator<Track> it = trackList.values().iterator();
+		while (it.hasNext()) {
+			it.next().enabled = false;
+		}
+	}
+	
 	public void addH264Track(int videoSource, int destinationPort, VideoQuality videoQuality, SurfaceHolder surfaceHolder) throws IllegalStateException, IOException {
 		
-		H264Stream stream = new H264Stream(context);
+		Track track = findTrackByClass(H264Stream.class);
+		H264Stream stream;
+		if (track==null) {
+			stream = new H264Stream(context,0);
+			trackList.put(generateId(), new Track(stream,true));
+		}
+		else {
+			stream = (H264Stream) track.stream;
+			track.enabled = true;
+		}
 		stream.setDestination(destination, destinationPort);
 		stream.setVideoQuality(videoQuality);
 		stream.setPreviewDisplay(surfaceHolder);
-		stream.testH264();
-		
-		Track track = new Track();
-		track.stream = stream;
-		
-		MP4Config config = stream.getMP4Config();
-		track.descriptor = "m=video "+String.valueOf(destinationPort)+" RTP/AVP 96\r\n" +
-				   "b=RR:0\r\n" +
-				   "a=rtpmap:96 H264/90000\r\n" +
-				   "a=fmtp:96 packetization-mode=1;profile-level-id="+config.getProfileLevel()+";sprop-parameter-sets="+config.getB64SPS()+","+config.getB64PPS()+";\r\n";
-		
-		trackList.put(generateId(), track);
 		
 	}
 	
 	public void addAMRNBTrack(int destinationPort) {
 		
-		AMRNBStream stream = new AMRNBStream();
+		Track track = findTrackByClass(AMRNBStream.class);
+		AMRNBStream stream;
+		if (track==null) {
+			stream = new AMRNBStream();
+			trackList.put(generateId(), new Track(stream,true));
+		}
+		else {
+			stream = (AMRNBStream) track.stream;
+			track.enabled = true;
+		}
 		stream.setDestination(destination, destinationPort);
-		
-		Track track = new Track();
-		track.stream = new AMRNBStream();
-		track.descriptor = "m=audio "+String.valueOf(destinationPort)+" RTP/AVP 96\r\n" +
-				   "b=AS:128\r\n" +
-				   "b=RR:0\r\n" +
-				   "a=rtpmap:96 AMR/8000\r\n" +
-				   "a=fmtp:96 octet-align=1;\r\n";
-		
-		trackList.put(generateId(), track);
 		
 	}
 	
-
+	public void setFlashState(boolean state) {
+		Iterator<Track> it = trackList.values().iterator();
+		while (it.hasNext()) {
+			MediaStream stream = it.next().stream;
+			if (stream.getClass().equals(H264Stream.class)) {
+				((H264Stream)stream).setFlashState(state);
+			}
+		}
+	}
+	
 	public int getTrackPort(int trackId) {
-		return trackList.get(trackId).stream.getPacketizer().getRtpSocket().getLocalPort();
+		return trackList.get(trackId).stream.getDestinationPort();
 	}
 	
 	public int getTrackSSRC(int trackId) {
 		return trackList.get(trackId).stream.getPacketizer().getRtpSocket().getSSRC();
 	}
 	
-	public String getTrackDescriptor(int trackId) {
-		return trackList.get(trackId).descriptor;
-	}
-	
-	public String getSessionDescriptor() {
+	/** Return a session descriptor that can be stored in a file or sent to a client with RTSP */
+	public String getSessionDescriptor() throws IllegalStateException, IOException {
 		String sdp = "";
 		Track t;
 		int i;
 		Iterator<Integer> it = trackList.keySet().iterator();
 		while (it.hasNext()) {
 			i = it.next(); t = trackList.get(i);
-			sdp += t.descriptor;
-			sdp += "a=control:trackID="+i;
+			if (t.enabled) {
+				sdp += t.stream.generateSdpDescriptor();
+				sdp += "a=control:trackID="+i+"\r\n";
+			}
 		}
 		return sdp;
 	}
 	
-	public void flush() {
-		stopAll();
+	/** Delete all existing tracks & release associated resources */
+	public synchronized void flush() {
+		Iterator<Track> it = trackList.values().iterator();
+		while (it.hasNext()) {
+			MediaStream stream = it.next().stream;
+			stream.stop();
+			stream.release();
+		}
 		trackList.clear();
 	}
 	
@@ -130,38 +154,41 @@ public class StreamingManager {
 	public void setDestination(InetAddress destination) {
 		this.destination =  destination;
 	}
-
-	public void prepareAll() throws IllegalStateException, IOException {
+	
+	/** Start all streams of the session 
+	 * @throws IOException */
+	public void startAll() throws RuntimeException, IllegalStateException, IOException {
 		Iterator<Track> it = trackList.values().iterator();
-		
-		// Let's prepare all MediaStreamers
+		Track t;
 		while (it.hasNext()) {
-			MediaStream stream = it.next().stream;
-			stream.prepare();
+			t = it.next();
+			if (t.enabled && !t.stream.isStreaming()) {
+				t.stream.prepare();
+				t.stream.start();
+			}
 		}
 		
 	}
 	
-	public void startAll() throws RuntimeException, IllegalStateException {
-		Iterator<Track> it = trackList.values().iterator();
-		
-		// Let's start all MediaStreamers
-		while (it.hasNext()) {
-			MediaStream stream = it.next().stream;
-			stream.start();
-		}
-		
-	}
-	
+	/** Stop existing streams */
 	public void stopAll() {
 		Iterator<Track> it = trackList.values().iterator();
-		
-		// Let's stop all MediaStreamers
 		while (it.hasNext()) {
 			MediaStream stream = it.next().stream;
 			stream.stop();
 		}
-		
+	}
+	
+	private Track findTrackByClass(Class<?> aClass) {
+		Iterator<Track> it = trackList.values().iterator();
+		while (it.hasNext()) {
+			Track t = it.next();
+			MediaStream stream = t.stream;
+			if (stream.getClass().equals(aClass)) {
+				return t;
+			}
+		}
+		return null;
 	}
 	
 	private int generateId() {
