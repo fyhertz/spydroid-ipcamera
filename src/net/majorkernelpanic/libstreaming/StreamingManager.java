@@ -155,8 +155,7 @@ public class StreamingManager {
 		this.destination =  destination;
 	}
 	
-	/** Start all streams of the session 
-	 * @throws IOException */
+	/** Start all streams of the session */
 	public void startAll() throws RuntimeException, IllegalStateException, IOException {
 		Iterator<Track> it = trackList.values().iterator();
 		Track t;

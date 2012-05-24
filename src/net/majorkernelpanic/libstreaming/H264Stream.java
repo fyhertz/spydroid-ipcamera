@@ -57,7 +57,6 @@ public class H264Stream extends MediaStream {
 				// We reconnect to camera just to stop the preview
 				camera.reconnect();
 				camera.stopPreview();
-				camera.unlock();
 			} catch (IOException ignore) {}
 		}
 	}
