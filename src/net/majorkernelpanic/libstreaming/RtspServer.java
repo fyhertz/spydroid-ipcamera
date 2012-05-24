@@ -107,7 +107,7 @@ public class RtspServer implements Runnable {
 		if (running) {
 			running = false;
 			try {
-				client.close();
+				if (client != null) client.close();
 				server.close();
 				streamingManager.flush();
 			} catch (IOException ignore) {}
