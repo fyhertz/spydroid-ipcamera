@@ -120,7 +120,8 @@ public class H264Stream extends MediaStream {
 		surfaceHolderCallback = new SurfaceHolder.Callback() {
 			//private boolean wasStreaming = false;
 			public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
-				// ignore
+				Log.d(TAG,"Surface changed !");
+				surfaceHolder = holder;
 			}
 			public void surfaceCreated(SurfaceHolder holder) {
 				// If it was streaming, we try to restart it

@@ -35,17 +35,15 @@ import android.util.Log;
  *   Stream must begin with a 6 bytes long header: "#!AMR\n", it will be skipped
  *   
  */
-public class AMRNBPacketizer extends AbstractPacketizer {
+public class AMRNBPacketizer extends AbstractPacketizer implements Runnable {
 	
 	private final static String TAG = "AMRNBPacketizer";
-	
 	private final int AMR_HEADER_LENGTH = 6; // "#!AMR\n"
     private static final int AMR_FRAME_HEADER_LENGTH = 1; // Each frame has a short header
 
     private static final int[] sBitrates = {
         4750, 5150, 5900, 6700, 7400, 7950, 1020, 1220
     };
-
     private static final int[] sFrameBits = {95, 103, 118, 134, 148, 159, 204, 244};
 	
 	private long ts = 0;
@@ -54,6 +52,17 @@ public class AMRNBPacketizer extends AbstractPacketizer {
 		super();
 	}
 
+	public void start() {
+		if (!running) {
+			running = true;
+			new Thread(this).start();
+		}
+	}
+
+	public void stop() {
+		running = false;
+	}
+	
 	public void run() {
 	
 		int frameLength, frameType;
@@ -80,9 +89,9 @@ public class AMRNBPacketizer extends AbstractPacketizer {
 			// RFC 3267 Page 14: 
 			// "For AMR, the sampling frequency is 8 kHz, corresponding to
 			// 160 encoded speech samples per frame from each channel."
-			rsock.updateTimestamp(ts); ts+=160;
-			rsock.markNextPacket();
-			rsock.send(rtphl+1+AMR_FRAME_HEADER_LENGTH+frameLength);
+			socket.updateTimestamp(ts); ts+=160;
+			socket.markNextPacket();
+			socket.send(rtphl+1+AMR_FRAME_HEADER_LENGTH+frameLength);
 			
 		}
 		
@@ -95,7 +104,7 @@ public class AMRNBPacketizer extends AbstractPacketizer {
 		
 		while (sum<length) {
 			try { 
-				len = fis.read(buffer, offset+sum, length-sum);
+				len = is.read(buffer, offset+sum, length-sum);
 				if (len<0) {
 					Log.e(TAG,"End of stream");
 				}

@@ -28,50 +28,38 @@ import java.net.InetAddress;
  * Each packetizer inherits from this one and therefore uses RTP and UDP
  *
  */
-abstract public class AbstractPacketizer implements Runnable{
+abstract public class AbstractPacketizer {
 	
-	protected RtpSocket rsock = null;
-	protected InputStream fis = null;
+	protected static final int rtphl = RtpSocket.RTP_HEADER_LENGTH;
+	
+	protected RtpSocket socket = null;
+	protected InputStream is = null;
 	protected boolean running = false;
+	protected byte[] buffer;
 	
-	protected byte[] buffer;	
-	
-	protected final int rtphl = RtpSocket.RTP_HEADER_LENGTH;
-	
-
 	public AbstractPacketizer() {
-		rsock = new RtpSocket();
-		buffer = rsock.getBuffer();
+		socket = new RtpSocket();
+		buffer = socket.getBuffer();
 	}	
 	
 	public AbstractPacketizer(InputStream fis) {
-		this.fis = fis;
+		this.is = fis;
 	}
 	
 	public RtpSocket getRtpSocket() {
-		return rsock;
+		return socket;
 	}
 	
 	public void setInputStream(InputStream fis) {
-		this.fis = fis;
+		this.is = fis;
 	}
 	
 	public void setDestination(InetAddress dest, int dport) {
-		rsock.setDestination(dest, dport);
+		socket.setDestination(dest, dport);
 	}
 	
-	public void start() {
-		if (!running) {
-			running = true;
-			new Thread(this).start();
-		}
-	}
-
-	public void stop() {
-		running = false;
-	}
-	
-	abstract public void run();
+	public abstract void stop();
+	public abstract void start();
 	
     // Useful for debug
     protected String printBuffer(int start,int end) {

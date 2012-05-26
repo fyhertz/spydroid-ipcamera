@@ -154,11 +154,13 @@ public class RtspServer implements Runnable {
 					break;
 				} catch (IllegalStateException e) {
 					// Invalid request
-					Log.e(TAG,"Bad request");
+					Log.e(TAG,"Bad request or something wrong with a MediaStream");
+					if (e.getMessage()!=null) Log.e(TAG,e.getMessage());
 					continue;
 				} catch (IOException e) {
 					// Invalid request
-					Log.e(TAG,"Bad request");
+					Log.e(TAG,"Bad request or something wrong with a MediaStream");
+					if (e.getMessage()!=null) Log.e(TAG,e.getMessage());
 					continue;
 				} 
 				
