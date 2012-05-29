@@ -37,7 +37,8 @@ import android.util.Log;
  */
 public class AMRNBPacketizer extends AbstractPacketizer implements Runnable {
 	
-	private final static String TAG = "AMRNBPacketizer";
+	public final static String TAG = "AMRNBPacketizer";
+	
 	private final int AMR_HEADER_LENGTH = 6; // "#!AMR\n"
     private static final int AMR_FRAME_HEADER_LENGTH = 1; // Each frame has a short header
 
@@ -84,7 +85,7 @@ public class AMRNBPacketizer extends AbstractPacketizer implements Runnable {
 			// And we read the payload
 			fill(rtphl+2,frameLength);
 			
-			Log.d(TAG,"Frame length: "+frameLength+" frameType: "+frameType);
+			//Log.d(TAG,"Frame length: "+frameLength+" frameType: "+frameType);
 			
 			// RFC 3267 Page 14: 
 			// "For AMR, the sampling frequency is 8 kHz, corresponding to

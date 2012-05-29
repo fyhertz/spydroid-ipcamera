@@ -20,8 +20,12 @@
 
 package net.majorkernelpanic.spydroid;
 
+import android.content.SharedPreferences;
+import android.content.SharedPreferences.Editor;
 import android.os.Bundle;
+import android.preference.Preference;
 import android.preference.PreferenceActivity;
+import android.preference.PreferenceManager;
 
 public class OptionsActivity extends PreferenceActivity {
 
@@ -30,6 +34,21 @@ public class OptionsActivity extends PreferenceActivity {
         
         addPreferencesFromResource(R.xml.preferences);
         
+        final SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(this);
+        final Preference videoEnabled = findPreference("stream_video");
+        final Preference videoEncoder = findPreference("video_encoder");
+        
+        videoEncoder.setEnabled(settings.getBoolean("stream_video", true));
+        
+        videoEnabled.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
+			public boolean onPreferenceChange(Preference preference, Object newValue) {
+				boolean state = (Boolean)newValue;
+				videoEncoder.setEnabled(state);
+				return true;
+			}
+        	
+        });
+        
     }
-	
+    
 }

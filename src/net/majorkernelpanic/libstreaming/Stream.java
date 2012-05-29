@@ -1,0 +1,22 @@
+package net.majorkernelpanic.libstreaming;
+
+import java.io.IOException;
+import java.net.InetAddress;
+
+public interface Stream {
+
+	public void start() throws IllegalStateException;
+	public void prepare() throws IllegalStateException,IOException;
+	public void stop();
+	public void release();
+	
+	public void setDestination(InetAddress dest, int dport);
+	
+	public int getLocalPort();
+	public int getDestinationPort();
+	public int getSSRC();
+	public String generateSdpDescriptor() throws IllegalStateException, IOException;
+	
+	public boolean isStreaming();
+	
+}

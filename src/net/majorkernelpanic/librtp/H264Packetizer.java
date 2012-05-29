@@ -40,7 +40,8 @@ import android.util.Log;
  */
 public class H264Packetizer extends AbstractPacketizer {
 	
-	private final static String TAG = "H264Packetizer";
+	public final static String TAG = "H264Packetizer";
+	
 	private final static int MAXPACKETSIZE = 1400;
 	private final SimpleFifo fifo = new SimpleFifo(500000);
 	private LinkedList<Chunk> chunks;
@@ -118,6 +119,10 @@ public class H264Packetizer extends AbstractPacketizer {
 				while (running) {
 					
 					// We try to read as much as we can from the camera buffer and measure how long it takes
+					// In a better world we could just wait until an entire unit is received and directly sent it and one thread would be enough !
+					// But some cameras have this annoying habit of delivering more than one NAL unit at once: 
+					// for example if 10 NAL units are delivered every 10 sec we have to guess the duration of each unit
+					// And BECAUSE InputStream.read blocks, another thread is necessary to send the stuff :/
 					oldtime = SystemClock.elapsedRealtime(); sum = 0;
 					try {
 						Thread.sleep(2*sleep[0]/3);

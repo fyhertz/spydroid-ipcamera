@@ -142,7 +142,7 @@ public class QualityListActivity extends ListActivity {
     	
 		listView.setItemChecked(getId(resX+"x"+resY),true);
 		listView.setItemChecked(getId(fps+" fps"),true);
-		listView.setItemChecked(getId(br+" kb/s"),true);
+		listView.setItemChecked(getId((br/1000)+" kb/s"),true);
     	
     }
     

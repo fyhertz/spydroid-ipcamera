@@ -21,8 +21,8 @@
 package net.majorkernelpanic.spydroid;
 
 import net.majorkernelpanic.libstreaming.RtspServer;
-import net.majorkernelpanic.libstreaming.StreamingManager;
-import net.majorkernelpanic.libstreaming.VideoQuality;
+import net.majorkernelpanic.libstreaming.StreamManager;
+import net.majorkernelpanic.libstreaming.video.VideoQuality;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
@@ -54,15 +54,15 @@ public class SpydroidActivity extends Activity implements OnSharedPreferenceChan
     
     static final public String TAG = "SPYDROID";
     
-    private TextView console, ip;
     private ImageView logo;
-    private SurfaceView camera;
-    private SurfaceHolder holder;
-    private VideoQuality defaultVideoQuality = new VideoQuality();
     private PowerManager.WakeLock wl;
+    private StreamManager streamManager;
+    private SurfaceHolder holder;
+    private SurfaceView camera;
+    private TextView console, ip;
+    private VideoQuality defaultVideoQuality = new VideoQuality();
     
     private static RtspServer rtspServer = null;
-    private static StreamingManager streamingManager = null;
     
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -95,37 +95,39 @@ public class SpydroidActivity extends Activity implements OnSharedPreferenceChan
 			log("<b>Spydroid</b>");
 		}
         
-        if (streamingManager == null) {
-	        streamingManager = new StreamingManager(this.getApplicationContext());
-	    	rtspServer = new RtspServer(streamingManager, 8086, handler);
-	    	rtspServer.setSurfaceHolder(holder);
-	    	rtspServer.setDefaultVideoQuality(defaultVideoQuality);
-	    	rtspServer.setDefaultSoundOption(settings.getBoolean("stream_sound", true));
+        if (streamManager == null) {
+        	streamManager = new StreamManager(this.getApplicationContext());
+        	streamManager.setSurfaceHolder(holder);
+	    	streamManager.setDefaultVideoQuality(defaultVideoQuality);
+	    	streamManager.setDefaultSoundOption(settings.getBoolean("stream_sound", true));
+	    	streamManager.setDefaultVideoEncoder(settings.getBoolean("stream_video", true)?Integer.parseInt(settings.getString("video_encoder", "1")):0);
+	    	rtspServer = new RtspServer(streamManager, 8086, handler);
         }
-        
     }
     
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
     	if (key.equals("resX")) {
     		defaultVideoQuality.resX = sharedPreferences.getInt("resX", 640);
-    		rtspServer.setDefaultVideoQuality(defaultVideoQuality);
+    		streamManager.setDefaultVideoQuality(defaultVideoQuality);
     	}
     	else if (key.equals("resY"))  {
     		defaultVideoQuality.resY = sharedPreferences.getInt("resY", 480);
-    		rtspServer.setDefaultVideoQuality(defaultVideoQuality);
+    		streamManager.setDefaultVideoQuality(defaultVideoQuality);
     	}
     	else if (key.equals("fps")) {
     		defaultVideoQuality.frameRate = sharedPreferences.getInt("fps", 15);
-    		rtspServer.setDefaultVideoQuality(defaultVideoQuality);
+    		streamManager.setDefaultVideoQuality(defaultVideoQuality);
     	}
     	else if (key.equals("br")) {
     		defaultVideoQuality.bitRate = sharedPreferences.getInt("br", 1000);
-    		rtspServer.setDefaultVideoQuality(defaultVideoQuality);
+    		streamManager.setDefaultVideoQuality(defaultVideoQuality);
     	}
     	else if (key.equals("stream_sound")) {
-    		rtspServer.setDefaultSoundOption(sharedPreferences.getBoolean("stream_sound", true));
+    		streamManager.setDefaultSoundOption(sharedPreferences.getBoolean("stream_sound", true));
     	}
-    	
+    	else if (key.equals("stream_video") || key.equals("video_encoder")) {
+    		streamManager.setDefaultVideoEncoder(sharedPreferences.getBoolean("stream_video", true)?Integer.parseInt(sharedPreferences.getString("video_encoder", "1")):0);
+    	}
     }
     
     public void onResume() {

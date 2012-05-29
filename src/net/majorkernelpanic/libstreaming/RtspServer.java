@@ -35,19 +35,19 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import net.majorkernelpanic.libstreaming.video.VideoQuality;
+
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URLEncodedUtils;
 
-import android.media.MediaRecorder;
+import android.hardware.Camera.CameraInfo;
 import android.os.Handler;
 import android.util.Log;
-import android.view.SurfaceHolder;
 
 /**
- * 
- *   RtspServer (RFC 2326)
- *   One client handled at a time only
- * 
+ * Implementation of a subset of the RTSP protocol (RFC 2326)
+ * This allow remote control of an android device cameras & microphone
+ * One client at a time only
  */
 public class RtspServer implements Runnable {
 	
@@ -58,37 +58,27 @@ public class RtspServer implements Runnable {
 	public static final int MESSAGE_START = 3;
 	public static final int MESSAGE_STOP = 4;
 	
-	// The RTSP server his just a remote interface for controlling a streamingManager
-	public final StreamingManager streamingManager;
+	// The RTSP server is just an interface that drives a streamManager
+	public final StreamManager streamManager;
 	
-	private ServerSocket server = null; 
 	private Socket client = null;
 	private Handler handler = null;
-	private int port;
-	private VideoQuality defaultVideoQuality = null;
-	private SurfaceHolder surfaceHolder = null;
-	private boolean running = false, defaultSoundEnabled = true;
 	private OutputStream output = null;
-	
-	public RtspServer(StreamingManager streamingManager, int port, Handler handler) {
-		this.port = port;
-		this.handler = handler;
-		this.streamingManager = streamingManager;
-	}
+	private int port;
+	private boolean running = false;
+	private ServerSocket server = null; 
 
-	/** */
-	public void setDefaultVideoQuality(VideoQuality quality) {
-		defaultVideoQuality = quality;
-	}
 	
-	/** */
-	public void setSurfaceHolder(SurfaceHolder sh) {
-		surfaceHolder = sh;
-	}
-	
-	/** */
-	public void setDefaultSoundOption(boolean enable) {
-		defaultSoundEnabled = enable;
+	/**
+	 * Constructor
+	 * @param context The context of the app
+	 * @param port The port the RtspServer will listen on
+	 * @param handler Handler of the UI Thread, it will be used to send messages to the ui
+	 */
+	public RtspServer(StreamManager streamManager, int port, Handler handler) {
+		this.handler = handler;
+		this.port = port;
+		this.streamManager = streamManager;
 	}
 	
 	public void start() {
@@ -109,7 +99,7 @@ public class RtspServer implements Runnable {
 			try {
 				if (client != null) client.close();
 				server.close();
-				streamingManager.flush();
+				streamManager.flush();
 			} catch (IOException ignore) {}
 		}
 	}
@@ -135,8 +125,8 @@ public class RtspServer implements Runnable {
 				continue;
 			}
 			
-			streamingManager.startNewSession();
-			streamingManager.setDestination(getClientAddress());
+			streamManager.startNewSession();
+			streamManager.setDestination(getClientAddress());
 			
 			log("Connection from "+getClientAddress().getHostAddress());
 			
@@ -167,7 +157,7 @@ public class RtspServer implements Runnable {
 			}
 			
 			// Streaming stop when client disconnect
-			streamingManager.stopAll();
+			streamManager.stopAll();
 			// Inform the UI Thread that streaming has stopped
 			handler.obtainMessage(MESSAGE_STOP).sendToTarget();
 			
@@ -192,10 +182,6 @@ public class RtspServer implements Runnable {
 		/* ********************************************************************************** */
 		if (request.method.toUpperCase().equals("DESCRIBE")) {
 			
-			if (surfaceHolder==null) {
-				throw new IllegalStateException("setSurfaceHolder() should be called before a client connects");
-			}
-			
 			// Here we parse the requested URI
 			List<NameValuePair> params = URLEncodedUtils.parse(URI.create(request.uri),"UTF-8");
 			if (params.size()>0) {
@@ -204,55 +190,57 @@ public class RtspServer implements Runnable {
 					
 					// H264
 					if (param.getName().equals("h264")) {
-						VideoQuality quality = defaultVideoQuality.clone();
-						String[] config = param.getValue().split("-");
-						try {
-							quality.bitRate = Integer.parseInt(config[0])*1000; // conversion to bit/s
-							quality.frameRate = Integer.parseInt(config[1]);
-							quality.resX = Integer.parseInt(config[2]);
-							quality.resY = Integer.parseInt(config[3]);
-						}
-						catch (IndexOutOfBoundsException ignore) {}
-						log("H264: "+quality.resX+"x"+quality.resY+", "+quality.frameRate+" fps, "+quality.bitRate+" bps");
-						streamingManager.addH264Track(MediaRecorder.VideoSource.CAMERA, 5006, quality, surfaceHolder);
+						VideoQuality quality = VideoQuality.parseQuality(param.getValue());
+						streamManager.addVideoTrack(StreamManager.VIDEO_H264, CameraInfo.CAMERA_FACING_BACK, 5006, quality);
+					}
+					
+					// H263
+					else if (param.getName().equals("h263")) {
+						VideoQuality quality = VideoQuality.parseQuality(param.getValue());
+						streamManager.addVideoTrack(StreamManager.VIDEO_H263, CameraInfo.CAMERA_FACING_BACK, 5006, quality);
 					}
 					
 					// AMRNB
 					else if (param.getName().equals("amrnb")) {
 						log("ARMNB");
-						streamingManager.addAMRNBTrack(5004);
+						streamManager.addAudioTrack(StreamManager.AUDIO_AMRNB, 5004);
+					}
+					
+					// Generic Audio Stream -> make use of api level 12
+					// TODO: Doesn't work :/
+					else if (param.getName().equals("testnewapi")) {
+						log("Generic Audio Stream: AMR");
+						streamManager.addAudioTrack(StreamManager.AUDIO_ANDROID_AMR, 5004);
 					}
 					
 					// FLASH ON/OFF
 					else if (param.getName().equals("flash")) {
 						if (param.getValue().equals("on")) {
-							streamingManager.setFlashState(true);
+							streamManager.setFlashState(true);
 						} 
 						else {
-							streamingManager.setFlashState(false);
+							streamManager.setFlashState(false);
 						}
 					}
 					
 					// ROTATION
 					else if (param.getName().equals("rotation")) {
-						defaultVideoQuality.orientation = Integer.parseInt(param.getValue());
+						streamManager.defaultVideoQuality.orientation = Integer.parseInt(param.getValue());
 					}
 					
 				}
 			} 
-			// Uri has no parameters: the default behaviour is to add one h264 track and one amrnb track
+			// Uri has no parameters: the default behavior is to add one h264 track and one amrnb track
 			else {
-				streamingManager.addH264Track(MediaRecorder.VideoSource.CAMERA, 5006, defaultVideoQuality, surfaceHolder);
-				if (defaultSoundEnabled) {
-					streamingManager.addAMRNBTrack(5004);
-				}
+				streamManager.addVideoTrack(5006);
+				streamManager.addAudioTrack(5004);
 			}
 			
-			String requestContent = streamingManager.getSessionDescriptor();
+			String requestContent = streamManager.getSessionDescriptor();
 			String requestAttributes = "Content-Base: "+getServerAddress()+":"+port+"/\r\n" +
 					"Content-Type: application/sdp\r\n";
 			
-			streamingManager.startAll();
+			streamManager.startAll();
 			
 			handler.obtainMessage(MESSAGE_START).sendToTarget();
 			
@@ -288,7 +276,7 @@ public class RtspServer implements Runnable {
 			
 			trackId = Integer.parseInt(m.group(1));
 			
-			if (!streamingManager.trackExists(trackId)) {
+			if (!streamManager.trackExists(trackId)) {
 				response.status = Response.STATUS_NOT_FOUND;
 				return response;
 			}
@@ -297,7 +285,7 @@ public class RtspServer implements Runnable {
 			m = p.matcher(request.headers.get("Transport"));
 			
 			if (!m.find()) {
-				int port = streamingManager.getTrackPort(trackId);
+				int port = streamManager.getTrackPort(trackId);
 				p1 = String.valueOf(port);
 				p2 = String.valueOf(port+1);
 			}
@@ -305,7 +293,7 @@ public class RtspServer implements Runnable {
 				p1 = m.group(1); p2 = m.group(2);
 			}
 			
-			ssrc = streamingManager.getTrackSSRC(trackId);
+			ssrc = streamManager.getTrackSSRC(trackId);
 			
 			String attributes = "Transport: RTP/AVP/UDP;unicast;client_port="+p1+"-"+p2+";server_port=54782-54783;ssrc="+Integer.toHexString(ssrc)+";mode=play\r\n" +
 								"Session: "+ "1185d20035702ca" + "\r\n" +

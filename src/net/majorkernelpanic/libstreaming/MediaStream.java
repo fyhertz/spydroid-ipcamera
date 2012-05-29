@@ -32,12 +32,11 @@ import android.net.LocalSocketAddress;
 import android.util.Log;
 
 /**
- *  
- *  A MediaRecorder that streams what is recorder using a packetizer
+ *  A MediaRecorder that streams what it records using a packetizer
  *  specified with setPacketizer 
- * 
+ *  Use it just like a regular MediaRecorder except for setOutputFile()
  */
-public abstract class MediaStream extends MediaRecorder {
+public abstract class MediaStream extends MediaRecorder implements Stream {
 
 	protected static final String TAG = "MediaStream";
 	
@@ -74,6 +73,10 @@ public abstract class MediaStream extends MediaRecorder {
 	
 	public int getDestinationPort() {
 		return this.packetizer.getRtpSocket().getPort();
+	}
+	
+	public int getLocalPort() {
+		return this.packetizer.getRtpSocket().getLocalPort();
 	}
 	
 	public void setMode(int mode) throws IllegalStateException {
@@ -131,6 +134,10 @@ public abstract class MediaStream extends MediaRecorder {
 		}
 	}
 	
+	public int getSSRC() {
+		return getPacketizer().getRtpSocket().getSSRC();
+	}
+	
 	public abstract String generateSdpDescriptor()  throws IllegalStateException, IOException;
 	
 	private void createSockets() throws IOException {
@@ -150,11 +157,13 @@ public abstract class MediaStream extends MediaRecorder {
 		} catch (IOException ignore) {}
 	}
 	
-	protected void finalize() {
+	public void release() {
+		stop();
 		try {
 			lss.close();
 		}
 		catch (IOException ignore) {}
+		super.release();
 	}
 	
 }
