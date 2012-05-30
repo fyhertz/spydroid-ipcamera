@@ -132,7 +132,7 @@ public class H264Packetizer extends AbstractPacketizer {
 					sum = fifo.write(is,100000);
 					duration = SystemClock.elapsedRealtime() - oldtime;
 					
-					Log.d(TAG,"New chunk -> sleep: "+sleep[0]+" duration: "+duration+" sum: "+sum+" length: "+length+" chunks: "+chunks.size());
+					//Log.d(TAG,"New chunk -> sleep: "+sleep[0]+" duration: "+duration+" sum: "+sum+" length: "+length+" chunks: "+chunks.size());
 					chunks.add(new Chunk(sum,duration));
 					sync.release();
 				}
