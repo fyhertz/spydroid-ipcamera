@@ -126,6 +126,7 @@ public abstract class MediaStream extends MediaRecorder implements Stream {
 				super.stop();
 			}
 			catch (IllegalStateException ignore) {}
+			catch (RuntimeException ignore) {}
 			finally {
 				super.reset();
 				streaming = false;
