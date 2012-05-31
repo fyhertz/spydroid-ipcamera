@@ -42,6 +42,7 @@ import org.apache.http.client.utils.URLEncodedUtils;
 
 import android.hardware.Camera.CameraInfo;
 import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 
 /**
@@ -203,6 +204,11 @@ public class RtspServer implements Runnable {
 					// AMRNB
 					else if (param.getName().equals("amrnb")) {
 						streamManager.addAudioTrack(StreamManager.AUDIO_AMRNB, 5004);
+					}
+					
+					// AMR -> just for convenience: does the same as AMRNB
+					else if (param.getName().equals("aac")) {
+						streamManager.addAudioTrack(StreamManager.AUDIO_AAC, 5004);
 					}
 					
 					// AMR -> does the same as AMRNB
@@ -418,6 +424,7 @@ public class RtspServer implements Runnable {
 			} catch (Exception ignore) {}
 			
 			String response = 	"RTSP/1.0 "+status+"\r\n" +
+					"Server: MajorKernelPanic RTSP Server !\r\n" +
 					(seqid>=0?("Cseq: " + seqid + "\r\n"):"") +
 					"Content-Length: " + content.length() + "\r\n" +
 					attributes +

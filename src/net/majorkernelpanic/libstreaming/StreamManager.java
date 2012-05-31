@@ -23,6 +23,7 @@ package net.majorkernelpanic.libstreaming;
 import java.io.IOException;
 import java.net.InetAddress;
 
+import net.majorkernelpanic.libstreaming.audio.AACStream;
 import net.majorkernelpanic.libstreaming.audio.AMRNBStream;
 import net.majorkernelpanic.libstreaming.audio.GenericAudioStream;
 import net.majorkernelpanic.libstreaming.video.H263Stream;
@@ -31,7 +32,6 @@ import net.majorkernelpanic.libstreaming.video.VideoQuality;
 import net.majorkernelpanic.libstreaming.video.VideoStream;
 import android.content.Context;
 import android.hardware.Camera.CameraInfo;
-import android.media.MediaRecorder;
 import android.util.Log;
 import android.view.SurfaceHolder;
 
@@ -47,12 +47,12 @@ public class StreamManager {
 	public final static int VIDEO_H263 = 2;
 	public final static int AUDIO_AMRNB = 3;
 	public final static int AUDIO_ANDROID_AMR = 4;
+	public final static int AUDIO_AAC = 5;
 	
 	private final Context context;
 	private InetAddress destination;
 	private SurfaceHolder surfaceHolder;
-	private int defaultVideoEncoder = VIDEO_H264;
-	private boolean defaultSoundEnabled = true;
+	private int defaultVideoEncoder = VIDEO_H264, defaultAudioEncoder = AUDIO_AMRNB;
 	public VideoQuality defaultVideoQuality = VideoQuality.defaultVideoQualiy.clone();
 	private int defaultCamera = CameraInfo.CAMERA_FACING_BACK;
 	
@@ -74,8 +74,8 @@ public class StreamManager {
 	}
 	
 	/** */
-	public void setDefaultSoundOption(boolean enable) {
-		defaultSoundEnabled = enable;
+	public void setDefaultAudioEncoder(int encoder) {
+		defaultAudioEncoder = encoder;
 	}
 	
 	/** */
@@ -116,7 +116,7 @@ public class StreamManager {
 	}
 	
 	public void addAudioTrack(int destinationPort) {
-		if (defaultSoundEnabled) addAudioTrack(AUDIO_AMRNB, destinationPort);
+		addAudioTrack(defaultAudioEncoder, destinationPort);
 	}
 	
 	public void addAudioTrack(int encoder, int destinationPort) {
@@ -129,6 +129,10 @@ public class StreamManager {
 		case AUDIO_ANDROID_AMR:
 			Log.d(TAG,"Audio streaming: GENERIC");
 			audioStream = new GenericAudioStream();
+			break;
+		case AUDIO_AAC:
+			Log.d(TAG,"Audio streaming: AAC (experimental)");
+			audioStream = new AACStream();
 			break;
 		}
 		

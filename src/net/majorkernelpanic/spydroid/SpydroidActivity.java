@@ -99,7 +99,7 @@ public class SpydroidActivity extends Activity implements OnSharedPreferenceChan
         	streamManager = new StreamManager(this.getApplicationContext());
         	streamManager.setSurfaceHolder(holder);
 	    	streamManager.setDefaultVideoQuality(defaultVideoQuality);
-	    	streamManager.setDefaultSoundOption(settings.getBoolean("stream_sound", true));
+	    	streamManager.setDefaultAudioEncoder(settings.getBoolean("stream_audio", true)?Integer.parseInt(settings.getString("audio_encoder", "1")):0);
 	    	streamManager.setDefaultVideoEncoder(settings.getBoolean("stream_video", true)?Integer.parseInt(settings.getString("video_encoder", "1")):0);
 	    	rtspServer = new RtspServer(streamManager, 8086, handler);
         }
@@ -122,8 +122,8 @@ public class SpydroidActivity extends Activity implements OnSharedPreferenceChan
     		defaultVideoQuality.bitRate = sharedPreferences.getInt("br", 1000);
     		streamManager.setDefaultVideoQuality(defaultVideoQuality);
     	}
-    	else if (key.equals("stream_sound")) {
-    		streamManager.setDefaultSoundOption(sharedPreferences.getBoolean("stream_sound", true));
+    	else if (key.equals("stream_audio") || key.equals("audio_encoder")) { 
+    		streamManager.setDefaultAudioEncoder(sharedPreferences.getBoolean("stream_audio", true)?Integer.parseInt(sharedPreferences.getString("audio_encoder", "1")):0);
     	}
     	else if (key.equals("stream_video") || key.equals("video_encoder")) {
     		streamManager.setDefaultVideoEncoder(sharedPreferences.getBoolean("stream_video", true)?Integer.parseInt(sharedPreferences.getString("video_encoder", "1")):0);

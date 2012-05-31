@@ -85,6 +85,16 @@ public abstract class VideoStream extends MediaStream {
 		super.setCamera(camera);
 		super.setVideoSource(MediaRecorder.VideoSource.CAMERA);
 		super.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
+		if (mode==MODE_DEFAULT) {
+			super.setMaxDuration(2000);
+			super.setMaxFileSize(Integer.MAX_VALUE);
+		} else {
+			// On some phones a RuntimeException might be thrown :/
+			try {
+				super.setMaxDuration(0);
+				super.setMaxFileSize(Integer.MAX_VALUE); 
+			} catch (RuntimeException ignore) {}
+		}
 		super.setVideoEncoder(videoEncoder);
 		super.setPreviewDisplay(surfaceHolder.getSurface());
 		super.setVideoSize(quality.resX,quality.resY);
@@ -98,12 +108,11 @@ public abstract class VideoStream extends MediaStream {
 		
 		// Quality has been updated
 		qualityHasChanged = false;
-		
+
 	}
 	
 	/**
 	 * Call this one instead of setPreviewDisplay(Surface sv) and don't worry about the SurfaceHolder.Callback
-	 * Streaming will be automatically resumed when the surface is recreated
 	 */
 	public void setPreviewDisplay(SurfaceHolder sh) {
 		surfaceHolder = sh;

@@ -37,14 +37,26 @@ public class OptionsActivity extends PreferenceActivity {
         final SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(this);
         final Preference videoEnabled = findPreference("stream_video");
         final Preference videoEncoder = findPreference("video_encoder");
+        final Preference audioEnabled = findPreference("stream_audio");
+        final Preference audioEncoder = findPreference("audio_encoder");
         
         videoEncoder.setEnabled(settings.getBoolean("stream_video", true));
+        audioEncoder.setEnabled(settings.getBoolean("stream_audio", true));
         
         videoEnabled.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
-			public boolean onPreferenceChange(Preference preference, Object newValue) {
-				boolean state = (Boolean)newValue;
-				videoEncoder.setEnabled(state);
-				return true;
+        	public boolean onPreferenceChange(Preference preference, Object newValue) {
+        		boolean state = (Boolean)newValue;
+        		videoEncoder.setEnabled(state);
+        		return true;
+			}
+        	
+        });
+        
+        audioEnabled.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
+        	public boolean onPreferenceChange(Preference preference, Object newValue) {
+        		boolean state = (Boolean)newValue;
+        		audioEncoder.setEnabled(state);
+        		return true;
 			}
         	
         });

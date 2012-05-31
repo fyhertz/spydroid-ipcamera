@@ -22,17 +22,15 @@ package net.majorkernelpanic.libstreaming.video;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
 
 import net.majorkernelpanic.libmp4.MP4Config;
 import net.majorkernelpanic.librtp.H264Packetizer;
 import net.majorkernelpanic.spydroid.SpydroidActivity;
 import android.content.Context;
-import android.content.pm.PackageManager;
-import android.hardware.Camera;
-import android.hardware.Camera.Parameters;
 import android.media.MediaRecorder;
 import android.util.Log;
-import android.view.SurfaceHolder;
 
 /**
  * This will stream H264 from the camera over RTP
@@ -40,7 +38,7 @@ import android.view.SurfaceHolder;
  * You can then call prepare() & start()
  */
 public class H264Stream extends VideoStream {
-	
+	private Semaphore lock = new Semaphore(0);
 	private MP4Config mp4Config;
 	
 	public H264Stream(Context context, int cameraId) {
@@ -73,10 +71,34 @@ public class H264Stream extends VideoStream {
 		start();
 		
 		// We wait a little and stop recording
+		this.setOnInfoListener(new MediaRecorder.OnInfoListener() {
+			public void onInfo(MediaRecorder mr, int what, int extra) {
+				Log.d(TAG,"MediaRecorder callback called !");
+				if (what==MEDIA_RECORDER_INFO_MAX_DURATION_REACHED) {
+					Log.d(TAG,"MediaRecorder: MAX_DURATION_REACHED");
+				} else if (what==MEDIA_RECORDER_INFO_MAX_FILESIZE_REACHED) {
+					Log.d(TAG,"MediaRecorder: MAX_FILESIZE_REACHED");
+				} else if (what==MEDIA_RECORDER_INFO_UNKNOWN) {
+					Log.d(TAG,"MediaRecorder: INFO_UNKNOWN");
+				} else {
+					Log.d(TAG,"WTF ?");
+				}
+				lock.release();
+			}
+		});
+		
 		try {
-			Thread.sleep(1500);
-		} catch (InterruptedException ignore) {}
-		stop();
+			if (lock.tryAcquire(8,TimeUnit.SECONDS)) {
+				Thread.sleep(400);
+			} else {
+				Log.d(TAG,"MediaRecorder callback was not called :(");
+			}
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		} finally {
+			stop();
+		}
+		
 		
 		// Retrieve SPS & PPS & ProfileId with MP4Config
 		mp4Config = new MP4Config(context.getCacheDir().getPath()+'/'+TESTFILE);

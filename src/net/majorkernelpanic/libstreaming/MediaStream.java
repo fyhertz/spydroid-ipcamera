@@ -52,7 +52,7 @@ public abstract class MediaStream extends MediaRecorder implements Stream {
 	// By default mode = MODE_STREAMING and MediaStream sends every data he receives to the packetizer
 	public static final int MODE_STREAMING = 0;
 	public static final int MODE_DEFAULT = 1;
-	private int mode = MODE_STREAMING;
+	protected int mode = MODE_STREAMING;
 	
 	public MediaStream() {
 		super();

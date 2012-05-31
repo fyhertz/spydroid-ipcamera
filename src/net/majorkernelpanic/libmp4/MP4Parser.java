@@ -23,9 +23,13 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.HashMap;
 
+import android.util.Log;
+
 
 public class MP4Parser {
 
+	private static final String TAG = "MP4Parser";
+	
 	private HashMap<String, Long> boxes = new HashMap<String, Long>();
 	private RandomAccessFile fis;
 	private long pos = 0;
@@ -78,6 +82,7 @@ public class MP4Parser {
 					newlen = (buffer[1]&0xFF)*65536 + (buffer[2]&0xFF)*256 + (buffer[3]&0xFF) - 8;
 					if (newlen<0) return false;
 					name = new String(buffer,4,4);
+					Log.d(TAG,"Atom -> name: "+name+" newlen: "+newlen);
 					sum += newlen;
 					if (!parse(path+'/'+name,newlen)) return false;
 					

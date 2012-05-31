@@ -136,7 +136,10 @@ public class H264Packetizer extends AbstractPacketizer {
 					chunks.add(new Chunk(sum,duration));
 					sync.release();
 				}
-			} catch (IOException e) {}
+			} catch (IOException ignore) {
+			} finally {
+				running = false;
+			}
 		}
 	}
 

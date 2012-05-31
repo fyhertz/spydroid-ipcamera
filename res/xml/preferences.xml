@@ -6,11 +6,19 @@
             android:title="Sound streaming">
 
         <CheckBoxPreference
-                android:key="stream_sound"
+                android:key="stream_audio"
                 android:title="Sound streaming"
                 android:defaultValue="true"
-                android:summary="AMRNB seems buggy on VLC 2, you might need to disable sound streaming" />
+                android:summary="Enable/Disable audio streamiing" />
 
+        <ListPreference
+            android:title="Default audio encoder"
+            android:key="audio_encoder"
+            android:defaultValue="3"
+            android:summary="Note that AAC streaming is experimental and requieres ICS"
+            android:entries="@array/listAudioEncoderArray"
+            android:entryValues="@array/listAudioEncoderValues" />
+        
     </PreferenceCategory>
     
         <PreferenceCategory
@@ -20,15 +28,15 @@
             android:key="stream_video"
             android:title="Video streaming"
             android:defaultValue="true"
-            android:summary="Enable/Disable streaming of video" />
+            android:summary="Enable/Disable video streaming" />
             
         <ListPreference
             android:title="Default video encoder"
             android:key="video_encoder"
             android:defaultValue="1"
             android:summary="Two video compression algorithms are available: H.263 and H.264"
-            android:entries="@array/listEncoderArray"
-            android:entryValues="@array/listEncoderValues" />
+            android:entries="@array/listVideoEncoderArray"
+            android:entryValues="@array/listVideoEncoderValues" />
 
     </PreferenceCategory>
 

@@ -2,14 +2,25 @@
 
 <resources>
 
-    <string-array name="listEncoderArray">
+    <string-array name="listVideoEncoderArray">
         <item>H.263</item>
         <item>H.264</item>
     </string-array>
 
-    <string-array name="listEncoderValues">
+    <string-array name="listVideoEncoderValues">
         <item>2</item>
         <item>1</item>
+    </string-array>
+    
+    
+    <string-array name="listAudioEncoderArray">
+        <item>AMR</item>
+        <item>AAC</item>
+    </string-array>
+
+    <string-array name="listAudioEncoderValues">
+        <item>3</item>
+        <item>5</item>
     </string-array>
 
 </resources>
