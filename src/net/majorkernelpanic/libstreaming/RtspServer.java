@@ -207,13 +207,13 @@ public class RtspServer implements Runnable {
 					}
 					
 					// AMR -> just for convenience: does the same as AMRNB
-					else if (param.getName().equals("aac")) {
-						streamManager.addAudioTrack(StreamManager.AUDIO_AAC, 5004);
-					}
-					
-					// AMR -> does the same as AMRNB
 					else if (param.getName().equals("amr")) {
 						streamManager.addAudioTrack(StreamManager.AUDIO_AMRNB, 5004);
+					}
+					
+					// AAC -> experimental
+					else if (param.getName().equals("aac")) {
+						streamManager.addAudioTrack(StreamManager.AUDIO_AAC, 5004);
 					}
 					
 					// Generic Audio Stream -> make use of api level 12
