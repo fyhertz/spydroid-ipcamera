@@ -52,7 +52,7 @@ public class H263Packetizer extends AbstractPacketizer implements Runnable {
 	public void run() {
 		long time, duration = 0, ts = 0;
 		int i = 0, j = 0, tr;
-		boolean start = true;
+		boolean firstFragment = true;
 		
 		try {
 			skipHeader();
@@ -81,8 +81,14 @@ public class H263Packetizer extends AbstractPacketizer implements Runnable {
 				}
 				// Parse temporal reference
 				tr = (buffer[i+2]&0x03)<<6 | (buffer[i+3]&0xFF)>>2;
-				//Log.d(TAG,"j: "+j+" buffer: "+printBuffer(rtphl, rtphl+10)+" tr: "+tr);
-				buffer[rtphl] = 0;
+				//Log.d(TAG,"j: "+j+" buffer: "+printBuffer(rtphl, rtphl+5)+" tr: "+tr);
+				if (firstFragment) {
+					// This is the first fragment of the frame -> header is set to 0x0400
+					buffer[rtphl] = 4;
+					firstFragment = false;
+				} else {
+					buffer[rtphl] = 0;
+				}
 				if (j>0) {
 					// We have found the end of the frame
 					//Log.d(TAG,"End of frame ! duration: "+duration);
@@ -93,20 +99,17 @@ public class H263Packetizer extends AbstractPacketizer implements Runnable {
 					socket.updateTimestamp(ts*90);
 					System.arraycopy(buffer,j+2,buffer,rtphl+2,MAXPACKETSIZE-j-2); 
 					j = MAXPACKETSIZE-j-2;
-					start = true;
+					firstFragment = true;
 				} else {
 					// We have not found the beginning of another frame
 					// The whole packet is a fragment of a frame
-					if (start) {
-						// This is the first fragment of the frame -> header is set to 0x0400
-						buffer[rtphl] = 4;
-						start = false;
-					}
 					socket.send(MAXPACKETSIZE);
 				}
 			}
 		} catch (IOException e) {
 			running = false;
+			Log.e(TAG,"IOException: "+e.getMessage());
+			e.printStackTrace();
 		}
 		
 		Log.d(TAG,"Packetizer stopped !");

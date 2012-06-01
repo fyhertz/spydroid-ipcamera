@@ -65,6 +65,8 @@ public class QualityListActivity extends ListActivity {
     		"1000 kb/s",
     		"700 kb/s",
     		"500 kb/s",
+    		"400 kb/s",
+    		"300 kb/s",
     		"100 kb/s",
     		"50 kb/s",
     		"10 kb/s"

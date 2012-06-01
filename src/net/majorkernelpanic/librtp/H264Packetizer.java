@@ -173,32 +173,38 @@ public class H264Packetizer extends AbstractPacketizer {
 		public void run() {
 			int len = 0; 
 			
-			while (running) {
-				try {
+			try {
+				while (running) {
+
 					sync.acquire(1);
-				} catch (InterruptedException e1) {
-					e1.printStackTrace();
+
+					// This may happen if a chunk contains only a part of a NAL unit
+					if (splitNal) {
+						len = naluLength-(cursor-chunk.size);
+						tmpChunk = chunks.get(1);
+						tmpChunk.duration += (chunk.size>naluLength) ? chunk.duration*len/chunk.size : chunk.duration;
+						tmpChunk.size += len;
+						//Log.d(TAG,"Nal unit cut: duration: "+chunk.duration+" size: "+chunk.size+" contrib: "+chunk.duration*len/chunk.size+" naluLength: "+naluLength+" cursor: "+cursor+" len: "+len);
+					}
+					chunks.pop(); cursor = 0;
+					chunk = chunks.getFirst();
+					//Log.d(TAG,"Sending chunk: "+chunk.size);
+					while (cursor<chunk.size) send();
 				}
-				// This may happen if a chunk contains only a part of a NAL unit
-				if (splitNal) {
-					len = naluLength-(cursor-chunk.size);
-					tmpChunk = chunks.get(1);
-					tmpChunk.duration += (chunk.size>naluLength) ? chunk.duration*len/chunk.size : chunk.duration;
-					tmpChunk.size += len;
-					//Log.d(TAG,"Nal unit cut: duration: "+chunk.duration+" size: "+chunk.size+" contrib: "+chunk.duration*len/chunk.size+" naluLength: "+naluLength+" cursor: "+cursor+" len: "+len);
-				}
-				chunks.pop(); cursor = 0;
-				chunk = chunks.getFirst();
-				//Log.d(TAG,"Sending chunk: "+chunk.size);
-				while (cursor<chunk.size) send();
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			} catch (IOException e) {
+				Log.e(TAG,"IOException: "+e.getMessage());
+				e.printStackTrace();
 			}
+			
 			Log.d(TAG,"H264 packetizer stopped !");
 			
 		}
 		
 		// Reads a NAL unit in the FIFO and sends it
 		// If it is too big, we split it in FU-A units (RFC 3984)
-		private void send() {
+		private void send() throws IOException {
 			int sum = 1, len = 0, type;
 
 			// Read NAL unit length (4 bytes)

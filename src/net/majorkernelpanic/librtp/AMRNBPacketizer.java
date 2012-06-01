@@ -73,28 +73,36 @@ public class AMRNBPacketizer extends AbstractPacketizer implements Runnable {
 		
 		buffer[rtphl] = (byte) 0xF0;
 		
-		while (running) {
-			
-			// First we read the frame header
-			fill(rtphl+1,AMR_FRAME_HEADER_LENGTH);
-			
-			// Then we calculate the frame payload length
-			frameType = (Math.abs(buffer[rtphl + 1]) >> 3) & 0x0f;
-			frameLength = (sFrameBits[frameType]+7)/8;
-			
-			// And we read the payload
-			fill(rtphl+2,frameLength);
-			
-			//Log.d(TAG,"Frame length: "+frameLength+" frameType: "+frameType);
-			
-			// RFC 3267 Page 14: 
-			// "For AMR, the sampling frequency is 8 kHz, corresponding to
-			// 160 encoded speech samples per frame from each channel."
-			socket.updateTimestamp(ts); ts+=160;
-			socket.markNextPacket();
-			socket.send(rtphl+1+AMR_FRAME_HEADER_LENGTH+frameLength);
-			
+		try {
+			while (running) {
+
+				// First we read the frame header
+				fill(rtphl+1,AMR_FRAME_HEADER_LENGTH);
+
+				// Then we calculate the frame payload length
+				frameType = (Math.abs(buffer[rtphl + 1]) >> 3) & 0x0f;
+				frameLength = (sFrameBits[frameType]+7)/8;
+
+				// And we read the payload
+				fill(rtphl+2,frameLength);
+
+				//Log.d(TAG,"Frame length: "+frameLength+" frameType: "+frameType);
+
+				// RFC 3267 Page 14: 
+				// "For AMR, the sampling frequency is 8 kHz, corresponding to
+				// 160 encoded speech samples per frame from each channel."
+				socket.updateTimestamp(ts); ts+=160;
+				socket.markNextPacket();
+
+				socket.send(rtphl+1+AMR_FRAME_HEADER_LENGTH+frameLength);
+			}
+		} catch (IOException e) {
+			running = false;
+			Log.e(TAG,"IOException: "+e.getMessage());
+			e.printStackTrace();
 		}
+		
+		Log.d(TAG,"Packetizer stopped !");
 		
 	}
 

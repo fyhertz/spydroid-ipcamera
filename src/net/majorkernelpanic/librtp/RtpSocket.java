@@ -112,16 +112,11 @@ public class RtpSocket {
 	}
 	
 	/* Send RTP packet over the network */
-	public void send(int length) {
+	public void send(int length) throws IOException {
 		
 		updateSequence();
 		upack.setLength(length);
-		
-		try {
-			usock.send(upack);
-		} catch (IOException e) {
-			Log.e(SpydroidActivity.TAG,"Send failed");
-		}
+		usock.send(upack);
 		
 		if (upts) {
 			upts = false;
