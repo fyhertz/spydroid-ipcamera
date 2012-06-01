@@ -86,14 +86,16 @@ public abstract class VideoStream extends MediaStream {
 		super.setVideoSource(MediaRecorder.VideoSource.CAMERA);
 		super.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
 		if (mode==MODE_DEFAULT) {
-			super.setMaxDuration(2000);
+			super.setMaxDuration(1000);
 			super.setMaxFileSize(Integer.MAX_VALUE);
 		} else {
 			// On some phones a RuntimeException might be thrown :/
 			try {
 				super.setMaxDuration(0);
 				super.setMaxFileSize(Integer.MAX_VALUE); 
-			} catch (RuntimeException ignore) {}
+			} catch (RuntimeException e) {
+				Log.e(TAG,"setMaxDuration or setMaxFileSize failed !");
+			}
 		}
 		super.setVideoEncoder(videoEncoder);
 		super.setPreviewDisplay(surfaceHolder.getSurface());
