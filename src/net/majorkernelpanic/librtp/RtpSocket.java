@@ -27,10 +27,6 @@ import java.net.InetAddress;
 import java.net.SocketException;
 import java.util.Random;
 
-import net.majorkernelpanic.spydroid.SpydroidActivity;
-import android.util.Log;
-
-
 
 public class RtpSocket {
 

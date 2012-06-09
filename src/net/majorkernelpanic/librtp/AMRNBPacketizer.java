@@ -22,7 +22,7 @@
 package net.majorkernelpanic.librtp;
 
 import java.io.IOException;
-import net.majorkernelpanic.spydroid.SpydroidActivity;
+
 import android.util.Log;
 
 /**

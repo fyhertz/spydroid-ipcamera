@@ -210,7 +210,7 @@ public class H264Packetizer extends AbstractPacketizer {
 			// Read NAL unit length (4 bytes)
 			if (!splitNal) {
 				fifo.read(buffer, rtphl, 4);
-				naluLength = (buffer[rtphl+3]&0xFF) + (buffer[rtphl+2]&0xFF)*256 + (buffer[rtphl+1]&0xFF)*65536;
+				naluLength = buffer[rtphl+3]&0xFF | (buffer[rtphl+2]&0xFF)<<8 | (buffer[rtphl+1]&0xFF)<<16 | (buffer[rtphl]&0xFF)<<24;
 			} else {
 				splitNal = false;
 			}

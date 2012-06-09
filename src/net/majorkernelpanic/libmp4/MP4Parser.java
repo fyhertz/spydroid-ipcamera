@@ -79,7 +79,7 @@ public class MP4Parser {
 				fis.read(buffer,0,8); sum += 8; pos += 8;
 				if (validBoxName()) {
 					
-					newlen = (buffer[1]&0xFF)*65536 + (buffer[2]&0xFF)*256 + (buffer[3]&0xFF) - 8;
+					newlen = ( buffer[3]&0xFF | (buffer[2]&0xFF)<<8 | (buffer[1]&0xFF)<<16 | (buffer[0]&0xFF)<<24 ) - 8;
 					if (newlen<0) return false;
 					name = new String(buffer,4,4);
 					Log.d(TAG,"Atom -> name: "+name+" newlen: "+newlen);

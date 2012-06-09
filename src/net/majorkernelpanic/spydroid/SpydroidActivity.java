@@ -56,13 +56,12 @@ public class SpydroidActivity extends Activity implements OnSharedPreferenceChan
     
     private ImageView logo;
     private PowerManager.WakeLock wl;
+    private RtspServer rtspServer = null;
     private StreamManager streamManager;
     private SurfaceHolder holder;
     private SurfaceView camera;
     private TextView console, ip;
     private VideoQuality defaultVideoQuality = new VideoQuality();
-    
-    private static RtspServer rtspServer = null;
     
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -75,10 +74,10 @@ public class SpydroidActivity extends Activity implements OnSharedPreferenceChan
         ip = (TextView) findViewById(R.id.ip);
         
         SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(this);
-        defaultVideoQuality.resX = settings.getInt("resX", 640);
-        defaultVideoQuality.resY = settings.getInt("resY", 480);
-        defaultVideoQuality.frameRate = settings.getInt("fps", 15);
-        defaultVideoQuality.bitRate = settings.getInt("br", 500*1000); // 500 kb/s
+        defaultVideoQuality.resX = settings.getInt("video_resX", 640);
+        defaultVideoQuality.resY = settings.getInt("video_resY", 480);
+        defaultVideoQuality.frameRate = Integer.parseInt(settings.getString("video_framerate", "15"));
+        defaultVideoQuality.bitRate = Integer.parseInt(settings.getString("video_bitrate", "500"))*1000; // 500 kb/s
         
         settings.registerOnSharedPreferenceChangeListener(this);
        	
@@ -106,20 +105,20 @@ public class SpydroidActivity extends Activity implements OnSharedPreferenceChan
     }
     
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
-    	if (key.equals("resX")) {
-    		defaultVideoQuality.resX = sharedPreferences.getInt("resX", 640);
+    	if (key.equals("video_resX")) {
+    		defaultVideoQuality.resX = sharedPreferences.getInt("video_resX", 640);
     		streamManager.setDefaultVideoQuality(defaultVideoQuality);
     	}
-    	else if (key.equals("resY"))  {
-    		defaultVideoQuality.resY = sharedPreferences.getInt("resY", 480);
+    	else if (key.equals("video_resY"))  {
+    		defaultVideoQuality.resY = sharedPreferences.getInt("video_resY", 480);
     		streamManager.setDefaultVideoQuality(defaultVideoQuality);
     	}
-    	else if (key.equals("fps")) {
-    		defaultVideoQuality.frameRate = sharedPreferences.getInt("fps", 15);
+    	else if (key.equals("video_framerate")) {
+    		defaultVideoQuality.frameRate = Integer.parseInt(sharedPreferences.getString("video_framerate", "15"));
     		streamManager.setDefaultVideoQuality(defaultVideoQuality);
     	}
-    	else if (key.equals("br")) {
-    		defaultVideoQuality.bitRate = sharedPreferences.getInt("br", 1000);
+    	else if (key.equals("video_bitrate")) {
+    		defaultVideoQuality.bitRate = Integer.parseInt(sharedPreferences.getString("video_bitrate", "500"))*1000;
     		streamManager.setDefaultVideoQuality(defaultVideoQuality);
     	}
     	else if (key.equals("stream_audio") || key.equals("audio_encoder")) { 
@@ -195,11 +194,6 @@ public class SpydroidActivity extends Activity implements OnSharedPreferenceChan
     	Intent intent;
     	
         switch (item.getItemId()) {
-        case R.id.quality:
-        	// Starts QualityListActivity where user can change the streaming quality
-        	intent = new Intent(this.getBaseContext(),QualityListActivity.class);
-        	startActivityForResult(intent, 0);
-        	return true;
         case R.id.options:
             // Starts QualityListActivity where user can change the streaming quality
             intent = new Intent(this.getBaseContext(),OptionsActivity.class);

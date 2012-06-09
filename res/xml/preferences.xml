@@ -12,12 +12,12 @@
                 android:summary="Enable/Disable audio streamiing" />
 
         <ListPreference
-            android:title="Default audio encoder"
+            android:title="Audio encoder"
             android:key="audio_encoder"
             android:defaultValue="3"
             android:summary="Note that AAC streaming is experimental and requieres ICS"
-            android:entries="@array/listAudioEncoderArray"
-            android:entryValues="@array/listAudioEncoderValues" />
+            android:entries="@array/audioEncoderArray"
+            android:entryValues="@array/audioEncoderValues" />
         
     </PreferenceCategory>
     
@@ -31,12 +31,33 @@
             android:summary="Enable/Disable video streaming" />
             
         <ListPreference
-            android:title="Default video encoder"
+            android:title="Video encoder"
             android:key="video_encoder"
             android:defaultValue="1"
             android:summary="Two video compression algorithms are available: H.263 and H.264"
-            android:entries="@array/listVideoEncoderArray"
-            android:entryValues="@array/listVideoEncoderValues" />
+            android:entries="@array/videoEncoderArray"
+            android:entryValues="@array/videoEncoderValues" />
+        
+        <ListPreference
+            android:title="Resolution"
+            android:key="video_resolution"
+            android:defaultValue="640x480"
+            android:entries="@array/videoResolutionArray"
+            android:entryValues="@array/videoResolutionArray" />
+                
+        <ListPreference
+            android:title="Framerate"
+            android:key="video_framerate"
+            android:defaultValue="15"
+            android:entries="@array/videoFramerateArray"
+            android:entryValues="@array/videoFramerateValues" />
+        
+        <ListPreference
+            android:title="Bitrate"
+            android:key="video_bitrate"
+            android:defaultValue="500"
+            android:entries="@array/videoBitrateArray"
+            android:entryValues="@array/videoBitrateValues" />
 
     </PreferenceCategory>
 
