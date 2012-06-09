@@ -42,12 +42,12 @@ public class StreamManager {
 
 	public final static String TAG = "StreamingManager";
 	
-	// Encoders available
+	// Available encoders
 	public final static int VIDEO_H264 = 1;
 	public final static int VIDEO_H263 = 2;
 	public final static int AUDIO_AMRNB = 3;
 	public final static int AUDIO_ANDROID_AMR = 4;
-	public final static int AUDIO_AAC = 5;
+	public final static int AUDIO_AAC = 5; // Only for ICS
 	
 	private final Context context;
 	private InetAddress destination;
@@ -63,35 +63,37 @@ public class StreamManager {
 	private Stream videoStream = null;
 	private Stream audioStream = null;
 	
-	/** */
+	/** Start a new session */
 	public void startNewSession() {
 		flush();
 	}
 	
-	/** */
+	/** Set default video stream quality, it will be used by addVideoTrack */
 	public void setDefaultVideoQuality(VideoQuality quality) {
 		defaultVideoQuality = quality;
 	}
 	
-	/** */
+	/** Set the default audio encoder, it will be used by addAudioTrack */
 	public void setDefaultAudioEncoder(int encoder) {
 		defaultAudioEncoder = encoder;
 	}
 	
-	/** */
+	/** Set the default video encoder, it will be used by addVideoTrack() */
 	public void setDefaultVideoEncoder(int encoder) {
 		defaultVideoEncoder = encoder;
 	}
 	
-	/** */
+	/** Set the Surface required by MediaRecorder to record video */
 	public void setSurfaceHolder(SurfaceHolder surfaceHolder) {
 		this.surfaceHolder = surfaceHolder;
 	}
 	
+	/** Add the default video track with default configuration */
 	public void addVideoTrack(int destinationPort) throws IllegalStateException, IOException {
 		addVideoTrack(defaultVideoEncoder,defaultCamera,destinationPort,defaultVideoQuality);
 	}
 	
+	/** Add default audio track with default configuration */
 	public void addVideoTrack(int encoder, int camera, int destinationPort, VideoQuality videoQuality) throws IllegalStateException, IOException {
 		VideoQuality.merge(videoQuality,defaultVideoQuality);
 		
@@ -149,7 +151,11 @@ public class StreamManager {
 		}
 	}
 	
-	/** Return a session descriptor that can be stored in a file or sent to a client with RTSP */
+	/** Return a session descriptor that can be stored in a file or sent to a client with RTSP
+	 * @return The session descriptor
+	 * @throws IllegalStateException
+	 * @throws IOException
+	 */
 	public String getSessionDescriptor() throws IllegalStateException, IOException {
 		String sdp = "";
 		if (videoStream != null) {
@@ -167,8 +173,16 @@ public class StreamManager {
 		return id==0?videoStream!=null:audioStream!=null;
 	}
 	
-	public int getTrackPort(int id) {
+	public int getTrackDestinationPort(int id) {
 		return id==0?videoStream.getDestinationPort():audioStream.getDestinationPort();
+	}
+
+	public int getTrackLocalPort(int id) {
+		return id==0?videoStream.getLocalPort():audioStream.getLocalPort();
+	}
+	
+	public void setTrackDestinationPort(int id, int port) {
+		if (id==0) videoStream.setDestination(destination,port); else audioStream.setDestination(destination,port);
 	}
 	
 	public int getTrackSSRC(int id) {
@@ -179,15 +193,31 @@ public class StreamManager {
 		this.destination =  destination;
 	}
 	
-	/** Start all streams of the session */
+	/** Start all streams of the session
+	 * @throws RuntimeException
+	 * @throws IllegalStateException
+	 * @throws IOException
+	 */
 	public void startAll() throws RuntimeException, IllegalStateException, IOException {
-		if (videoStream != null) {
+		if (videoStream != null && !videoStream.isStreaming()) {
 			videoStream.prepare();
 			videoStream.start();
 		}
-		if (audioStream != null) {
+		if (audioStream != null && !audioStream.isStreaming()) {
 			audioStream.prepare();
 			audioStream.start();
+		}
+	}
+	
+	/** Start stream with id travkId 
+	 * @throws RuntimeException
+	 * @throws IOException 
+	 * @throws IllegalStateException */
+	public void start(int trackId) throws IllegalStateException, IOException, RuntimeException {
+		Stream stream = trackId==0?videoStream:audioStream;
+		if (stream!=null && !stream.isStreaming()) {
+			stream.prepare();
+			stream.start();
 		}
 	}
 	

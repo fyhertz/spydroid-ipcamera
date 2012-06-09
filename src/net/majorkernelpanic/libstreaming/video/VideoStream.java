@@ -102,7 +102,7 @@ public abstract class VideoStream extends MediaStream {
 		super.setVideoSize(quality.resX,quality.resY);
 		super.setVideoFrameRate(quality.frameRate);
 		super.setVideoEncodingBitRate(quality.bitRate);
-		super.setOrientationHint(quality.orientation); // FIXME: wrong orientation of the stream and setOrientationHint doesn't help
+		//super.setOrientationHint(quality.orientation); // FIXME: wrong orientation of the stream and setOrientationHint doesn't help
 		super.prepare();
 		
 		// Reset flash state to ensure that default behavior is to turn it off
@@ -157,7 +157,7 @@ public abstract class VideoStream extends MediaStream {
 		// Test if phone has a flash
 		if (context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_CAMERA_FLASH)) {
 			// Takes effect when configure() is called
-			flashState = true;
+			flashState = state;
 		}
 	}
 	

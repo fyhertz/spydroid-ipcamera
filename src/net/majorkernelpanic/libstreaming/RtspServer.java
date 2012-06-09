@@ -249,8 +249,6 @@ public class RtspServer implements Runnable {
 			String requestAttributes = "Content-Base: "+getServerAddress()+":"+port+"/\r\n" +
 					"Content-Type: application/sdp\r\n";
 			
-			streamManager.startAll();
-			
 			handler.obtainMessage(MESSAGE_START).sendToTarget();
 			
 			response.status = Response.STATUS_OK;
@@ -271,9 +269,8 @@ public class RtspServer implements Runnable {
 		/* ********************************** Method SETUP ********************************** */
 		/* ********************************************************************************** */
 		else if (request.method.toUpperCase().equals("SETUP")) {
-			String p2,p1;
 			Pattern p; Matcher m;
-			int ssrc, trackId;
+			int p2, p1, ssrc, trackId, src;
 			
 			p = Pattern.compile("trackID=(\\w+)",Pattern.CASE_INSENSITIVE);
 			m = p.matcher(request.uri);
@@ -294,22 +291,30 @@ public class RtspServer implements Runnable {
 			m = p.matcher(request.headers.get("Transport"));
 			
 			if (!m.find()) {
-				int port = streamManager.getTrackPort(trackId);
-				p1 = String.valueOf(port);
-				p2 = String.valueOf(port+1);
+				int port = streamManager.getTrackDestinationPort(trackId);
+				p1 = port;
+				p2 = port+1;
 			}
 			else {
-				p1 = m.group(1); p2 = m.group(2);
+				p1 = Integer.parseInt(m.group(1)); 
+				p2 = Integer.parseInt(m.group(2));
 			}
 			
 			ssrc = streamManager.getTrackSSRC(trackId);
+			src = streamManager.getTrackLocalPort(trackId);
+			streamManager.setTrackDestinationPort(trackId, p1);
 			
-			String attributes = "Transport: RTP/AVP/UDP;unicast;client_port="+p1+"-"+p2+";server_port=54782-54783;ssrc="+Integer.toHexString(ssrc)+";mode=play\r\n" +
-								"Session: "+ "1185d20035702ca" + "\r\n" +
-								"Cache-Control: no-cache\r\n";
+			try {
+				streamManager.start(trackId);
+				response.attributes = "Transport: RTP/AVP/UDP;unicast;client_port="+p1+"-"+p2+";server_port="+src+"-"+(src+1)+";ssrc="+Integer.toHexString(ssrc)+";mode=play\r\n" +
+						"Session: "+ "1185d20035702ca" + "\r\n" +
+						"Cache-Control: no-cache\r\n";
+				response.status = Response.STATUS_OK;
+			} catch (RuntimeException e) {
+				log("Could not start stream, configuration probably not supported by phone");
+				response.status = Response.STATUS_INTERNAL_SERVER_ERROR;
+			}
 			
-			response.status = Response.STATUS_OK;
-			response.attributes = attributes;
 		}
 
 		/* ********************************************************************************** */
@@ -317,7 +322,8 @@ public class RtspServer implements Runnable {
 		/* ********************************************************************************** */
 		else if (request.method.toUpperCase().equals("PLAY")) {
 			String requestAttributes = "RTP-Info: ";
-			requestAttributes += "url=rtsp://"+getServerAddress()+":"+port+"/trackID="+0+";seq=0;rtptime=0,";
+			if (streamManager.trackExists(0)) requestAttributes += "url=rtsp://"+getServerAddress()+":"+port+"/trackID="+0+";seq=0;rtptime=0,";
+			if (streamManager.trackExists(1)) requestAttributes += "url=rtsp://"+getServerAddress()+":"+port+"/trackID="+1+";seq=0;rtptime=0,";
 			requestAttributes = requestAttributes.substring(0, requestAttributes.length()-1) + "\r\nSession: 1185d20035702ca\r\n";
 			
 			response.status = Response.STATUS_OK;
@@ -406,6 +412,7 @@ public class RtspServer implements Runnable {
 		public static final String STATUS_OK = "200 OK";
 		public static final String STATUS_BAD_REQUEST = "400 Bad Request";
 		public static final String STATUS_NOT_FOUND = "404 Not Found";
+		public static final String STATUS_INTERNAL_SERVER_ERROR = "Internal Server Error";
 		
 		public String status = STATUS_OK;
 		public String content = "";
