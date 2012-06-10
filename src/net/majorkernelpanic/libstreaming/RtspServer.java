@@ -412,7 +412,7 @@ public class RtspServer implements Runnable {
 		public static final String STATUS_OK = "200 OK";
 		public static final String STATUS_BAD_REQUEST = "400 Bad Request";
 		public static final String STATUS_NOT_FOUND = "404 Not Found";
-		public static final String STATUS_INTERNAL_SERVER_ERROR = "Internal Server Error";
+		public static final String STATUS_INTERNAL_SERVER_ERROR = "500 Internal Server Error";
 		
 		public String status = STATUS_OK;
 		public String content = "";
