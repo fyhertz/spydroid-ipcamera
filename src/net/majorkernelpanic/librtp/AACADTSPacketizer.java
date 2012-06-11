@@ -27,6 +27,8 @@ import android.util.Log;
 /**
  * RFC 3640  
  *
+ * This packetizer must be fed with an InputStream containing ADTS AAC. 
+ * AAC will basically be rewrapped in an RTP stream and sent over the network.
  * This packetizer only implements the aac-hbr mode (High Bit-rate AAC) and
  * each packet only carry a single and complete AAC access unit.
  * 

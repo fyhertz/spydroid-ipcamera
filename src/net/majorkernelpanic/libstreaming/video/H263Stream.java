@@ -37,7 +37,7 @@ public class H263Stream extends VideoStream {
 		this.packetizer = new H263Packetizer();
 	}
 	
-	public String generateSdpDescriptor() throws IllegalStateException,
+	public String generateSessionDescriptor() throws IllegalStateException,
 			IOException {
 
 		return "m=video "+String.valueOf(getDestinationPort())+" RTP/AVP 96\r\n" +

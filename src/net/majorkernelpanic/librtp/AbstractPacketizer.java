@@ -43,6 +43,7 @@ abstract public class AbstractPacketizer {
 	}	
 	
 	public AbstractPacketizer(InputStream fis) {
+		super();
 		this.is = fis;
 	}
 	

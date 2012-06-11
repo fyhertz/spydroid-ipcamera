@@ -194,7 +194,7 @@ public abstract class VideoStream extends MediaStream {
 		this.videoEncoder = videoEncoder;
 	}
 	
-	public abstract String generateSdpDescriptor() throws IllegalStateException, IOException;
+	public abstract String generateSessionDescriptor() throws IllegalStateException, IOException;
 
 	public void release() {
 		stop();

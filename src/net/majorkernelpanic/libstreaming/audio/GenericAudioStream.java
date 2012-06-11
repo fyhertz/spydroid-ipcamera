@@ -63,7 +63,7 @@ public class GenericAudioStream implements Stream {
 		audioGroup = null;
 	}
 	
-	public String generateSdpDescriptor() throws IllegalStateException, IOException {
+	public String generateSessionDescriptor() throws IllegalStateException, IOException {
 		AudioCodec codec = audioStream.getCodec();
 		Log.d(TAG, "Codec: rtmap:\""+codec.rtpmap+"\""+" ftmp:\""+codec.fmtp+"\" type:\""+codec.type+"\"");
 		return "m=audio "+String.valueOf(getDestinationPort())+" RTP/AVP "+codec.type+"\r\n" +

@@ -159,11 +159,11 @@ public class StreamManager {
 	public String getSessionDescriptor() throws IllegalStateException, IOException {
 		String sdp = "";
 		if (videoStream != null) {
-			sdp += videoStream.generateSdpDescriptor();
+			sdp += videoStream.generateSessionDescriptor();
 			sdp += "a=control:trackID=0\r\n";
 		}
 		if (audioStream != null) {
-			sdp += audioStream.generateSdpDescriptor();
+			sdp += audioStream.generateSessionDescriptor();
 			sdp += "a=control:trackID=1\r\n";
 		}
 		return sdp;

@@ -99,6 +99,9 @@ public abstract class MediaStream extends MediaRecorder implements Stream {
 	public void prepare() throws IllegalStateException,IOException {
 		if (mode==MODE_STREAMING) {
 			createSockets();
+			// We write the ouput of the camera in a local socket instead of a file !			
+			// This one little trick makes streaming feasible quiet simply: data from the camera
+			// can then be manipulated at the other end of the socket
 			setOutputFile(sender.getFileDescriptor());
 		}
 		super.prepare();
@@ -108,6 +111,8 @@ public abstract class MediaStream extends MediaRecorder implements Stream {
 		try {
 			super.start();
 			if (mode==MODE_STREAMING) {
+				// receiver.getInputStream contains the data from the camera
+				// the packetizer encapsulates this stream in an RTP stream and send it over the network
 				packetizer.setInputStream(receiver.getInputStream());
 				packetizer.start();
 			}
@@ -139,7 +144,7 @@ public abstract class MediaStream extends MediaRecorder implements Stream {
 		return getPacketizer().getRtpSocket().getSSRC();
 	}
 	
-	public abstract String generateSdpDescriptor()  throws IllegalStateException, IOException;
+	public abstract String generateSessionDescriptor()  throws IllegalStateException, IOException;
 	
 	private void createSockets() throws IOException {
 		receiver = new LocalSocket();

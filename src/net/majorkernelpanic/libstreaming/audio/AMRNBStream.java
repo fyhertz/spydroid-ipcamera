@@ -47,7 +47,7 @@ public class AMRNBStream extends MediaStream {
 		super.prepare();
 	}
 	
-	public String generateSdpDescriptor() {
+	public String generateSessionDescriptor() {
 		return "m=audio "+String.valueOf(getDestinationPort())+" RTP/AVP 96\r\n" +
 				   "b=AS:128\r\n" +
 				   "b=RR:0\r\n" +

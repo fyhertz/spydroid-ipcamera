@@ -119,7 +119,7 @@ public class H264Stream extends VideoStream {
 		
 	}
 	
-	public String generateSdpDescriptor() throws IllegalStateException, IOException {
+	public String generateSessionDescriptor() throws IllegalStateException, IOException {
 		testH264();
 		return "m=video "+String.valueOf(getDestinationPort())+" RTP/AVP 96\r\n" +
 				   "b=RR:0\r\n" +

@@ -62,7 +62,7 @@ public class AACStream extends MediaStream {
 	 * Profile ?
 	 */
 	
-	public String generateSdpDescriptor() {
+	public String generateSessionDescriptor() {
 		return "m=audio "+String.valueOf(getDestinationPort())+" RTP/AVP 96\r\n" +
 				"b=RR:0\r\n" +
 				"a=rtpmap:96 mpeg4-generic/8000\r\n" +
