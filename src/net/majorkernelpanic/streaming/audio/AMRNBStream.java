@@ -18,55 +18,41 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-package net.majorkernelpanic.libstreaming.audio;
+package net.majorkernelpanic.streaming.audio;
 
 import java.io.IOException;
 
-import net.majorkernelpanic.librtp.AACADTSPacketizer;
-import net.majorkernelpanic.libstreaming.MediaStream;
+import net.majorkernelpanic.rtp.AMRNBPacketizer;
+import net.majorkernelpanic.streaming.MediaStream;
 import android.media.MediaRecorder;
 
 /**
  * This will stream AMRNB from the mic over RTP
  * Just call setDestination(), prepare() & start()
  */
-public class AACStream extends MediaStream {
+public class AMRNBStream extends MediaStream {
 
-	
-	
-	public AACStream() {
+	public AMRNBStream() {
 		super();
 		
-		AACADTSPacketizer packetizer = new AACADTSPacketizer(); 
-		this.packetizer = packetizer;
+		this.packetizer = new AMRNBPacketizer();
 		
 	}
 
 	public void prepare() throws IllegalStateException, IOException {
-		
 		setAudioSource(MediaRecorder.AudioSource.CAMCORDER);
-		
-		// This is completely experimental: AAC_ADTS is not yet visible in the android developer documentation
-		// Recording AAC ADTS works on my galaxy SII with this tiny trick
-		setOutputFormat(6);
-		setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
+		setOutputFormat(MediaRecorder.OutputFormat.RAW_AMR);
+		setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
 		setAudioChannels(1);
-		setAudioSamplingRate(8000);
-		
 		super.prepare();
 	}
 	
-	/* streamtype ?
-	 * profile-level-id ?
-	 * config ?
-	 * Profile ?
-	 */
-	
 	public String generateSessionDescriptor() {
 		return "m=audio "+String.valueOf(getDestinationPort())+" RTP/AVP 96\r\n" +
-				"b=RR:0\r\n" +
-				"a=rtpmap:96 mpeg4-generic/8000\r\n" +
-				"a=fmtp:96 streamtype=5; profile-level-id=15; mode=AAC-hbr; config=1588; SizeLength=13; IndexLength=3; IndexDeltaLength=3; Profile=1;\r\n";
+				   "b=AS:128\r\n" +
+				   "b=RR:0\r\n" +
+				   "a=rtpmap:96 AMR/8000\r\n" +
+				   "a=fmtp:96 octet-align=1;\r\n";
 	}
 	
 }

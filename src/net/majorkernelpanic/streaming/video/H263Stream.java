@@ -18,21 +18,21 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-package net.majorkernelpanic.libstreaming.video;
+package net.majorkernelpanic.streaming.video;
 
 import java.io.IOException;
 
-import net.majorkernelpanic.librtp.H263Packetizer;
-import net.majorkernelpanic.librtp.H264Packetizer;
-import net.majorkernelpanic.libstreaming.MediaStream;
+import net.majorkernelpanic.rtp.H263Packetizer;
+import net.majorkernelpanic.rtp.H264Packetizer;
+import net.majorkernelpanic.streaming.MediaStream;
 import android.content.Context;
 import android.media.MediaRecorder;
 import android.util.Log;
 
 public class H263Stream extends VideoStream {
 	
-	public H263Stream(Context context, int cameraId) {
-		super(context,cameraId);
+	public H263Stream(int cameraId) {
+		super(cameraId);
 		setVideoEncoder(MediaRecorder.VideoEncoder.H263);
 		this.packetizer = new H263Packetizer();
 	}

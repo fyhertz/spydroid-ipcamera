@@ -20,15 +20,18 @@
 
 package net.majorkernelpanic.spydroid;
 
-import net.majorkernelpanic.libstreaming.RtspServer;
-import net.majorkernelpanic.libstreaming.StreamManager;
-import net.majorkernelpanic.libstreaming.video.VideoQuality;
+import java.io.IOException;
+
+import net.majorkernelpanic.streaming.video.VideoQuality;
 import android.app.Activity;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.content.pm.PackageManager.NameNotFoundException;
+import android.net.NetworkInfo;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.os.Bundle;
@@ -37,6 +40,7 @@ import android.os.Message;
 import android.os.PowerManager;
 import android.preference.PreferenceManager;
 import android.text.Html;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -45,19 +49,17 @@ import android.view.SurfaceView;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-/**
- * The application Spydroid, is basically just an interface for net.majorkernelpanic.libstreaming
- * It creates a StreamingManger and launches an RtspServer
- * 
+/** 
+ * Spydroid launches an RtspServer, clients can then connect to it and receive audio/video streams from the phone
  */
 public class SpydroidActivity extends Activity implements OnSharedPreferenceChangeListener {
     
-    static final public String TAG = "SPYDROID";
+    static final public String TAG = "SpydroidActivity";
     
+    private HttpServer httpServer = null;
     private ImageView logo;
     private PowerManager.WakeLock wl;
     private RtspServer rtspServer = null;
-    private StreamManager streamManager;
     private SurfaceHolder holder;
     private SurfaceView camera;
     private TextView console, ip;
@@ -94,67 +96,124 @@ public class SpydroidActivity extends Activity implements OnSharedPreferenceChan
 			log("<b>Spydroid</b>");
 		}
         
-        if (streamManager == null) {
-        	streamManager = new StreamManager(this.getApplicationContext());
-        	streamManager.setSurfaceHolder(holder);
-	    	streamManager.setDefaultVideoQuality(defaultVideoQuality);
-	    	streamManager.setDefaultAudioEncoder(settings.getBoolean("stream_audio", true)?Integer.parseInt(settings.getString("audio_encoder", "1")):0);
-	    	streamManager.setDefaultVideoEncoder(settings.getBoolean("stream_video", true)?Integer.parseInt(settings.getString("video_encoder", "1")):0);
-	    	rtspServer = new RtspServer(streamManager, 8086, handler);
-        }
+        Session.setSurfaceHolder(holder);
+        Session.setDefaultVideoQuality(defaultVideoQuality);
+        Session.setDefaultAudioEncoder(settings.getBoolean("stream_audio", true)?Integer.parseInt(settings.getString("audio_encoder", "1")):0);
+        Session.setDefaultVideoEncoder(settings.getBoolean("stream_video", true)?Integer.parseInt(settings.getString("video_encoder", "1")):0);
+        
+        if (settings.getBoolean("enable_rtsp", true)) rtspServer = new RtspServer(8086, handler);
+        if (settings.getBoolean("enable_http", true)) httpServer = new HttpServer(8080, this.getAssets());
+        
     }
     
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
     	if (key.equals("video_resX")) {
     		defaultVideoQuality.resX = sharedPreferences.getInt("video_resX", 640);
-    		streamManager.setDefaultVideoQuality(defaultVideoQuality);
+    		Session.setDefaultVideoQuality(defaultVideoQuality);
     	}
     	else if (key.equals("video_resY"))  {
     		defaultVideoQuality.resY = sharedPreferences.getInt("video_resY", 480);
-    		streamManager.setDefaultVideoQuality(defaultVideoQuality);
+    		Session.setDefaultVideoQuality(defaultVideoQuality);
     	}
     	else if (key.equals("video_framerate")) {
     		defaultVideoQuality.frameRate = Integer.parseInt(sharedPreferences.getString("video_framerate", "15"));
-    		streamManager.setDefaultVideoQuality(defaultVideoQuality);
+    		Session.setDefaultVideoQuality(defaultVideoQuality);
     	}
     	else if (key.equals("video_bitrate")) {
     		defaultVideoQuality.bitRate = Integer.parseInt(sharedPreferences.getString("video_bitrate", "500"))*1000;
-    		streamManager.setDefaultVideoQuality(defaultVideoQuality);
+    		Session.setDefaultVideoQuality(defaultVideoQuality);
     	}
     	else if (key.equals("stream_audio") || key.equals("audio_encoder")) { 
-    		streamManager.setDefaultAudioEncoder(sharedPreferences.getBoolean("stream_audio", true)?Integer.parseInt(sharedPreferences.getString("audio_encoder", "1")):0);
+    		Session.setDefaultAudioEncoder(sharedPreferences.getBoolean("stream_audio", true)?Integer.parseInt(sharedPreferences.getString("audio_encoder", "1")):0);
     	}
     	else if (key.equals("stream_video") || key.equals("video_encoder")) {
-    		streamManager.setDefaultVideoEncoder(sharedPreferences.getBoolean("stream_video", true)?Integer.parseInt(sharedPreferences.getString("video_encoder", "1")):0);
+    		Session.setDefaultVideoEncoder(sharedPreferences.getBoolean("stream_video", true)?Integer.parseInt(sharedPreferences.getString("video_encoder", "1")):0);
     	}
+    	else if (key.equals("enable_http")) {
+    		if (sharedPreferences.getBoolean("enable_http", true)) {
+    			httpServer =  new HttpServer(8080, this.getAssets());
+    		} else {
+    			if (httpServer != null) httpServer = null;
+    		}
+    	}
+    	else if (key.equals("enable_rtsp")) {
+    		if (sharedPreferences.getBoolean("enable_rtsp", true)) {
+    			rtspServer =  new RtspServer(8086, handler);
+    		} else {
+    			if (rtspServer != null) rtspServer = null;
+    		}
+    	}	
+    }
+    
+    public void onStart() {
+    	super.onStart();
+    	// Lock screen
+    	wl.acquire();
+    }
+    
+    public void onStop() {
+    	super.onStop();
+    	wl.release();
     }
     
     public void onResume() {
     	super.onResume();
     	
-    	wl.acquire();
-    	
     	// Determines if user is connected to a wireless network & displays ip 
     	WifiManager wifiManager = (WifiManager) this.getSystemService(Context.WIFI_SERVICE);
     	WifiInfo wifiInfo = wifiManager.getConnectionInfo();
-    	if (wifiInfo.getNetworkId()>-1) {
-	    	int i = wifiInfo.getIpAddress();
-	    	ip.setText("rtsp://");
-	    	ip.append(String.format("%d.%d.%d.%d", i & 0xff, i >> 8 & 0xff,i >> 16 & 0xff,i >> 24 & 0xff));
-	    	ip.append(":8086/");
-    	} else {
-    		ip.setText("Wifi should be enabled !");
-    	}
+    	displayIpAddress(wifiInfo);
     	
-    	rtspServer.start();
+    	startServers();
+    	
+    	registerReceiver(wifiStateReceiver,new IntentFilter(WifiManager.NETWORK_STATE_CHANGED_ACTION));
     	
     }
     
     public void onPause() {
     	super.onPause();
-    	wl.release();
-    	rtspServer.stop();
+    	stopServers();
+    	unregisterReceiver(wifiStateReceiver);
     }
+    
+    private void stopServers() {
+    	if (rtspServer != null) rtspServer.stop();
+    	if (httpServer != null) httpServer.stop();
+    }
+    
+    private void startServers() {
+    	if (rtspServer != null) {
+    		try {
+    			rtspServer.start();
+    		} catch (IOException e) {
+    			log("RtspServer could not be started : "+e.getMessage());
+    		}
+    	}
+    	if (httpServer != null) {
+    		try {
+    			httpServer.start();
+    		} catch (IOException e) {
+    			log("HttpServer could not be started : "+e.getMessage());
+    		}
+    	}
+    }
+    
+    // BroadcastReceiver that detects wifi state changements
+    private final BroadcastReceiver wifiStateReceiver = new BroadcastReceiver() {
+        public void onReceive(Context context, Intent intent) {
+        	String action = intent.getAction();
+        	if (action.equals(WifiManager.NETWORK_STATE_CHANGED_ACTION)) {
+        		Log.d(TAG,"Wifi state has changed !");
+        		WifiInfo wifiInfo = (WifiInfo)intent.getParcelableExtra(WifiManager.EXTRA_WIFI_INFO);
+        		if (wifiInfo != null) {
+        			Log.d(TAG,wifiInfo.toString());
+        			stopServers();
+        			startServers();
+        		}
+        		displayIpAddress(wifiInfo);
+        	}
+        } 
+    };
     
     // The Handler that gets information back from the RtspServer
     private final Handler handler = new Handler() {
@@ -202,6 +261,17 @@ public class SpydroidActivity extends Activity implements OnSharedPreferenceChan
         default:
             return super.onOptionsItemSelected(item);
         }
+    }
+    
+    private void displayIpAddress(WifiInfo wifiInfo) {
+    	if (wifiInfo!=null && wifiInfo.getNetworkId()>-1) {
+	    	int i = wifiInfo.getIpAddress();
+	    	ip.setText("rtsp://");
+	    	ip.append(String.format("%d.%d.%d.%d", i & 0xff, i >> 8 & 0xff,i >> 16 & 0xff,i >> 24 & 0xff));
+	    	ip.append(":8086/");
+    	} else {
+    		ip.setText("Wifi should be enabled !");
+    	}
     }
     
     public void log(String s) {

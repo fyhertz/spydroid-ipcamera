@@ -1,11 +1,11 @@
-package net.majorkernelpanic.libstreaming.audio;
+package net.majorkernelpanic.streaming.audio;
 
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.UnknownHostException;
 
-import net.majorkernelpanic.libstreaming.Stream;
+import net.majorkernelpanic.streaming.Stream;
 
 import android.net.rtp.AudioCodec;
 import android.net.rtp.AudioGroup;

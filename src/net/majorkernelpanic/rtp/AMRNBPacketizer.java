@@ -19,10 +19,11 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-package net.majorkernelpanic.librtp;
+package net.majorkernelpanic.rtp;
 
 import java.io.IOException;
 
+import android.os.SystemClock;
 import android.util.Log;
 
 /**
@@ -47,8 +48,6 @@ public class AMRNBPacketizer extends AbstractPacketizer implements Runnable {
     };
     private static final int[] sFrameBits = {95, 103, 118, 134, 148, 159, 204, 244};
 	
-	private long ts = 0;
-	
 	public AMRNBPacketizer() {
 		super();
 	}
@@ -67,6 +66,7 @@ public class AMRNBPacketizer extends AbstractPacketizer implements Runnable {
 	public void run() {
 	
 		int frameLength, frameType;
+		long ts = 0;
 		
 		// Skip raw amr header
 		fill(rtphl,AMR_HEADER_LENGTH);

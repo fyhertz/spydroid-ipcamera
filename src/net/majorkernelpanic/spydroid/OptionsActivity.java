@@ -49,6 +49,10 @@ public class OptionsActivity extends PreferenceActivity {
         videoEncoder.setEnabled(settings.getBoolean("stream_video", true));
         audioEncoder.setEnabled(settings.getBoolean("stream_audio", true));
         
+        videoResolution.setSummary("Current resolution is "+settings.getInt("video_resX", 640)+"x"+settings.getInt("video_resY", 320)+"px");
+        videoFramerate.setSummary("Current framerate is "+Integer.parseInt(settings.getString("video_framerate", "15"))+"fps");
+        videoBitrate.setSummary("Current bitrate is "+Integer.parseInt(settings.getString("video_bitrate", "500"))+"kbps");
+        
         videoResolution.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
         	public boolean onPreferenceChange(Preference preference, Object newValue) {
         		Editor editor = settings.edit();
@@ -58,10 +62,24 @@ public class OptionsActivity extends PreferenceActivity {
         		editor.putInt("video_resX", Integer.parseInt(matcher.group(1)));
         		editor.putInt("video_resY", Integer.parseInt(matcher.group(2)));
         		editor.commit();
+        		videoResolution.setSummary("Current resolution is "+(String)newValue+"px");
         		return true;
 			}
-        	
-        });        
+        });
+        
+        videoFramerate.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
+        	public boolean onPreferenceChange(Preference preference, Object newValue) {
+        		videoFramerate.setSummary("Current framerate is "+(String)newValue+"fps");
+        		return true;
+			}
+        });
+
+        videoBitrate.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
+        	public boolean onPreferenceChange(Preference preference, Object newValue) {
+        		videoBitrate.setSummary("Current bitrate is "+(String)newValue+"kbps");
+        		return true;
+			}
+        });
         
         videoEnabled.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
         	public boolean onPreferenceChange(Preference preference, Object newValue) {
@@ -72,7 +90,6 @@ public class OptionsActivity extends PreferenceActivity {
         		videoFramerate.setEnabled(state);
         		return true;
 			}
-        	
         });
         
         audioEnabled.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
@@ -81,7 +98,6 @@ public class OptionsActivity extends PreferenceActivity {
         		audioEncoder.setEnabled(state);
         		return true;
 			}
-        	
         });
         
     }

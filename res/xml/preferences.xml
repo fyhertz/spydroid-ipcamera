@@ -9,7 +9,7 @@
                 android:key="stream_audio"
                 android:title="Sound streaming"
                 android:defaultValue="true"
-                android:summary="Enable/Disable audio streamiing" />
+                android:summary="Enable/Disable audio streaming" />
 
         <ListPreference
             android:title="Audio encoder"
@@ -61,4 +61,21 @@
 
     </PreferenceCategory>
 
+	<PreferenceCategory
+            android:title="Interfaces">
+
+		<CheckBoxPreference
+                android:key="enable_http"
+                android:title="HTTP server"
+                android:defaultValue="true"
+                android:summary="Enable/Disable the http interface" />
+	    
+        <CheckBoxPreference
+                android:key="enable_rtsp"
+                android:title="RTSP server"
+                android:defaultValue="true"
+                android:summary="Enable/Disable the rtsp interface" />
+        
+    </PreferenceCategory>
+        
 </PreferenceScreen>

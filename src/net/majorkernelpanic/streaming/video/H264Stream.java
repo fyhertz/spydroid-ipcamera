@@ -18,16 +18,15 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-package net.majorkernelpanic.libstreaming.video;
+package net.majorkernelpanic.streaming.video;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
-import net.majorkernelpanic.libmp4.MP4Config;
-import net.majorkernelpanic.librtp.H264Packetizer;
-import net.majorkernelpanic.spydroid.SpydroidActivity;
+import net.majorkernelpanic.mp4.MP4Config;
+import net.majorkernelpanic.rtp.H264Packetizer;
 import android.content.Context;
 import android.media.MediaRecorder;
 import android.util.Log;
@@ -41,8 +40,8 @@ public class H264Stream extends VideoStream {
 	private Semaphore lock = new Semaphore(0);
 	private MP4Config mp4Config;
 	
-	public H264Stream(Context context, int cameraId) {
-		super(context,cameraId);
+	public H264Stream(int cameraId) {
+		super(cameraId);
 		setVideoEncoder(MediaRecorder.VideoEncoder.H264);
 		this.packetizer = new H264Packetizer();
 	}
@@ -51,7 +50,7 @@ public class H264Stream extends VideoStream {
 	private MP4Config testH264() throws IllegalStateException, IOException {
 		if (!qualityHasChanged) return mp4Config;
 		
-		final String TESTFILE = "test.mp4";
+		final String TESTFILE = "/sdcard/spydroid-test.mp4";
 		
 		Log.i(TAG,"Testing H264 support...");
 		
@@ -64,7 +63,7 @@ public class H264Stream extends VideoStream {
 		// in a file
 		setMode(MODE_DEFAULT);
 		
-		setOutputFile(context.getCacheDir().getPath()+'/'+TESTFILE);
+		setOutputFile(TESTFILE);
 		
 		// Start recording
 		prepare();
@@ -101,11 +100,11 @@ public class H264Stream extends VideoStream {
 		
 		
 		// Retrieve SPS & PPS & ProfileId with MP4Config
-		mp4Config = new MP4Config(context.getCacheDir().getPath()+'/'+TESTFILE);
+		mp4Config = new MP4Config(TESTFILE);
 
 		// Delete dummy video
-		File file = new File(context.getCacheDir().getPath()+'/'+TESTFILE);
-		if (!file.delete()) Log.e(SpydroidActivity.TAG,"Temp file could not be erased");
+		File file = new File(TESTFILE);
+		if (!file.delete()) Log.e(TAG,"Temp file could not be erased");
 		
 		// Back to streaming mode & prepare
 		setMode(MODE_STREAMING);

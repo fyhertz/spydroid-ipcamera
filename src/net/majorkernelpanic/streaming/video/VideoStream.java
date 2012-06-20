@@ -18,11 +18,11 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-package net.majorkernelpanic.libstreaming.video;
+package net.majorkernelpanic.streaming.video;
 
 import java.io.IOException;
 
-import net.majorkernelpanic.libstreaming.MediaStream;
+import net.majorkernelpanic.streaming.MediaStream;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.hardware.Camera;
@@ -35,21 +35,16 @@ public abstract class VideoStream extends MediaStream {
 
 	protected final static String TAG = "VideoStream";
 	
-	// Default quality for the stream
-	private final static VideoQuality defaultQuality = new VideoQuality(320,240,15,500); 
-	
-	protected VideoQuality quality = defaultQuality.clone();
+	protected VideoQuality quality = VideoQuality.defaultVideoQualiy.clone();
 	protected SurfaceHolder.Callback surfaceHolderCallback = null;
 	protected SurfaceHolder surfaceHolder = null;
 	protected boolean flashState = false,  qualityHasChanged = false;
-	protected int videoEncoder;
-	protected Context context;
+	protected int videoEncoder, cameraId;
 	protected Camera camera;
 
-	public VideoStream(Context context, int cameraId) {
+	public VideoStream(int cameraId) {
 		super();
-		this.context = context;
-		this.camera = Camera.open(cameraId);
+		this.cameraId = cameraId;
 	}
 	
 	public void stop() {
@@ -69,6 +64,10 @@ public abstract class VideoStream extends MediaStream {
 	}
 	
 	public void prepare() throws IllegalStateException, IOException {
+		
+		if (camera == null) {
+			camera = Camera.open(cameraId);
+		}
 		
 		// We reconnect to camera to change flash state if needed
 		camera.reconnect();
@@ -119,33 +118,16 @@ public abstract class VideoStream extends MediaStream {
 	public void setPreviewDisplay(SurfaceHolder sh) {
 		surfaceHolder = sh;
 		surfaceHolderCallback = new SurfaceHolder.Callback() {
-			//private boolean wasStreaming = false;
 			public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
 				Log.d(TAG,"Surface changed !");
 				surfaceHolder = holder;
 			}
 			public void surfaceCreated(SurfaceHolder holder) {
-				// If it was streaming, we try to restart it
-				/*if (wasStreaming) {
-					try {
-						prepare();
-						start();
-					} catch (IllegalStateException e) {
-						stop();
-					} catch (IOException e) {
-						stop();
-					} finally {
-						wasStreaming = false;
-					}
-				}*/
 				Log.d(TAG,"Surface created !");
 				surfaceHolder = holder;
 			}
 			public void surfaceDestroyed(SurfaceHolder holder) {
-				if (streaming) {
-					//wasStreaming = true;
-					stop();
-				}
+				if (streaming) stop();
 				Log.d(TAG,"Surface destroyed !");
 			}
 		};
@@ -155,10 +137,10 @@ public abstract class VideoStream extends MediaStream {
 	/** Turn flash on or off if phone has one */
 	public void setFlashState(boolean state) {
 		// Test if phone has a flash
-		if (context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_CAMERA_FLASH)) {
+		//if (context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_CAMERA_FLASH)) {
 			// Takes effect when configure() is called
 			flashState = state;
-		}
+		//}
 	}
 	
 	public void setVideoSize(int width, int height) {
@@ -198,7 +180,7 @@ public abstract class VideoStream extends MediaStream {
 
 	public void release() {
 		stop();
-		camera.release();
+		if (camera != null) camera.release();
 		if (surfaceHolderCallback != null && surfaceHolder != null) {
 			surfaceHolder.removeCallback(surfaceHolderCallback);
 		}

@@ -18,7 +18,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-package net.majorkernelpanic.librtp;
+package net.majorkernelpanic.rtp;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -119,9 +119,9 @@ public class H264Packetizer extends AbstractPacketizer {
 				while (running) {
 					
 					// We try to read as much as we can from the camera buffer and measure how long it takes
-					// In a better world we could just wait until an entire unit is received and directly sent it and one thread would be enough !
+					// In a better world we could just wait until an entire nal unit is received and directly send it and one thread would be enough !
 					// But some cameras have this annoying habit of delivering more than one NAL unit at once: 
-					// for example if 10 NAL units are delivered every 10 sec we have to guess the duration of each unit
+					// for example if 10 NAL units are delivered every 10 sec we have to guess the duration of each nal unit
 					// And BECAUSE InputStream.read blocks, another thread is necessary to send the stuff :/
 					oldtime = SystemClock.elapsedRealtime(); sum = 0;
 					try {
@@ -311,21 +311,6 @@ public class H264Packetizer extends AbstractPacketizer {
 			}
 
 			return len;
-		}
-		
-		public void write(byte[] buffer, int offset, int length) {
-
-			if (tail+length<this.length) {
-				System.arraycopy(buffer, offset, this.buffer, tail, length);
-				tail += length;
-			}
-			else {
-				int u = this.length-tail;
-				System.arraycopy(buffer, offset, this.buffer, tail, u);
-				System.arraycopy(buffer, offset+u, this.buffer, 0, length-u);
-				tail = length-u;
-			}
-
 		}
 		
 		public int read(byte[] buffer, int offset, int length) {

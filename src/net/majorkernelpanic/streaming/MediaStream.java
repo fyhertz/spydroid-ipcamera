@@ -18,13 +18,13 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-package net.majorkernelpanic.libstreaming;
+package net.majorkernelpanic.streaming;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.InetAddress;
 
-import net.majorkernelpanic.librtp.AbstractPacketizer;
+import net.majorkernelpanic.rtp.AbstractPacketizer;
 import android.media.MediaRecorder;
 import android.net.LocalServerSocket;
 import android.net.LocalSocket;
@@ -32,9 +32,8 @@ import android.net.LocalSocketAddress;
 import android.util.Log;
 
 /**
- *  A MediaRecorder that streams what it records using a packetizer
- *  specified with setPacketizer 
- *  Use it just like a regular MediaRecorder except for setOutputFile()
+ *  A MediaRecorder that streams what it records using a packetizer specified with setPacketizer 
+ *  Use it just like a regular MediaRecorder except for setOutputFile() that you don't need to call
  */
 public abstract class MediaStream extends MediaRecorder implements Stream {
 
@@ -49,7 +48,7 @@ public abstract class MediaStream extends MediaRecorder implements Stream {
 	protected String sdpDescriptor;
 
 	// If you mode==MODE_DEFAULT the MediaStream will just act as a regular MediaRecorder
-	// By default mode = MODE_STREAMING and MediaStream sends every data he receives to the packetizer
+	// By default: mode = MODE_STREAMING and MediaStream forwards data to the packetizer
 	public static final int MODE_STREAMING = 0;
 	public static final int MODE_DEFAULT = 1;
 	protected int mode = MODE_STREAMING;

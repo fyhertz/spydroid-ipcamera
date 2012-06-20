@@ -1,4 +1,4 @@
-package net.majorkernelpanic.libstreaming;
+package net.majorkernelpanic.streaming;
 
 import java.io.IOException;
 import java.net.InetAddress;
