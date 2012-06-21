@@ -34,6 +34,7 @@ import net.majorkernelpanic.streaming.video.H264Stream;
 import net.majorkernelpanic.streaming.video.VideoQuality;
 import net.majorkernelpanic.streaming.video.VideoStream;
 import android.hardware.Camera.CameraInfo;
+import android.os.Handler;
 import android.util.Log;
 import android.view.SurfaceHolder;
 
@@ -46,6 +47,10 @@ import android.view.SurfaceHolder;
 public class Session {
 
 	public final static String TAG = "Session";
+
+	// Message types for UI thread
+	public static final int MESSAGE_START = 3;
+	public static final int MESSAGE_STOP = 4;
 	
 	// Available encoders
 	public final static int VIDEO_H264 = 1;
@@ -80,9 +85,11 @@ public class Session {
 	
 	private ArrayList<Track> tracks = new ArrayList<Track>(); 
 	private InetAddress destination;
+	private Handler handler;
 	
-	public Session(InetAddress destination) {
+	public Session(InetAddress destination, Handler handler) {
 		this.destination = destination;
+		this.handler = handler;
 	}
 	
 	/** Set default video stream quality, it will be used by addVideoTrack */
@@ -242,6 +249,7 @@ public class Session {
 				}
 			}
 		}
+		handler.obtainMessage(MESSAGE_START).sendToTarget();
 	}
 
 	/** Start existing streams 
@@ -258,6 +266,7 @@ public class Session {
 		for (Iterator<Track> it = tracks.iterator();it.hasNext();) {
 			it.next().stream.stop();
 		}
+		handler.obtainMessage(MESSAGE_STOP).sendToTarget();
 	}
 	
 	/** Delete all existing tracks & release associated resources */

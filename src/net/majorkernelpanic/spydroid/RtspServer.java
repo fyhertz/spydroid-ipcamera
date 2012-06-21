@@ -56,9 +56,7 @@ public class RtspServer {
 
 	// Message types for UI thread
 	public static final int MESSAGE_LOG = 2;
-	public static final int MESSAGE_START = 3;
-	public static final int MESSAGE_STOP = 4;
-	
+
 	private final Handler handler;
 	private final int port;
 	private RequestListenerThread listenerThread;
@@ -122,7 +120,7 @@ public class RtspServer {
 		public WorkerThread(final Socket client, final Handler handler) throws IOException {
 			this.input = new BufferedReader(new InputStreamReader(client.getInputStream()));
 			this.output = client.getOutputStream();
-			this.session = new Session(client.getInetAddress());
+			this.session = new Session(client.getInetAddress(), handler);
 			this.client = client;
 			this.handler = handler;
 		}

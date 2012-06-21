@@ -19,6 +19,7 @@ import org.apache.http.protocol.HttpContext;
 import org.apache.http.protocol.HttpRequestHandler;
 
 import android.content.res.AssetManager;
+import android.os.Handler;
 
 /**
  * This is an HTTP interface for spydroid
@@ -28,14 +29,19 @@ import android.content.res.AssetManager;
  */
 public class HttpServer extends BasicHttpServer{
 
-	public HttpServer(int port, AssetManager assetManager) {
+	public HttpServer(int port, AssetManager assetManager, Handler handler) {
 		super(port, assetManager);
-		addRequestHandler("/spydroid.sdp*", new DescriptorRequestHandler());
+		addRequestHandler("/spydroid.sdp*", new DescriptorRequestHandler(handler));
 	}
 	
 	static class DescriptorRequestHandler implements HttpRequestHandler {
 
 		private Session session;
+		private Handler handler;
+		
+		public DescriptorRequestHandler(Handler handler) {
+			this.handler = handler;
+		}
 		
 		public synchronized void handle(HttpRequest request, HttpResponse response,
 				HttpContext context) throws HttpException, IOException {
@@ -48,7 +54,7 @@ public class HttpServer extends BasicHttpServer{
 			}
 			
 			// Create new Session
-			session = new Session(socket.getInetAddress());
+			session = new Session(socket.getInetAddress(),handler);
 			
 			// Parse URI and configure the Session accordingly 
 			final String uri = URLDecoder.decode(request.getRequestLine().getUri());

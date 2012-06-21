@@ -30,7 +30,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
-import android.content.pm.PackageManager.NameNotFoundException;
+import android.graphics.drawable.Drawable;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.os.Bundle;
@@ -89,11 +89,11 @@ public class SpydroidActivity extends Activity implements OnSharedPreferenceChan
         wl = pm.newWakeLock(PowerManager.SCREEN_DIM_WAKE_LOCK, "net.majorkernelpanic.spydroid.wakelock");
     
     	// Print version number
-        try {
+        /*try {
 			log("<b>Spydroid v"+this.getPackageManager().getPackageInfo(this.getPackageName(), 0 ).versionName+"</b>");
 		} catch (NameNotFoundException e) {
 			log("<b>Spydroid</b>");
-		}
+		}*/
         
         Session.setSurfaceHolder(holder);
         Session.setDefaultVideoQuality(defaultVideoQuality);
@@ -101,7 +101,7 @@ public class SpydroidActivity extends Activity implements OnSharedPreferenceChan
         Session.setDefaultVideoEncoder(settings.getBoolean("stream_video", true)?Integer.parseInt(settings.getString("video_encoder", "1")):0);
         
         if (settings.getBoolean("enable_rtsp", true)) rtspServer = new RtspServer(8086, handler);
-        if (settings.getBoolean("enable_http", true)) httpServer = new HttpServer(8080, this.getAssets());
+        if (settings.getBoolean("enable_http", true)) httpServer = new HttpServer(8080, this.getAssets(), handler);
         
     }
     
@@ -130,7 +130,7 @@ public class SpydroidActivity extends Activity implements OnSharedPreferenceChan
     	}
     	else if (key.equals("enable_http")) {
     		if (sharedPreferences.getBoolean("enable_http", true)) {
-    			httpServer =  new HttpServer(8080, this.getAssets());
+    			httpServer =  new HttpServer(8080, this.getAssets(), handler);
     		} else {
     			if (httpServer != null) httpServer = null;
     		}
@@ -207,8 +207,6 @@ public class SpydroidActivity extends Activity implements OnSharedPreferenceChan
         		// Seems like wifiInfo is ALWAYS null on android 2
         		if (wifiInfo != null) {
         			Log.d(TAG,wifiInfo.toString());
-        			stopServers();
-        			startServers();
         			displayIpAddress(wifiInfo);
         		}
         		else {
@@ -232,13 +230,15 @@ public class SpydroidActivity extends Activity implements OnSharedPreferenceChan
     			log((String)msg.obj);
     			break;
 
-    		case RtspServer.MESSAGE_START:
+    		case Session.MESSAGE_START:
     			// Sent when streaming starts
     			logo.setAlpha(100);
+    			camera.setBackgroundDrawable(null);
     			break;
     			
-    		case RtspServer.MESSAGE_STOP:
+    		case Session.MESSAGE_STOP:
     			// Sent when streaming ends
+    			camera.setBackgroundResource(R.drawable.background);
     			logo.setAlpha(255);
     			break;
 

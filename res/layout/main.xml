@@ -6,6 +6,7 @@
     android:layout_height="fill_parent" >
 
     <SurfaceView
+		android:background="@drawable/background"
         android:layout_width="fill_parent"
         android:layout_height="fill_parent"
         android:id="@+id/smallcameraview"
@@ -34,7 +35,7 @@
 	    android:shadowDx="1"
 	    android:shadowDy="1"
 	    android:shadowRadius="1"
-	    android:textColor="#FFAC63" />
+	    android:textColor="#FFFFFF" />
 
 	<TextView
 	    android:id="@+id/ip"
@@ -47,6 +48,7 @@
 	    android:shadowDx="1"
 	    android:shadowDy="1"
 	    android:shadowRadius="1"
-	    android:textColor="#FFAC63" />
+	    android:textSize="16dp"
+	    android:textColor="#FFFFFF" />
 
 </RelativeLayout>
