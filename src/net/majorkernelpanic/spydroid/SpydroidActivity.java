@@ -31,7 +31,6 @@ import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.content.pm.PackageManager.NameNotFoundException;
-import android.net.NetworkInfo;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.os.Bundle;
@@ -203,14 +202,20 @@ public class SpydroidActivity extends Activity implements OnSharedPreferenceChan
         public void onReceive(Context context, Intent intent) {
         	String action = intent.getAction();
         	if (action.equals(WifiManager.NETWORK_STATE_CHANGED_ACTION)) {
-        		Log.d(TAG,"Wifi state has changed !");
         		WifiInfo wifiInfo = (WifiInfo)intent.getParcelableExtra(WifiManager.EXTRA_WIFI_INFO);
+        		Log.d(TAG,"Wifi state has changed ! null?: "+(wifiInfo==null));
+        		// Seems like wifiInfo is ALWAYS null on android 2
         		if (wifiInfo != null) {
         			Log.d(TAG,wifiInfo.toString());
         			stopServers();
         			startServers();
+        			displayIpAddress(wifiInfo);
         		}
-        		displayIpAddress(wifiInfo);
+        		else {
+        	    	WifiManager wifiManager = (WifiManager) context.getSystemService(Context.WIFI_SERVICE);
+        	    	WifiInfo info = wifiManager.getConnectionInfo();
+        	    	displayIpAddress(info);
+        		}
         	}
         } 
     };
