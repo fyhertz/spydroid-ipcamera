@@ -8,7 +8,7 @@
         <CheckBoxPreference
                 android:key="stream_audio"
                 android:title="Sound streaming"
-                android:defaultValue="true"
+                android:defaultValue="false"
                 android:summary="Enable/Disable audio streaming" />
 
         <ListPreference

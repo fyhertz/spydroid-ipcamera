@@ -48,7 +48,7 @@ public class H264Stream extends VideoStream {
 	
 	// Should not be called by the UI thread
 	private MP4Config testH264() throws IllegalStateException, IOException {
-		if (!qualityHasChanged) return mp4Config;
+		if (!qualityHasChanged && mp4Config!=null) return mp4Config;
 		
 		final String TESTFILE = "/sdcard/spydroid-test.mp4";
 		

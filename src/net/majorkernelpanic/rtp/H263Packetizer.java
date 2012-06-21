@@ -31,7 +31,6 @@ import android.util.Log;
 public class H263Packetizer extends AbstractPacketizer implements Runnable {
 
 	public final static String TAG = "H263Packetizer";
-	
 	private final static int MAXPACKETSIZE = 1400;
 	
 	public H263Packetizer() {
