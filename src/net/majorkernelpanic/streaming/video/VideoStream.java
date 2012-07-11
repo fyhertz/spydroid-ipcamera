@@ -37,7 +37,7 @@ public abstract class VideoStream extends MediaStream {
 	protected VideoQuality quality = VideoQuality.defaultVideoQualiy.clone();
 	protected SurfaceHolder.Callback surfaceHolderCallback = null;
 	protected SurfaceHolder surfaceHolder = null;
-	protected boolean flashState = false,  qualityHasChanged = false, withCamera = true;
+	protected boolean flashState = false,  qualityHasChanged = false, cameraError = false;
 	protected int videoEncoder, cameraId;
 	protected Camera camera;
 
@@ -66,7 +66,7 @@ public abstract class VideoStream extends MediaStream {
 	
 	public void prepare() throws IllegalStateException, IOException {
 		
-		if (withCamera) {
+		if (!cameraError) {
 			if (camera == null) {
 				camera = Camera.open(cameraId);
 				camera.setErrorCallback(new ErrorCallback(){
@@ -79,7 +79,7 @@ public abstract class VideoStream extends MediaStream {
 							cameraArg = null;
 						}
 						// We won't use a camera with the mediarecorder anymore
-						withCamera = false;
+						cameraError = true;
 					}
 				});
 			}
@@ -93,6 +93,14 @@ public abstract class VideoStream extends MediaStream {
 			camera.stopPreview();
 			camera.unlock();
 			super.setCamera(camera);
+		}
+		
+		if (cameraError) {
+			super.setCamera(null);
+			super.reset();
+			try {
+				Thread.sleep(200);
+			} catch (InterruptedException ignore) {}
 		}
 		
 		// MediaRecorder should have been like this according to me:
