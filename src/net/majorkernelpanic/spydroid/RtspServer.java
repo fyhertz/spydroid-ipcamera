@@ -27,20 +27,10 @@ import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
-import java.net.URI;
 import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import net.majorkernelpanic.spydroid.RtspServer.WorkerThread;
-import net.majorkernelpanic.streaming.video.VideoQuality;
-
-import org.apache.http.NameValuePair;
-import org.apache.http.client.utils.URLEncodedUtils;
-
-import android.hardware.Camera.CameraInfo;
 import android.os.Handler;
 import android.util.Log;
 
@@ -56,6 +46,7 @@ public class RtspServer {
 
 	// Message types for UI thread
 	public static final int MESSAGE_LOG = 2;
+	public static final int MESSAGE_ERROR = 6;
 
 	private final Handler handler;
 	private final int port;
@@ -139,18 +130,14 @@ public class RtspServer {
 					response = processRequest(request);
 					// Send response
 					response.send(output);
+				} catch (IllegalStateException e1) {
+					loge("Client sent a bad request !");
 				} catch (SocketException e) {
-					// Client disconnected
+					// Client left
 					break;
-				} catch (IllegalStateException e) {
-					Log.e(TAG,"Bad request or something wrong with a MediaStream");
-					if (e.getMessage()!=null) Log.e(TAG,e.getMessage());
-					continue;
 				} catch (IOException e) {
-					Log.e(TAG,"Bad request or something wrong with a MediaStream");
-					if (e.getMessage()!=null) Log.e(TAG,e.getMessage());
 					continue;
-				} 
+				}
 			}
 
 			// Streaming stops when client disconnects
@@ -241,8 +228,8 @@ public class RtspServer {
 							"Cache-Control: no-cache\r\n";
 					response.status = Response.STATUS_OK;
 				} catch (RuntimeException e) {
-					Log.e(TAG,"Could not start stream, configuration probably not supported by phone");
 					response.status = Response.STATUS_INTERNAL_SERVER_ERROR;
+					throw new RuntimeException("Could not start stream, configuration probably not supported by phone");
 				}
 				
 			}
@@ -252,8 +239,8 @@ public class RtspServer {
 			/* ********************************************************************************** */
 			else if (request.method.toUpperCase().equals("PLAY")) {
 				String requestAttributes = "RTP-Info: ";
-				if (session.trackExists(0)) requestAttributes += "url=rtsp://"+client.getLocalAddress()+":"+client.getLocalPort()+"/trackID="+0+";seq=0;rtptime=0,";
-				if (session.trackExists(1)) requestAttributes += "url=rtsp://"+client.getLocalAddress()+":"+client.getLocalPort()+"/trackID="+1+";seq=0;rtptime=0,";
+				if (session.trackExists(0)) requestAttributes += "url=rtsp://"+client.getLocalAddress()+":"+client.getLocalPort()+"/trackID="+0+";seq=0,";
+				if (session.trackExists(1)) requestAttributes += "url=rtsp://"+client.getLocalAddress()+":"+client.getLocalPort()+"/trackID="+1+";seq=0,";
 				requestAttributes = requestAttributes.substring(0, requestAttributes.length()-1) + "\r\nSession: 1185d20035702ca\r\n";
 				
 				response.status = Response.STATUS_OK;
@@ -287,6 +274,13 @@ public class RtspServer {
 		
 		private void log(String message) {
 			handler.obtainMessage(MESSAGE_LOG, message).sendToTarget();
+			Log.v(TAG,message);
+		}
+		
+		// Display an error on user interface
+		private void loge(String error) {
+			handler.obtainMessage(MESSAGE_LOG, error).sendToTarget();
+			Log.e(TAG,error);
 		}
 
 	}
@@ -309,7 +303,7 @@ public class RtspServer {
 			Matcher matcher;
 
 			// Parsing request method & uri
-			if ((line = input.readLine())==null) throw new SocketException();
+			if ((line = input.readLine())==null) throw new SocketException("Client disconnected");
 			matcher = regexMethod.matcher(line);
 			matcher.find();
 			request.method = matcher.group(1);
@@ -321,7 +315,7 @@ public class RtspServer {
 				matcher.find();
 				request.headers.put(matcher.group(1),matcher.group(2));
 			}
-			if (line==null) throw new SocketException();
+			if (line==null) throw new SocketException("Client disconnected");
 			
 			Log.e(TAG,request.method+" "+request.uri);
 			

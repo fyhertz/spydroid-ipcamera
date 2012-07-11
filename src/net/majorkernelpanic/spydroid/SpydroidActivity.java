@@ -226,10 +226,13 @@ public class SpydroidActivity extends Activity implements OnSharedPreferenceChan
     		switch (msg.what) {
     			
     		case RtspServer.MESSAGE_LOG:
-    			// Sent when the streamingManager has something to report
     			log((String)msg.obj);
     			break;
 
+    		case RtspServer.MESSAGE_ERROR:
+    			log((String)msg.obj);
+    			break;
+    			
     		case Session.MESSAGE_START:
     			// Sent when streaming starts
     			logo.setAlpha(100);
@@ -242,8 +245,11 @@ public class SpydroidActivity extends Activity implements OnSharedPreferenceChan
     			logo.setAlpha(255);
     			break;
 
+    		case Session.MESSAGE_ERROR:
+    			log((String)msg.obj);
+    			break;
+
     		}
-    		
     	}
     	
     };

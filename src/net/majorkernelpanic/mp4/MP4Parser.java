@@ -86,8 +86,13 @@ public class MP4Parser {
 					
 				}
 				else {
-					fis.skipBytes((int) (len-8)); pos += len-8;
-					sum += len-8;
+					if( len < 8){
+						fis.seek(fis.getFilePointer() - 8 + len);
+						sum += len-8;
+					} else {
+						fis.skipBytes((int) (len-8)); pos += len-8;
+						sum += len-8;
+					}
 				}
 			}
 			

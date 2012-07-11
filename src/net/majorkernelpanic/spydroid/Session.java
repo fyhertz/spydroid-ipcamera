@@ -51,6 +51,7 @@ public class Session {
 	// Message types for UI thread
 	public static final int MESSAGE_START = 3;
 	public static final int MESSAGE_STOP = 4;
+	public static final int MESSAGE_ERROR = 5;
 	
 	// Available encoders
 	public final static int VIDEO_H264 = 1;
@@ -224,38 +225,43 @@ public class Session {
 		this.destination =  destination;
 	}
 	
-	/** Start stream with id trackId 
-	 * @throws IOException, RuntimeException
-	 * @throws IllegalStateException */
-	public void start(int trackId) throws IllegalStateException, IOException, RuntimeException {
+	/** Start stream with id trackId */
+	public void start(int trackId) {
 		Track track = tracks.get(trackId);
+		String type = track.type==Track.VIDEO ? "Video stream" : "Audio stream";
 		Stream stream = track.stream;
-		if (stream!=null && !stream.isStreaming()) {
-			// Prevent two different sessions from using the same peripheral at the same time
-			synchronized (LOCK) {
-				if (track.type == Track.VIDEO) {
-					if (!cameraInUse) {
-						stream.prepare();
-						stream.start();
-						cameraInUse = true;
+		try {
+			if (stream!=null && !stream.isStreaming()) {
+				// Prevent two different sessions from using the same peripheral at the same time
+				synchronized (LOCK) {
+					if (track.type == Track.VIDEO) {
+						if (!cameraInUse) {
+							stream.prepare();
+							stream.start();
+							cameraInUse = true;
+						}
 					}
-				}
-				if (track.type == Track.AUDIO) {
-					if (!micInUse) {
-						stream.prepare();
-						stream.start();
-						micInUse = true;
+					if (track.type == Track.AUDIO) {
+						if (!micInUse) {
+							stream.prepare();
+							stream.start();
+							micInUse = true;
+						}
 					}
 				}
 			}
+			handler.obtainMessage(MESSAGE_START).sendToTarget();
+		} catch (IOException e) {
+			loge(type+" could not be started (IOException)");
+		} catch (IllegalStateException e) {
+			loge(type+" could not be started (IllegalStateException)");
+		} catch (RuntimeException e) {
+			loge(type+" could not be started, your phone doesn't support those settings");
 		}
-		handler.obtainMessage(MESSAGE_START).sendToTarget();
 	}
 
-	/** Start existing streams 
-	 * @throws IOException, RuntimeException 
-	 * @throws IllegalStateException */
-	public void startAll() throws IllegalStateException, IOException, RuntimeException {
+	/** Start existing streams */
+	public void startAll() {
 		for (int i=0;i<tracks.size();i++) {
 			start(i);
 		}
@@ -277,6 +283,12 @@ public class Session {
 			if (track.type == Track.VIDEO) cameraInUse = false;
 			else if (track.type == Track.AUDIO) micInUse = false;
 		}
+	}
+	
+	/** Send some error report to the ui thread*/
+	private void loge(String error) {
+		handler.obtainMessage(MESSAGE_ERROR,error).sendToTarget();
+		Log.e(TAG,error);
 	}
 	
 }

@@ -23,9 +23,8 @@ package net.majorkernelpanic.streaming.video;
 import java.io.IOException;
 
 import net.majorkernelpanic.streaming.MediaStream;
-import android.content.Context;
-import android.content.pm.PackageManager;
 import android.hardware.Camera;
+import android.hardware.Camera.ErrorCallback;
 import android.hardware.Camera.Parameters;
 import android.media.MediaRecorder;
 import android.util.Log;
@@ -38,7 +37,7 @@ public abstract class VideoStream extends MediaStream {
 	protected VideoQuality quality = VideoQuality.defaultVideoQualiy.clone();
 	protected SurfaceHolder.Callback surfaceHolderCallback = null;
 	protected SurfaceHolder surfaceHolder = null;
-	protected boolean flashState = false,  qualityHasChanged = false;
+	protected boolean flashState = false,  qualityHasChanged = false, withCamera = true;
 	protected int videoEncoder, cameraId;
 	protected Camera camera;
 
@@ -57,31 +56,48 @@ public abstract class VideoStream extends MediaStream {
 			} 
 			try {
 				// We reconnect to camera just to stop the preview
-				camera.reconnect();
-				camera.stopPreview();
+				if (camera != null) {
+					camera.reconnect();
+					camera.stopPreview();
+				}
 			} catch (IOException ignore) {}
 		}
 	}
 	
 	public void prepare() throws IllegalStateException, IOException {
 		
-		if (camera == null) {
-			camera = Camera.open(cameraId);
+		if (withCamera) {
+			if (camera == null) {
+				camera = Camera.open(cameraId);
+				camera.setErrorCallback(new ErrorCallback(){
+					// Will be called if the media server dies
+					// FIXME: In what thread is this called ? Concurrent use of camera may happen here ?!
+					public void onError(int error, Camera cameraArg){
+						Log.e(TAG, "Media server probably died !!");
+						if (cameraArg != null) {
+							cameraArg.release();
+							cameraArg = null;
+						}
+						// We won't use a camera with the mediarecorder anymore
+						withCamera = false;
+					}
+				});
+			}
+
+			// We reconnect to camera to change flash state if needed
+			camera.reconnect();
+			Parameters parameters = camera.getParameters();
+			parameters.setFlashMode(flashState?Parameters.FLASH_MODE_TORCH:Parameters.FLASH_MODE_OFF);
+			camera.setParameters(parameters);
+			camera.setDisplayOrientation(quality.orientation);
+			camera.stopPreview();
+			camera.unlock();
+			super.setCamera(camera);
 		}
-		
-		// We reconnect to camera to change flash state if needed
-		camera.reconnect();
-		Parameters parameters = camera.getParameters();
-		parameters.setFlashMode(flashState?Parameters.FLASH_MODE_TORCH:Parameters.FLASH_MODE_OFF);
-		camera.setParameters(parameters);
-		camera.setDisplayOrientation(quality.orientation);
-		camera.stopPreview();
-		camera.unlock();
 		
 		// MediaRecorder should have been like this according to me:
 		// all configuration methods can be called at any time and
 		// changes take effects when prepare() is called
-		super.setCamera(camera);
 		super.setVideoSource(MediaRecorder.VideoSource.CAMERA);
 		super.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
 		if (mode==MODE_DEFAULT) {

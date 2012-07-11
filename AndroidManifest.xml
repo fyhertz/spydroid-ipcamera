@@ -2,8 +2,8 @@
 
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
       package="net.majorkernelpanic.spydroid"
-      android:versionCode="410"
-      android:versionName="410">
+      android:versionCode="420"
+      android:versionName="420">
       
     <uses-sdk android:minSdkVersion="10" />
     <uses-permission android:name="android.permission.CAMERA"></uses-permission>   

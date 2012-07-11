@@ -87,7 +87,8 @@ public class H264Stream extends VideoStream {
 		});
 		
 		try {
-			if (lock.tryAcquire(8,TimeUnit.SECONDS)) {
+			if (lock.tryAcquire(6,TimeUnit.SECONDS)) {
+				Log.d(TAG,"MediaRecorder callback was called :)");
 				Thread.sleep(400);
 			} else {
 				Log.d(TAG,"MediaRecorder callback was not called :(");
