@@ -33,11 +33,12 @@ import android.view.SurfaceHolder;
 public abstract class VideoStream extends MediaStream {
 
 	protected final static String TAG = "VideoStream";
-	
+
+	protected static boolean cameraError = false;
 	protected VideoQuality quality = VideoQuality.defaultVideoQualiy.clone();
 	protected SurfaceHolder.Callback surfaceHolderCallback = null;
 	protected SurfaceHolder surfaceHolder = null;
-	protected boolean flashState = false,  qualityHasChanged = false, cameraError = false;
+	protected boolean flashState = false,  qualityHasChanged = false;
 	protected int videoEncoder, cameraId;
 	protected Camera camera;
 

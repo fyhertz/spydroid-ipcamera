@@ -21,7 +21,6 @@
 package net.majorkernelpanic.streaming;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.InetAddress;
 
 import net.majorkernelpanic.rtp.AbstractPacketizer;
@@ -29,7 +28,6 @@ import android.media.MediaRecorder;
 import android.net.LocalServerSocket;
 import android.net.LocalSocket;
 import android.net.LocalSocketAddress;
-import android.util.Log;
 
 /**
  *  A MediaRecorder that streams what it records using a packetizer specified with setPacketizer 
