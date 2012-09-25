@@ -27,7 +27,8 @@ import java.util.concurrent.TimeUnit;
 
 import net.majorkernelpanic.mp4.MP4Config;
 import net.majorkernelpanic.rtp.H264Packetizer;
-import android.content.Context;
+import android.content.SharedPreferences;
+import android.content.SharedPreferences.Editor;
 import android.media.MediaRecorder;
 import android.util.Log;
 
@@ -37,6 +38,9 @@ import android.util.Log;
  * You can then call prepare() & start()
  */
 public class H264Stream extends VideoStream {
+
+	static private SharedPreferences settings = null;
+	
 	private Semaphore lock = new Semaphore(0);
 	private MP4Config mp4Config;
 	
@@ -44,6 +48,10 @@ public class H264Stream extends VideoStream {
 		super(cameraId);
 		setVideoEncoder(MediaRecorder.VideoEncoder.H264);
 		this.packetizer = new H264Packetizer();
+	}
+	
+	static public void setPreferences(SharedPreferences prefs) {
+		settings = prefs;
 	}
 	
 	// Should not be called by the UI thread
@@ -115,16 +123,42 @@ public class H264Stream extends VideoStream {
 		
 		Log.i(TAG,"H264 Test succeded...");
 		
+		// Save test result
+		if (settings != null) {
+			Editor editor = settings.edit();
+			editor.putString(quality.frameRate+","+quality.resX+","+quality.resY, mp4Config.getProfileLevel()+","+mp4Config.getB64SPS()+","+mp4Config.getB64PPS());
+			editor.commit();
+		}
 		return mp4Config;
 		
 	}
 	
 	public String generateSessionDescriptor() throws IllegalStateException, IOException {
-		testH264();
+		String profile,sps,pps;
+		
+		if (settings != null) {
+			if (!settings.contains(quality.frameRate+","+quality.resX+","+quality.resY)) {
+				testH264();
+				profile = mp4Config.getProfileLevel();
+				pps = mp4Config.getB64PPS();
+				sps = mp4Config.getB64PPS();
+			} else {
+				String[] s = settings.getString(quality.frameRate+","+quality.resX+","+quality.resY, "").split(",");
+				profile = s[0];
+				sps = s[1];
+				pps = s[2];
+			}
+		} else {
+			testH264();
+			profile = mp4Config.getProfileLevel();
+			pps = mp4Config.getB64PPS();
+			sps = mp4Config.getB64PPS();
+		}
+
 		return "m=video "+String.valueOf(getDestinationPort())+" RTP/AVP 96\r\n" +
 				   "b=RR:0\r\n" +
 				   "a=rtpmap:96 H264/90000\r\n" +
-				   "a=fmtp:96 packetization-mode=1;profile-level-id="+mp4Config.getProfileLevel()+";sprop-parameter-sets="+mp4Config.getB64SPS()+","+mp4Config.getB64PPS()+";\r\n";
+				   "a=fmtp:96 packetization-mode=1;profile-level-id="+profile+";sprop-parameter-sets="+sps+","+pps+";\r\n";
 	}
 	
 }

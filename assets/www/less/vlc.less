@@ -1,0 +1,97 @@
+@vlcWidth: 640px;
+@vlcHeight: 480px;
+
+
+@-moz-keyframes move {
+	0% {
+	    margin-left: 0px;
+	}
+	100% {
+	    margin-left: 190px;
+	}
+}
+
+@-o-keyframes move {
+	0% {
+	    margin-left: 0px;
+	}
+	100% {
+	    margin-left: 190px;
+	}
+}
+
+@-ms-keyframes move {
+	0% {
+	    margin-left: 0px;
+	}
+	100% {
+	    margin-left: 190px;
+	}
+}
+
+@-webkit-keyframes move {
+	0% {
+	    margin-left: 0px;
+	}
+	100% {
+	    margin-left: 190px;
+	}
+}
+
+#vlc-container {
+    background: black;
+    width: @vlcWidth;
+    height: @vlcHeight;
+    float: left;
+    margin-bottom: 20px;
+    .box-shadow(2px 2px 5px rgba(0,0,0,0.7));
+    position: relative;
+
+    #upper-layer {
+	position: absolute;
+	background: black;
+	top: 0px;
+	left: 0px;
+	width: @vlcWidth;
+	height: @vlcHeight;
+	z-index:10;
+	overflow: hidden;
+
+	h1 {
+	    color: white;
+	    line-height: @vlcHeight;
+	    text-align: center;
+	    font-size: 20px;
+	    letter-spacing: 8px;
+	}
+
+	#mask {
+	    opacity: 0.9;
+	    .animation(move 2s infinite alternate ease-in-out);
+	    position: absolute;
+	    z-index:100;
+	    width: 440px;
+	    height: 55px;
+	    top: 0;
+	    bottom: 0;
+	    left: 0;
+	    right: 0;
+	    margin: auto;
+
+	    background: -moz-linear-gradient(left,  rgba(0,0,0,1) 0%, rgba(0,0,0,1) 35%, rgba(0,0,0,0) 50%, rgba(0,0,0,1) 65%, rgba(0,0,0,1) 100%); /* FF3.6+ */
+	    background: -webkit-gradient(linear, left top, right top, color-stop(0%,rgba(0,0,0,1)), color-stop(35%,rgba(0,0,0,1)), color-stop(50%,rgba(0,0,0,0)), color-stop(65%,rgba(0,0,0,1)), color-stop(100%,rgba(0,0,0,1))); /* Chrome,Safari4+ */
+	    background: -webkit-linear-gradient(left,  rgba(0,0,0,1) 0%,rgba(0,0,0,1) 35%,rgba(0,0,0,0) 50%,rgba(0,0,0,1) 65%,rgba(0,0,0,1) 100%); /* Chrome10+,Safari5.1+ */
+	    background: -o-linear-gradient(left,  rgba(0,0,0,1) 0%,rgba(0,0,0,1) 35%,rgba(0,0,0,0) 50%,rgba(0,0,0,1) 65%,rgba(0,0,0,1) 100%); /* Opera 11.10+ */
+	    background: -ms-linear-gradient(left,  rgba(0,0,0,1) 0%,rgba(0,0,0,1) 35%,rgba(0,0,0,0) 50%,rgba(0,0,0,1) 65%,rgba(0,0,0,1) 100%); /* IE10+ */
+	    background: linear-gradient(to right,  rgba(0,0,0,1) 0%,rgba(0,0,0,1) 35%,rgba(0,0,0,0) 50%,rgba(0,0,0,1) 65%,rgba(0,0,0,1) 100%); /* W3C */
+	    //filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#000000', endColorstr='#000000',GradientType=1 ); /* IE6-9 */
+
+	}
+
+    }
+
+    #vlc {
+	visibility: hidden;
+    }
+
+}

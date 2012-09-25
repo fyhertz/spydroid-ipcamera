@@ -1,54 +1,175 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/mainlayout"
-    android:orientation="vertical"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="fill_parent"
-    android:layout_height="fill_parent" >
+    android:layout_height="fill_parent">
 
-    <SurfaceView
-		android:background="@drawable/background"
+   <SurfaceView
+        android:id="@+id/smallcameraview"
         android:layout_width="fill_parent"
         android:layout_height="fill_parent"
-        android:id="@+id/smallcameraview"
-        android:layout_alignParentLeft="true" />
-
-    <LinearLayout
-	    android:id="@+id/linearLayout"
-	    android:layout_width="fill_parent"
-	    android:gravity="center"
-	    android:layout_height="fill_parent" >
+        android:gravity="center" />
+   
+   <ImageView
+        android:background="@drawable/background"
+        android:id="@+id/background"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:gravity="center" />
+   
+    <RelativeLayout
+    	android:layout_width="fill_parent"
+    	android:layout_height="fill_parent">
     
 		<ImageView
-		    android:id="@+id/logo"
-		    android:layout_width="wrap_content"
-		    android:layout_height="wrap_content"
-		    android:src="@drawable/ic_eye" />
-	
-	</LinearLayout>
+            android:id="@+id/spydroid"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_alignParentTop="true"
+            android:layout_marginTop="24dp"
+            android:src="@drawable/spydroid" />
+        
+        <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              xmlns:ads="http://schemas.android.com/apk/lib/com.google.ads"
+               android:id="@+id/adcontainer"
+              android:orientation="vertical"
+              android:layout_alignParentBottom="true"
+              android:layout_width="fill_parent"
+              android:layout_height="wrap_content">
+        
+	        <com.google.ads.AdView android:id="@+id/adView"
+	                         android:layout_width="wrap_content"
+	                         android:layout_height="wrap_content"
+	                         ads:adUnitId="a1503ac1fd4e2ac"
+	                         ads:adSize="BANNER"
+	                         ads:testDevices="TEST_EMULATOR, 0019d431063b5e, BX9033M47E"
+	                         ads:loadAdOnCreate="true"/>
+        
+        </LinearLayout>
+        
+        <LinearLayout
+            android:id="@+id/bar"
+    		android:layout_width="fill_parent"
+		  	android:layout_height="50dp"
+		  	android:layout_above="@id/adcontainer"
+	    	android:layout_marginBottom="20dp"
+	      	android:layout_marginLeft="20dp"
+	      	android:layout_marginRight="20dp"
+	      	android:orientation="horizontal">
+        
+			<ImageView
+			    android:layout_margin="10dp"
+		        android:id="@+id/led"
+		        android:layout_width="35dp"
+		        android:layout_height="35dp"
+		        android:layout_gravity="center_vertical"
+		        android:src="@drawable/led_green" />
+            
+			<TextView 
+			    android:paddingLeft="0dp"
+			    android:paddingTop="12dp"
+			    android:paddingBottom="7dp"
+			    android:paddingRight="0dp"
+			    android:layout_width="wrap_content"
+	            android:layout_height="wrap_content"
+	    		android:id="@+id/status"
+		    	android:textColor="#FFFFFF"
+		    	android:textSize="17dp"
+		    	android:textStyle="bold" />
+        
+		</LinearLayout>
+		
+        <RelativeLayout
+            android:id="@+id/text"
+            android:background="@drawable/blue_button"
+            android:layout_below="@id/spydroid"
+			android:layout_width="fill_parent"
+			android:layout_height="wrap_content"
+			android:layout_margin="20dp" >
+            
+            <TextView
+                style="@style/style1"
+	            android:layout_width="wrap_content"
+	            android:layout_height="wrap_content"
+	            android:padding="10dp"
+	            android:text="1)"
+	            android:id="@+id/stepone" />
+            
+            
+			<TextView
+			    style="@style/style1"
+	            android:layout_width="wrap_content"
+	            android:layout_height="wrap_content"
+	            android:layout_toRightOf="@id/stepone"
+	            android:padding="10dp"
+	            android:id="@+id/help1"
+	            android:text="@string/help1"
+	            android:textColor="#FFFFFF"/>
+            
+			<TextView
+			    style="@style/style1"
+	            android:layout_width="wrap_content"
+	            android:layout_height="wrap_content"
+	            android:layout_below="@id/help1"
+	            android:padding="10dp"
+	            android:text="2)"
+	            android:id="@+id/steptwo"/>
+			
+			<TextView
+			    style="@style/style1"
+	            android:layout_width="wrap_content"
+	            android:layout_height="wrap_content"
+	            android:layout_toRightOf="@id/steptwo"
+	            android:layout_below="@id/help1"
+	            android:padding="10dp"
+	            android:text="@string/help2"
+	            android:id="@+id/help2"/>
+			
+			<TextView
+			    style="@style/style1"
+	            android:layout_width="wrap_content"
+	            android:layout_height="wrap_content"
+	            android:layout_below="@id/help2"
+	            android:padding="10dp"
+	            android:text="3)"
+	            android:id="@+id/stepthree"/>		
+						
+			<TextView
+			    style="@style/style1"
+	            android:layout_width="wrap_content"
+	            android:layout_height="wrap_content"
+	            android:layout_toRightOf="@id/stepthree"
+	            android:layout_below="@id/help2"
+	            android:padding="10dp"
+	            android:text="@string/help3"
+	            android:id="@+id/help3"/>
+			
+			<TextView
+			    style="@style/style1"
+	            android:layout_width="wrap_content"
+	            android:layout_height="wrap_content"
+	            android:layout_below="@id/help3"
+	            android:padding="10dp"
+	            android:text="4)"
+	            android:id="@+id/stepfour"/>		
+						
+			<TextView
+			    style="@style/style1"
+	            android:layout_width="wrap_content"
+	            android:layout_height="wrap_content"
+	            android:layout_toRightOf="@id/stepfour"
+	            android:layout_below="@id/help3"
+	            android:padding="10dp"
+	            android:text="@string/help4"/>
+			
+        </RelativeLayout>
+
+    </RelativeLayout>
     
-	<TextView
-	    android:id="@+id/console"
-	    android:layout_width="fill_parent"
-	    android:layout_height="wrap_content"
-	    android:gravity="top"
-	    android:shadowColor="#000000"
-	    android:shadowDx="1"
-	    android:shadowDy="1"
-	    android:shadowRadius="1"
-	    android:textColor="#FFFFFF" />
-
-	<TextView
-	    android:id="@+id/ip"
-	    android:layout_marginBottom="20dp"
-	    android:layout_width="wrap_content"
-	    android:layout_height="wrap_content"
-	    android:layout_alignParentBottom="true"
-	    android:layout_centerHorizontal="true" 	    
-	    android:shadowColor="#000000"
-	    android:shadowDx="1"
-	    android:shadowDy="1"
-	    android:shadowRadius="1"
-	    android:textSize="16dp"
-	    android:textColor="#FFFFFF" />
-
-</RelativeLayout>
+    <ImageView
+	     android:id="@+id/logo"
+	     android:src="@drawable/icon"
+	     android:layout_width="wrap_content"
+	     android:layout_height="wrap_content"
+	     android:visibility="invisible" />
+    
+</FrameLayout>

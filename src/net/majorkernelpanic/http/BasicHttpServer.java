@@ -109,6 +109,7 @@ public class BasicHttpServer {
 	private RequestListenerThread requestListenerThread;
     private HttpRequestHandlerRegistry registry = new HttpRequestHandlerRegistry();
 	private boolean firstStart = true;
+	private boolean running = false;
     
     public BasicHttpServer(final int port, final AssetManager assetManager) {
         this.port = port;
@@ -126,20 +127,24 @@ public class BasicHttpServer {
     }
     
     public void start() throws IOException {
+    	if (running) return;
     	if (firstStart) {
     		registry.register("*", new HttpFileHandler(assetManager));
     		firstStart = false;
     	}
+    	running = true;
     	requestListenerThread = new RequestListenerThread(port, assetManager, registry);
     	requestListenerThread.start();
     }
     
     public void stop() {
+    	if (!running) return;
         try {
         	requestListenerThread.serversocket.close();
 		} catch (IOException e) {
 			Log.e(TAG,"Error when close was called on serversocket: "+e.getMessage());
 		}
+        running = false;
     }
     
     private static class RequestListenerThread extends Thread {
@@ -215,10 +220,7 @@ public class BasicHttpServer {
     	};
 
     	private final AssetManager assetManager;
-    	private ByteArrayOutputStream buffer = new ByteArrayOutputStream(64000);
-    	private byte[] tmp = new byte[4096]; 
-        private int length; 
-        
+    	
         public HttpFileHandler(final AssetManager assetManager) {
             super();
             this.assetManager = assetManager;
@@ -229,6 +231,11 @@ public class BasicHttpServer {
                 final HttpResponse response,
                 final HttpContext context) throws HttpException, IOException {
 
+        	ByteArrayOutputStream buffer = new ByteArrayOutputStream(64000);
+        	byte[] tmp = new byte[4096]; 
+            int length; 
+            
+        	
             final String method = request.getRequestLine().getMethod().toUpperCase(Locale.ENGLISH);
             if (!method.equals("GET") && !method.equals("HEAD") && !method.equals("POST")) {
                 throw new MethodNotSupportedException(method + " method not supported"); 

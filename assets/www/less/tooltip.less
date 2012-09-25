@@ -1,0 +1,43 @@
+#tooltip {
+
+    display: none;
+    background: rgba(255,255,255,0.1);
+    margin: 10px 0 0 20px;
+    width: 235px;
+    float: left;
+    height: 450px;
+    // .border-radius(10px);
+
+    >div {
+	display: none;
+    }
+
+    #sounds {
+	display: block;
+    }
+
+    #title {
+	h1 {line-height: 30px;}
+	text-align: center;
+	margin-top: 20px;
+	font-family: @baseFontFamily;
+    }
+
+    #content {
+	font-family: "Sunshiney", "Helvetica Neue", Helvetica, Arial, sans-serif;
+	font-size: 18px;
+	padding: 0 20px 10px 20px;
+	text-align: justify;
+    }
+
+    #hide-tooltip {
+	display: block;
+	text-align: center;
+	margin-bottom: 15px;
+	font-family: "Sunshiney", "Helvetica Neue", Helvetica, Arial, sans-serif;
+	font-size: 17px;
+	text-decoration: underline;
+	cursor: pointer;
+    }
+
+}

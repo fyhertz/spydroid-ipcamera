@@ -22,6 +22,8 @@ package net.majorkernelpanic.spydroid;
 
 import java.io.IOException;
 
+import net.majorkernelpanic.streaming.audio.AACStream;
+import net.majorkernelpanic.streaming.video.H264Stream;
 import net.majorkernelpanic.streaming.video.VideoQuality;
 import android.app.Activity;
 import android.content.BroadcastReceiver;
@@ -39,41 +41,56 @@ import android.os.PowerManager;
 import android.preference.PreferenceManager;
 import android.text.Html;
 import android.util.Log;
+import android.view.Display;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
+import android.view.View;
+import android.view.animation.Animation;
+import android.view.animation.Animation.AnimationListener;
+import android.view.animation.AnimationSet;
+import android.view.animation.RotateAnimation;
+import android.view.animation.TranslateAnimation;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 /** 
  * Spydroid launches an RtspServer, clients can then connect to it and receive audio/video streams from the phone
  */
 public class SpydroidActivity extends Activity implements OnSharedPreferenceChangeListener {
     
-    static final public String TAG = "SpydroidActivity";
+    static final public String TAG = "SpydroidActivity"; 
     
     private HttpServer httpServer = null;
-    private ImageView logo;
+    private ImageView logo, led;
     private PowerManager.WakeLock wl;
     private RtspServer rtspServer = null;
     private SurfaceHolder holder;
     private SurfaceView camera;
-    private TextView console, ip;
+    private TextView console, status;
     private VideoQuality defaultVideoQuality = new VideoQuality();
+    private Display display;
+    private Context context;
     
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         
         setContentView(R.layout.main);
-        
+
         camera = (SurfaceView)findViewById(R.id.smallcameraview);
         logo = (ImageView)findViewById(R.id.logo);
-        console = (TextView) findViewById(R.id.console);
-        ip = (TextView) findViewById(R.id.ip);
+        //console = (TextView) findViewById(R.id.console);
+        status = (TextView) findViewById(R.id.status);
+        display = getWindowManager().getDefaultDisplay();
+        context = this.getApplicationContext();
+        led = (ImageView)findViewById(R.id.led);
         
         SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(this);
+        H264Stream.setPreferences(settings);
+        AACStream.setAACSupported(android.os.Build.VERSION.SDK_INT>=14);
         defaultVideoQuality.resX = settings.getInt("video_resX", 640);
         defaultVideoQuality.resY = settings.getInt("video_resY", 480);
         defaultVideoQuality.frameRate = Integer.parseInt(settings.getString("video_framerate", "15"));
@@ -100,7 +117,7 @@ public class SpydroidActivity extends Activity implements OnSharedPreferenceChan
         Session.setDefaultVideoEncoder(settings.getBoolean("stream_video", true)?Integer.parseInt(settings.getString("video_encoder", "1")):0);
         
         if (settings.getBoolean("enable_rtsp", true)) rtspServer = new RtspServer(8086, handler);
-        if (settings.getBoolean("enable_http", true)) httpServer = new HttpServer(8080, this.getAssets(), handler);
+        if (settings.getBoolean("enable_http", true)) httpServer = new HttpServer(8080, this.getApplicationContext(), handler);
         
     }
     
@@ -129,7 +146,7 @@ public class SpydroidActivity extends Activity implements OnSharedPreferenceChan
     	}
     	else if (key.equals("enable_http")) {
     		if (sharedPreferences.getBoolean("enable_http", true)) {
-    			httpServer =  new HttpServer(8080, this.getAssets(), handler);
+    			httpServer =  new HttpServer(8080, this.getApplicationContext(), handler);
     		} else {
     			if (httpServer != null) httpServer = null;
     		}
@@ -148,7 +165,7 @@ public class SpydroidActivity extends Activity implements OnSharedPreferenceChan
     	// Lock screen
     	wl.acquire();
     }
-    
+    	
     public void onStop() {
     	super.onStop();
     	wl.release();
@@ -158,13 +175,12 @@ public class SpydroidActivity extends Activity implements OnSharedPreferenceChan
     	super.onResume();
     	
     	// Determines if user is connected to a wireless network & displays ip 
-    	WifiManager wifiManager = (WifiManager) this.getSystemService(Context.WIFI_SERVICE);
-    	WifiInfo wifiInfo = wifiManager.getConnectionInfo();
-    	displayIpAddress(wifiInfo);
+    	displayIpAddress();
     	
     	startServers();
     	
     	registerReceiver(wifiStateReceiver,new IntentFilter(WifiManager.NETWORK_STATE_CHANGED_ACTION));
+    	//handler.postDelayed(logoAnimation, 7000);
     	
     }
     
@@ -172,11 +188,15 @@ public class SpydroidActivity extends Activity implements OnSharedPreferenceChan
     	super.onPause();
     	stopServers();
     	unregisterReceiver(wifiStateReceiver);
+    	//handler.removeCallbacks(logoAnimation);
     }
     
     private void stopServers() {
     	if (rtspServer != null) rtspServer.stop();
-    	if (httpServer != null) httpServer.stop();
+    	if (httpServer != null) {
+    		httpServer.setScreenState(false);
+    		//httpServer.stop();
+    	}
     }
     
     private void startServers() {
@@ -184,14 +204,15 @@ public class SpydroidActivity extends Activity implements OnSharedPreferenceChan
     		try {
     			rtspServer.start();
     		} catch (IOException e) {
-    			log("RtspServer could not be started : "+e.getMessage());
+    			log("RtspServer could not be started : "+(e.getMessage()!=null?e.getMessage():"Unknown error"));
     		}
     	}
     	if (httpServer != null) {
+    		httpServer.setScreenState(true);
     		try {
     			httpServer.start();
     		} catch (IOException e) {
-    			log("HttpServer could not be started : "+e.getMessage());
+    			log("HttpServer could not be started : "+(e.getMessage()!=null?e.getMessage():"Unknown error"));
     		}
     	}
     }
@@ -201,51 +222,41 @@ public class SpydroidActivity extends Activity implements OnSharedPreferenceChan
         public void onReceive(Context context, Intent intent) {
         	String action = intent.getAction();
         	if (action.equals(WifiManager.NETWORK_STATE_CHANGED_ACTION)) {
-        		WifiInfo wifiInfo = (WifiInfo)intent.getParcelableExtra(WifiManager.EXTRA_WIFI_INFO);
-        		Log.d(TAG,"Wifi state has changed ! null?: "+(wifiInfo==null));
-        		// Seems like wifiInfo is ALWAYS null on android 2
-        		if (wifiInfo != null) {
-        			Log.d(TAG,wifiInfo.toString());
-        			displayIpAddress(wifiInfo);
-        		}
-        		else {
-        	    	WifiManager wifiManager = (WifiManager) context.getSystemService(Context.WIFI_SERVICE);
-        	    	WifiInfo info = wifiManager.getConnectionInfo();
-        	    	displayIpAddress(info);
-        		}
+        		displayIpAddress();
         	}
         } 
     };
     
+    private boolean streaming = false;
+    
     // The Handler that gets information back from the RtspServer
     private final Handler handler = new Handler() {
     	
-    	public void handleMessage(Message msg) {
+    	public void handleMessage(Message msg) { 
     		
     		switch (msg.what) {
     			
     		case RtspServer.MESSAGE_LOG:
-    			log((String)msg.obj);
+    			Toast.makeText(context, (String)msg.obj, 500).show();
     			break;
 
     		case RtspServer.MESSAGE_ERROR:
-    			log((String)msg.obj);
+    			Toast.makeText(context, (String)msg.obj, 1500).show();
     			break;
     			
     		case Session.MESSAGE_START:
-    			// Sent when streaming starts
-    			logo.setAlpha(100);
-    			camera.setBackgroundDrawable(null);
+    			if (!streaming) handler.postDelayed(ledAnimation, 100);
+    			streaming = true;
+    			status.setText(R.string.streaming);
     			break;
-    			
     		case Session.MESSAGE_STOP:
-    			// Sent when streaming ends
-    			camera.setBackgroundResource(R.drawable.background);
-    			logo.setAlpha(255);
+    			streaming = false;
+    			handler.removeCallbacks(ledAnimation);
+    			displayIpAddress();
     			break;
 
     		case Session.MESSAGE_ERROR:
-    			log((String)msg.obj);
+    			Toast.makeText(context, (String)msg.obj, 1000).show();
     			break;
 
     		}
@@ -273,14 +284,18 @@ public class SpydroidActivity extends Activity implements OnSharedPreferenceChan
         }
     }
     
-    private void displayIpAddress(WifiInfo wifiInfo) {
-    	if (wifiInfo!=null && wifiInfo.getNetworkId()>-1) {
-	    	int i = wifiInfo.getIpAddress();
-	    	ip.setText("rtsp://");
-	    	ip.append(String.format("%d.%d.%d.%d", i & 0xff, i >> 8 & 0xff,i >> 16 & 0xff,i >> 24 & 0xff));
-	    	ip.append(":8086/");
+    private void displayIpAddress() {
+		WifiManager wifiManager = (WifiManager) context.getSystemService(Context.WIFI_SERVICE);
+		WifiInfo info = wifiManager.getConnectionInfo();
+    	if (info!=null && info.getNetworkId()>-1) {
+	    	int i = info.getIpAddress();
+	    	status.setText("http://");
+	    	status.append(String.format("%d.%d.%d.%d", i & 0xff, i >> 8 & 0xff,i >> 16 & 0xff,i >> 24 & 0xff));
+	    	status.append(":8080/");
+	    	led.setImageResource(R.drawable.led_green);
     	} else {
-    		ip.setText("Wifi should be enabled !");
+    		led.setImageResource(R.drawable.led_red);
+    		status.setText(R.string.warning);
     	}
     }
     
@@ -291,6 +306,70 @@ public class SpydroidActivity extends Activity implements OnSharedPreferenceChan
     	}
     	console.append(Html.fromHtml(s+"<br />"));
     }
+
+	private Runnable logoAnimation = new Runnable() {
+		public void run() {
+			runLogoAnimation();
+			handler.postDelayed(this,7000);
+		}
+	};
+    
+	private boolean ledState = true; 
+	
+	private void toggleLed() {
+		if (ledState) {
+			ledState = false;
+			led.setImageResource(R.drawable.led_green);
+		} else {
+			ledState = true;
+			led.setImageResource(getResources().getColor(android.R.color.transparent));
+		}
+	}
+	
+	private Runnable ledAnimation = new Runnable() {
+		public void run() {
+			toggleLed();
+			handler.postDelayed(this,900);
+		}
+	};
+	
+	private void runLogoAnimation() { 
+		int width = display.getWidth(), height = display.getHeight();
+		int side = (int) (Math.random()*4);
+		int position = (int) (side<2?(width-256)*Math.random():(height-256)*Math.random());
+		
+		RotateAnimation rotateAnimation = new RotateAnimation(0, side==0?180:(side==1?0:(side==2?90:270)),Animation.RELATIVE_TO_SELF,0.5f,Animation.RELATIVE_TO_SELF,0.5f);
+		TranslateAnimation translateAnimation = new TranslateAnimation(
+				Animation.ABSOLUTE, side<2?position:(side==2?-200:width), 
+				Animation.ABSOLUTE, side<2?position:(side==2?-100:width-80), 
+				Animation.ABSOLUTE, side>=2?position:(side==0?-200:height), 
+				Animation.ABSOLUTE, side>=2?position:(side==0?-110:height-80));
+		
+		rotateAnimation.setDuration(0);
+		rotateAnimation.setFillAfter(true);
+		translateAnimation.setStartOffset(1500);
+		translateAnimation.setDuration(1500);
+		translateAnimation.setRepeatCount(1);
+		translateAnimation.setRepeatMode(Animation.REVERSE);
+		translateAnimation.setFillAfter(true);
+		
+		AnimationSet animationSet = new AnimationSet(true);
+		
+		animationSet.setAnimationListener(new AnimationListener() {
+			public void onAnimationEnd(Animation animation) {
+				logo.setVisibility(View.INVISIBLE);
+			}
+			public void onAnimationRepeat(Animation animation) {}
+			public void onAnimationStart(Animation animation) {}
+		});
+		
+		animationSet.addAnimation(rotateAnimation);
+		animationSet.addAnimation(translateAnimation);
+		
+		logo.startAnimation(animationSet);
+		logo.setVisibility(View.VISIBLE);
+		
+	}
     
     
 }
