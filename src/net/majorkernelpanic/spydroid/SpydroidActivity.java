@@ -254,11 +254,9 @@ public class SpydroidActivity extends Activity implements OnSharedPreferenceChan
     			handler.removeCallbacks(ledAnimation);
     			displayIpAddress();
     			break;
-
     		case Session.MESSAGE_ERROR:
     			log((String)msg.obj);
     			break;
-
     		}
     	}
     	

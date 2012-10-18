@@ -25,6 +25,7 @@ import org.apache.http.protocol.HttpContext;
 import org.apache.http.protocol.HttpRequestHandler;
 
 import android.content.Context;
+import android.content.Intent;
 import android.media.AudioManager;
 import android.media.SoundPool;
 import android.media.SoundPool.OnLoadCompleteListener;
@@ -41,18 +42,20 @@ public class HttpServer extends BasicHttpServer{
 
 	public HttpServer(int port, Context context, Handler handler) {
 		super(port, context.getAssets());
+		this.context = context;
 		addRequestHandler("/spydroid.sdp*", new DescriptorRequestHandler(handler));
 		addRequestHandler("/sound.htm*", new SoundRequestHandler(context, handler));
 		addRequestHandler("/js/params.js", new SoundsListRequestHandler(handler));
 	} 
 	 
 	private static boolean screenState = true;
+	private static Context context;
 	
 	public void setScreenState(boolean state) {
 		screenState  = state;
 	}
 	
-	/** Send an array with all available sounds */
+	/** Send an array with all available sounds, and the screenState boolean that indicates if the app is on the foreground */
 	static class SoundsListRequestHandler implements HttpRequestHandler {
 
 		private Handler handler;
@@ -62,8 +65,7 @@ public class HttpServer extends BasicHttpServer{
 			this.handler = handler;
 		}
 		
-		public void handle(HttpRequest request, HttpResponse response, HttpContext arg2)
-				throws HttpException, IOException {
+		public void handle(HttpRequest request, HttpResponse response, HttpContext arg2) throws HttpException, IOException {
 			EntityTemplate body = new EntityTemplate(new ContentProducer() {
 				public void writeTo(final OutputStream outstream) throws IOException {
 					OutputStreamWriter writer = new OutputStreamWriter(outstream, "UTF-8"); 
@@ -80,6 +82,13 @@ public class HttpServer extends BasicHttpServer{
 			response.setStatusCode(HttpStatus.SC_OK);
         	body.setContentType("application/json; charset=UTF-8");
         	response.setEntity(body);
+        	
+        	if (!screenState) {
+    			Intent i = new Intent(context,SpydroidActivity.class);
+    			i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+    			context.startActivity(i);
+        	}
+        	
 		}
 	}
 	
