@@ -237,11 +237,11 @@ public class SpydroidActivity extends Activity implements OnSharedPreferenceChan
     		switch (msg.what) {
     			
     		case RtspServer.MESSAGE_LOG:
-    			Toast.makeText(context, (String)msg.obj, 500).show();
+    			log((String)msg.obj);
     			break;
 
     		case RtspServer.MESSAGE_ERROR:
-    			Toast.makeText(context, (String)msg.obj, 1500).show();
+    			log((String)msg.obj);
     			break;
     			
     		case Session.MESSAGE_START:
@@ -256,7 +256,7 @@ public class SpydroidActivity extends Activity implements OnSharedPreferenceChan
     			break;
 
     		case Session.MESSAGE_ERROR:
-    			Toast.makeText(context, (String)msg.obj, 1000).show();
+    			log((String)msg.obj);
     			break;
 
     		}
@@ -300,11 +300,12 @@ public class SpydroidActivity extends Activity implements OnSharedPreferenceChan
     }
     
     public void log(String s) {
-    	String t = console.getText().toString();
+    	/*String t = console.getText().toString();
     	if (t.split("\n").length>8) {
     		console.setText(t.substring(t.indexOf("\n")+1, t.length()));
     	}
-    	console.append(Html.fromHtml(s+"<br />"));
+    	console.append(Html.fromHtml(s+"<br />"));*/
+    	Toast.makeText(context, s, Toast.LENGTH_SHORT).show();
     }
 
 	private Runnable logoAnimation = new Runnable() {
