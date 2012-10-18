@@ -304,9 +304,9 @@
 	    $('#need-help').show();
 	});
 
-	$('body').width($('body').width() + $('#tooltip').width());
-	$('#tooltip').show();
-	$('#need-help').hide();
+	//$('body').width($('body').width() + $('#tooltip').width());
+	$('#tooltip').hide();
+	$('#need-help').show();
 
 	$('#need-help').click(function () {
 	    $('body').width($('body').width() + $('#tooltip').width());

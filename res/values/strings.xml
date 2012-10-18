@@ -7,4 +7,6 @@
     <string name="help4">Have fun !!</string>
     <string name="warning">Wifi should be enabled !</string>
     <string name="streaming">Streaming !</string>
+    <string name="notification_title">Spydroid</string>
+    <string name="notification_content">Beware ! Spydroid is running ;)</string>
 </resources>

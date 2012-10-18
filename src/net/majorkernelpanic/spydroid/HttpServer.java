@@ -47,7 +47,16 @@ public class HttpServer extends BasicHttpServer{
 		addRequestHandler("/sound.htm*", new SoundRequestHandler(context, handler));
 		addRequestHandler("/js/params.js", new SoundsListRequestHandler(handler));
 	} 
-	 
+	
+	public void stop() {
+		super.stop();
+		// If user has started a session with the HTTP Server, we need to stop it
+		if (DescriptorRequestHandler.session != null) {
+			DescriptorRequestHandler.session.stopAll();
+			DescriptorRequestHandler.session.flush();
+		}
+	}
+	
 	private static boolean screenState = true;
 	private static Context context;
 	
@@ -159,9 +168,11 @@ public class HttpServer extends BasicHttpServer{
 		
 	}
 	
+	/* Allow user to start streams (a session contains one or more streams) from the HTTP server by requesting 
+	 * this URL: http://ip/spydroid.sdp (the RTSP server is not needed here) */
 	static class DescriptorRequestHandler implements HttpRequestHandler {
 
-		private Session session;
+		private static Session session;
 		private Handler handler;
 		
 		public DescriptorRequestHandler(Handler handler) {

@@ -85,7 +85,7 @@ public abstract class MediaStream extends MediaRecorder implements Stream {
 		}
 	}
 	
-	public AbstractPacketizer getPacketizer() {
+	public AbstractPacketizer getPacketizer() { 
 		return packetizer;
 	}
 	
@@ -157,7 +157,7 @@ public abstract class MediaStream extends MediaRecorder implements Stream {
 		try {
 			sender.close();
 			receiver.close();
-		} catch (IOException ignore) {}
+		} catch (Exception ignore) {}
 	}
 	
 	public void release() {
@@ -165,7 +165,7 @@ public abstract class MediaStream extends MediaRecorder implements Stream {
 		try {
 			lss.close();
 		}
-		catch (IOException ignore) {}
+		catch (Exception ignore) {}
 		super.release();
 	}
 	

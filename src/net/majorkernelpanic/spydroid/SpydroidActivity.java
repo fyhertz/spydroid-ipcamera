@@ -26,6 +26,9 @@ import net.majorkernelpanic.streaming.audio.AACStream;
 import net.majorkernelpanic.streaming.video.H264Stream;
 import net.majorkernelpanic.streaming.video.VideoQuality;
 import android.app.Activity;
+import android.app.Notification;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -39,8 +42,7 @@ import android.os.Handler;
 import android.os.Message;
 import android.os.PowerManager;
 import android.preference.PreferenceManager;
-import android.text.Html;
-import android.util.Log;
+import android.support.v4.app.NotificationCompat;
 import android.view.Display;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -146,14 +148,14 @@ public class SpydroidActivity extends Activity implements OnSharedPreferenceChan
     	}
     	else if (key.equals("enable_http")) {
     		if (sharedPreferences.getBoolean("enable_http", true)) {
-    			httpServer =  new HttpServer(8080, this.getApplicationContext(), handler);
+    			if (httpServer == null) httpServer = new HttpServer(8080, this.getApplicationContext(), handler);
     		} else {
     			if (httpServer != null) httpServer = null;
     		}
     	}
     	else if (key.equals("enable_rtsp")) {
     		if (sharedPreferences.getBoolean("enable_rtsp", true)) {
-    			rtspServer =  new RtspServer(8086, handler);
+    			if (rtspServer == null) rtspServer = new RtspServer(8086, handler);
     		} else {
     			if (rtspServer != null) rtspServer = null;
     		}
@@ -164,6 +166,20 @@ public class SpydroidActivity extends Activity implements OnSharedPreferenceChan
     	super.onStart();
     	// Lock screen
     	wl.acquire();
+    	
+    	Intent notificationIntent = new Intent(this, SpydroidActivity.class);
+    	PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, PendingIntent.FLAG_CANCEL_CURRENT);
+
+    	NotificationCompat.Builder builder = new NotificationCompat.Builder(this);
+    	Notification notification = builder.setContentIntent(pendingIntent)
+    	        .setWhen(System.currentTimeMillis())
+    	        .setTicker(getText(R.string.notification_title))
+    	        .setSmallIcon(R.drawable.icon)
+    	        .setContentTitle(getText(R.string.notification_title))
+    	        .setContentText(getText(R.string.notification_content)).build();
+    	notification.flags |= Notification.FLAG_ONGOING_EVENT;
+    	((NotificationManager)getSystemService(Context.NOTIFICATION_SERVICE)).notify(0,notification);
+    	
     }
     	
     public void onStop() {
@@ -173,30 +189,58 @@ public class SpydroidActivity extends Activity implements OnSharedPreferenceChan
     
     public void onResume() {
     	super.onResume();
-    	
     	// Determines if user is connected to a wireless network & displays ip 
     	displayIpAddress();
-    	
     	startServers();
-    	
     	registerReceiver(wifiStateReceiver,new IntentFilter(WifiManager.NETWORK_STATE_CHANGED_ACTION));
     	//handler.postDelayed(logoAnimation, 7000);
-    	
     }
     
     public void onPause() {
     	super.onPause();
-    	stopServers();
+    	if (rtspServer != null) rtspServer.stop();
+    	if (httpServer != null) httpServer.setScreenState(false);
     	unregisterReceiver(wifiStateReceiver);
     	//handler.removeCallbacks(logoAnimation);
     }
     
-    private void stopServers() {
+    public void onDestroy() {
+    	super.onDestroy();
+    	// Remove notification
+    	((NotificationManager)getSystemService(Context.NOTIFICATION_SERVICE)).cancel(0);
+    	if (httpServer != null) httpServer.stop();
     	if (rtspServer != null) rtspServer.stop();
-    	if (httpServer != null) {
-    		httpServer.setScreenState(false);
-    		//httpServer.stop();
-    	}
+    }
+    
+    public void onBackPressed() {
+    	Intent setIntent = new Intent(Intent.ACTION_MAIN);
+    	setIntent.addCategory(Intent.CATEGORY_HOME);
+    	setIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+    	startActivity(setIntent);
+    }
+
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.menu, menu);
+        return true;
+    }
+    
+    public boolean onOptionsItemSelected(MenuItem item) {
+    	Intent intent;
+    	
+        switch (item.getItemId()) {
+        case R.id.options:
+            // Starts QualityListActivity where user can change the streaming quality
+            intent = new Intent(this.getBaseContext(),OptionsActivity.class);
+            startActivityForResult(intent, 0);
+            return true;
+        case R.id.quit:
+        	if (httpServer != null) httpServer.stop();
+        	finish();	
+            return true;
+        default:
+            return super.onOptionsItemSelected(item);
+        }
     }
     
     private void startServers() {
@@ -233,17 +277,13 @@ public class SpydroidActivity extends Activity implements OnSharedPreferenceChan
     private final Handler handler = new Handler() {
     	
     	public void handleMessage(Message msg) { 
-    		
     		switch (msg.what) {
-    			
     		case RtspServer.MESSAGE_LOG:
     			log((String)msg.obj);
     			break;
-
     		case RtspServer.MESSAGE_ERROR:
     			log((String)msg.obj);
     			break;
-    			
     		case Session.MESSAGE_START:
     			if (!streaming) handler.postDelayed(ledAnimation, 100);
     			streaming = true;
@@ -262,26 +302,6 @@ public class SpydroidActivity extends Activity implements OnSharedPreferenceChan
     	
     };
     
-    public boolean onCreateOptionsMenu(Menu menu) {
-        MenuInflater inflater = getMenuInflater();
-        inflater.inflate(R.menu.menu, menu);
-        return true;
-    }
-    
-    public boolean onOptionsItemSelected(MenuItem item) {
-    	Intent intent;
-    	
-        switch (item.getItemId()) {
-        case R.id.options:
-            // Starts QualityListActivity where user can change the streaming quality
-            intent = new Intent(this.getBaseContext(),OptionsActivity.class);
-            startActivityForResult(intent, 0);
-            return true;
-        default:
-            return super.onOptionsItemSelected(item);
-        }
-    }
-    
     private void displayIpAddress() {
 		WifiManager wifiManager = (WifiManager) context.getSystemService(Context.WIFI_SERVICE);
 		WifiInfo info = wifiManager.getConnectionInfo();
@@ -289,7 +309,7 @@ public class SpydroidActivity extends Activity implements OnSharedPreferenceChan
 	    	int i = info.getIpAddress();
 	    	status.setText("http://");
 	    	status.append(String.format("%d.%d.%d.%d", i & 0xff, i >> 8 & 0xff,i >> 16 & 0xff,i >> 24 & 0xff));
-	    	status.append(":8080/");
+	    	status.append(":8080");
 	    	led.setImageResource(R.drawable.led_green);
     	} else {
     		led.setImageResource(R.drawable.led_red);

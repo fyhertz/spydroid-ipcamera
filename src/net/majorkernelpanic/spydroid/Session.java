@@ -51,7 +51,7 @@ public class Session {
 	// Message types for UI thread
 	public static final int MESSAGE_START = 3;
 	public static final int MESSAGE_STOP = 4;
-	public static final int MESSAGE_ERROR = 5;
+	public static final int MESSAGE_ERROR = 5; 
 	
 	// Available encoders
 	public final static int VIDEO_H264 = 1;
