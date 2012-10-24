@@ -69,6 +69,8 @@ public class Session {
 	// Indicates if a session is already streaming audio or video
 	private static boolean cameraInUse = false;
 	private static boolean micInUse = false;
+	private static int startedStreamCount = 0;
+	private static Object streamCountLock = new Object();
 	
 	// Prevent two different sessions from using the same peripheral at the same time
 	private static final Object LOCK = new Object();
@@ -118,7 +120,7 @@ public class Session {
 		addVideoTrack(defaultVideoEncoder,defaultCamera,defaultVideoQuality,false);
 	}
 	
-	/** Add default audio track with default configuration */
+	/** Add video track with specified quality and encoder */
 	public void addVideoTrack(int encoder, int camera, VideoQuality videoQuality, boolean flash) throws IllegalStateException, IOException {
 		Stream stream = null;
 		VideoQuality.merge(videoQuality,defaultVideoQuality);
@@ -144,10 +146,12 @@ public class Session {
 		}
 	}
 	
+	/** Add default audio track with default configuration */
 	public void addAudioTrack() {
 		addAudioTrack(defaultAudioEncoder);
 	}
 	
+	/** Add audio track with specified encoder */
 	public void addAudioTrack(int encoder) {
 		Stream stream = null;
 		
@@ -249,8 +253,11 @@ public class Session {
 						}
 					}
 				}
+				synchronized (streamCountLock) {
+					if (startedStreamCount==0) handler.obtainMessage(MESSAGE_START).sendToTarget();
+					startedStreamCount++;
+				}
 			}
-			handler.obtainMessage(MESSAGE_START).sendToTarget();
 		} catch (IOException e) {
 			loge(type+" could not be started (IOException)");
 		} catch (IllegalStateException e) {
@@ -269,10 +276,18 @@ public class Session {
 	
 	/** Stop existing streams */
 	public void stopAll() {
-		for (Iterator<Track> it = tracks.iterator();it.hasNext();) {
-			it.next().stream.stop();
+		synchronized (streamCountLock) {
+			for (Iterator<Track> it = tracks.iterator();it.hasNext();) {
+				Stream stream = it.next().stream;
+				if (stream != null && stream.isStreaming()) {
+					stream.stop();
+					synchronized (streamCountLock) {
+						startedStreamCount--;
+						if (startedStreamCount==0) handler.obtainMessage(MESSAGE_STOP).sendToTarget();
+					}
+				}
+			}
 		}
-		handler.obtainMessage(MESSAGE_STOP).sendToTarget();
 	}
 	
 	/** Delete all existing tracks & release associated resources */

@@ -190,7 +190,7 @@ public class SpydroidActivity extends Activity implements OnSharedPreferenceChan
     public void onResume() {
     	super.onResume();
     	// Determines if user is connected to a wireless network & displays ip 
-    	displayIpAddress();
+    	if (!streaming) displayIpAddress();
     	startServers();
     	registerReceiver(wifiStateReceiver,new IntentFilter(WifiManager.NETWORK_STATE_CHANGED_ACTION));
     	//handler.postDelayed(logoAnimation, 7000);
@@ -265,8 +265,9 @@ public class SpydroidActivity extends Activity implements OnSharedPreferenceChan
     private final BroadcastReceiver wifiStateReceiver = new BroadcastReceiver() {
         public void onReceive(Context context, Intent intent) {
         	String action = intent.getAction();
+        	// This intent is also received when app resumes even if wifi state hasn't changed :/
         	if (action.equals(WifiManager.NETWORK_STATE_CHANGED_ACTION)) {
-        		displayIpAddress();
+        		if (!streaming) displayIpAddress();
         	}
         } 
     };

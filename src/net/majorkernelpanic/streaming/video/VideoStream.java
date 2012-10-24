@@ -77,7 +77,7 @@ public abstract class VideoStream extends MediaStream {
 						Log.e(TAG, "Media server probably died !!");
 						if (cameraArg != null) {
 							cameraArg.release();
-							cameraArg = null;
+							camera = null;
 						}
 						// We won't use a camera with the mediarecorder anymore
 						cameraError = true;
