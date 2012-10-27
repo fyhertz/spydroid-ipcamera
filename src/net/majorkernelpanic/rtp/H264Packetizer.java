@@ -23,6 +23,7 @@ package net.majorkernelpanic.rtp;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.LinkedList;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Semaphore;
 
 import android.os.SystemClock;
@@ -44,7 +45,7 @@ public class H264Packetizer extends AbstractPacketizer {
 	
 	private final static int MAXPACKETSIZE = 1400;
 	private final SimpleFifo fifo = new SimpleFifo(500000);
-	private LinkedList<Chunk> chunks;
+	private ConcurrentLinkedQueue<Chunk> chunks;
 	private Semaphore sync;
 	private Producer producer;
 	private Consumer consumer;
@@ -67,8 +68,7 @@ public class H264Packetizer extends AbstractPacketizer {
 		
 		// We reinitialize everything so that the packetizer can be reused
 		sync = new Semaphore(0);
-		chunks = new LinkedList<Chunk>();
-		chunks.add(new Chunk(0,0));
+		chunks = new ConcurrentLinkedQueue<Chunk>();
 		fifo.flush();
 		
 		// This will skip the MPEG4 header if this step fails we can't stream anything :(
@@ -98,11 +98,11 @@ public class H264Packetizer extends AbstractPacketizer {
 		public boolean running = true;
 		private final SimpleFifo fifo;
 		private final Semaphore sync;
-		private final LinkedList<Chunk> chunks;
+		private final ConcurrentLinkedQueue<Chunk> chunks;
 		private final InputStream is;
 		private final long[] sleep;
 		
-		public Producer(InputStream is, SimpleFifo fifo, LinkedList<Chunk> chunks, Semaphore sync, long[] sleep) {
+		public Producer(InputStream is, SimpleFifo fifo, ConcurrentLinkedQueue<Chunk> chunks, Semaphore sync, long[] sleep) {
 			this.fifo = fifo;
 			this.chunks = chunks;
 			this.sync = sync;
@@ -112,7 +112,7 @@ public class H264Packetizer extends AbstractPacketizer {
 		}
 		
 		public void run() {
-			int length = 0, sum;
+			int sum;
 			long oldtime, duration;
 			
 			try {
@@ -132,8 +132,8 @@ public class H264Packetizer extends AbstractPacketizer {
 					sum = fifo.write(is,100000);
 					duration = SystemClock.elapsedRealtime() - oldtime;
 					
-					//Log.d(TAG,"New chunk -> sleep: "+sleep[0]+" duration: "+duration+" sum: "+sum+" length: "+length+" chunks: "+chunks.size());
-					chunks.add(new Chunk(sum,duration));
+					//Log.d(TAG,"New chunk -> sleep: "+sleep[0]+" duration: "+duration+" sum: "+sum+" chunks: "+chunks.size());
+					chunks.offer(new Chunk(sum,duration));
 					sync.release();
 				}
 			} catch (IOException ignore) {
@@ -151,16 +151,16 @@ public class H264Packetizer extends AbstractPacketizer {
 		public boolean running = true;
 		private final SimpleFifo fifo;
 		private final Semaphore sync;
-		private final LinkedList<Chunk> chunks;
+		private final ConcurrentLinkedQueue<Chunk> chunks;
 		private final RtpSocket socket;
 		private final byte[] buffer;
 		private boolean splitNal;
 		private long newDelay, ts, delay = 10;
 		private int cursor, naluLength = 0;
-		private Chunk chunk = null, tmpChunk = null;
+		private Chunk chunk = new Chunk(0,0), tmpChunk = null;
 		private final long[] sleep;
 		
-		public Consumer(RtpSocket socket, SimpleFifo fifo, LinkedList<Chunk> chunks, Semaphore sync, long[] sleep) {
+		public Consumer(RtpSocket socket, SimpleFifo fifo, ConcurrentLinkedQueue<Chunk> chunks, Semaphore sync, long[] sleep) {
 			this.fifo = fifo;
 			this.chunks = chunks;
 			this.sync = sync;
@@ -181,15 +181,19 @@ public class H264Packetizer extends AbstractPacketizer {
 					// This may happen if a chunk contains only a part of a NAL unit
 					if (splitNal) {
 						len = naluLength-(cursor-chunk.size);
-						tmpChunk = chunks.get(1);
-						tmpChunk.duration += (chunk.size>naluLength) ? chunk.duration*len/chunk.size : chunk.duration;
-						tmpChunk.size += len;
+						tmpChunk = chunk;
+						chunk = chunks.poll();
+						chunk.duration += (tmpChunk.size>naluLength) ? tmpChunk.duration*len/tmpChunk.size : tmpChunk.duration;
+						chunk.size += len;
 						//Log.d(TAG,"Nal unit cut: duration: "+chunk.duration+" size: "+chunk.size+" contrib: "+chunk.duration*len/chunk.size+" naluLength: "+naluLength+" cursor: "+cursor+" len: "+len);
+					} else {
+						len = chunk.size-cursor;
+						chunk = chunks.poll();
+						chunk.size += len;
 					}
-					chunks.pop(); cursor = 0;
-					chunk = chunks.getFirst();
+					cursor = 0;
 					//Log.d(TAG,"Sending chunk: "+chunk.size);
-					while (cursor<chunk.size) send();
+					while (chunk.size-cursor>3) send();
 				}
 			} catch (InterruptedException e) {
 				e.printStackTrace();
@@ -216,10 +220,10 @@ public class H264Packetizer extends AbstractPacketizer {
 			}
 			cursor += naluLength+4;
 
-			// This may happen if a chunk contains only a part of a NAL unit
 			if (cursor<=chunk.size) {
-				newDelay = chunk.duration*naluLength/chunk.size;			
+				newDelay = chunk.duration*naluLength/chunk.size;
 			}
+			// This may happen if a chunk contains only a part of a NAL unit
 			else {
 				splitNal = true;
 				return;
@@ -321,7 +325,7 @@ public class H264Packetizer extends AbstractPacketizer {
 				head += length;
 			}
 			else {
-				int u = this.length-head;
+				int u = this.length-head;	
 				System.arraycopy(this.buffer, head, buffer, offset, u);
 				System.arraycopy(this.buffer, 0, buffer, offset+u, length-u);
 				head = length-u;
@@ -329,7 +333,7 @@ public class H264Packetizer extends AbstractPacketizer {
 			//Log.d(TAG,"head: "+head+" tail: "+tail);
 			return length;
 		}
-
+		
 		public void flush() {
 			tail = head = 0;
 		}
