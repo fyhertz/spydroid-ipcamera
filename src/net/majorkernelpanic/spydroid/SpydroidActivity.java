@@ -22,6 +22,9 @@ package net.majorkernelpanic.spydroid;
 
 import java.io.IOException;
 
+import net.majorkernelpanic.spydroid.CustomHttpServer;
+import net.majorkernelpanic.networking.RtspServer;
+import net.majorkernelpanic.networking.Session;
 import net.majorkernelpanic.streaming.audio.AACStream;
 import net.majorkernelpanic.streaming.video.H264Stream;
 import net.majorkernelpanic.streaming.video.VideoQuality;
@@ -66,7 +69,7 @@ public class SpydroidActivity extends Activity implements OnSharedPreferenceChan
     
     static final public String TAG = "SpydroidActivity"; 
     
-    private HttpServer httpServer = null;
+    private CustomHttpServer httpServer = null;
     private ImageView logo, led;
     private PowerManager.WakeLock wl;
     private RtspServer rtspServer = null;
@@ -114,12 +117,13 @@ public class SpydroidActivity extends Activity implements OnSharedPreferenceChan
 		}*/
         
         Session.setSurfaceHolder(holder);
+        Session.setHandler(handler);
         Session.setDefaultVideoQuality(defaultVideoQuality);
         Session.setDefaultAudioEncoder(settings.getBoolean("stream_audio", true)?Integer.parseInt(settings.getString("audio_encoder", "1")):0);
         Session.setDefaultVideoEncoder(settings.getBoolean("stream_video", true)?Integer.parseInt(settings.getString("video_encoder", "1")):0);
         
         if (settings.getBoolean("enable_rtsp", true)) rtspServer = new RtspServer(8086, handler);
-        if (settings.getBoolean("enable_http", true)) httpServer = new HttpServer(8080, this.getApplicationContext(), handler);
+        if (settings.getBoolean("enable_http", true)) httpServer = new CustomHttpServer(8080, this.getApplicationContext(), handler);
         
     }
     
@@ -148,7 +152,7 @@ public class SpydroidActivity extends Activity implements OnSharedPreferenceChan
     	}
     	else if (key.equals("enable_http")) {
     		if (sharedPreferences.getBoolean("enable_http", true)) {
-    			if (httpServer == null) httpServer = new HttpServer(8080, this.getApplicationContext(), handler);
+    			if (httpServer == null) httpServer = new CustomHttpServer(8080, this.getApplicationContext(), handler);
     		} else {
     			if (httpServer != null) httpServer = null;
     		}
@@ -229,6 +233,11 @@ public class SpydroidActivity extends Activity implements OnSharedPreferenceChan
     	Intent intent;
     	
         switch (item.getItemId()) {
+       /* case R.id.client:
+            // Starts ClientActivity where user can view stream from another phone
+            intent = new Intent(this.getBaseContext(),ClientActivity.class);
+            startActivityForResult(intent, 0);
+            return true;*/
         case R.id.options:
             // Starts QualityListActivity where user can change the streaming quality
             intent = new Intent(this.getBaseContext(),OptionsActivity.class);

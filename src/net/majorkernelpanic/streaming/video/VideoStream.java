@@ -24,20 +24,19 @@ import java.io.IOException;
 
 import net.majorkernelpanic.streaming.MediaStream;
 import android.hardware.Camera;
-import android.hardware.Camera.ErrorCallback;
 import android.hardware.Camera.Parameters;
 import android.media.MediaRecorder;
 import android.util.Log;
+import android.view.Surface;
 import android.view.SurfaceHolder;
 
 public abstract class VideoStream extends MediaStream {
 
 	protected final static String TAG = "VideoStream";
 
-	protected static boolean cameraError = false;
 	protected VideoQuality quality = VideoQuality.defaultVideoQualiy.clone();
 	protected SurfaceHolder.Callback surfaceHolderCallback = null;
-	protected SurfaceHolder surfaceHolder = null;
+	protected Surface surface = null;
 	protected boolean flashState = false,  qualityHasChanged = false;
 	protected int videoEncoder, cameraId;
 	protected Camera camera;
@@ -51,59 +50,32 @@ public abstract class VideoStream extends MediaStream {
 		if (streaming) {
 			try {
 				super.stop();
-			} catch (RuntimeException e) {
-				// stop() can throw a RuntimeException when called too quickly after start() !
-				Log.d(TAG,"stop() called too quickly after start() but it's okay");
-			} 
-			try {
 				// We reconnect to camera just to stop the preview
 				if (camera != null) {
 					camera.reconnect();
 					camera.stopPreview();
+					camera.release();
+					camera = null;
 				}
-			} catch (IOException ignore) {}
+			} catch (Exception e) {
+				Log.e(TAG,e.getMessage());
+			}
 		}
 	}
-	
-	public void prepare() throws IllegalStateException, IOException {
-		
-		if (!cameraError) {
-			if (camera == null) {
-				camera = Camera.open(cameraId);
-				camera.setErrorCallback(new ErrorCallback(){
-					// Will be called if the media server dies
-					// FIXME: In what thread is this called ? Concurrent use of camera may happen here ?!
-					public void onError(int error, Camera cameraArg){
-						Log.e(TAG, "Media server probably died !!");
-						if (cameraArg != null) {
-							cameraArg.release();
-							camera = null;
-						}
-						// We won't use a camera with the mediarecorder anymore
-						cameraError = true;
-					}
-				});
-			}
 
+	public void prepare() throws IllegalStateException, IOException {
+
+		if (camera == null) {
+			camera = Camera.open(cameraId);
 			// We reconnect to camera to change flash state if needed
-			camera.reconnect();
 			Parameters parameters = camera.getParameters();
 			parameters.setFlashMode(flashState?Parameters.FLASH_MODE_TORCH:Parameters.FLASH_MODE_OFF);
 			camera.setParameters(parameters);
 			camera.setDisplayOrientation(quality.orientation);
-			camera.stopPreview();
 			camera.unlock();
 			super.setCamera(camera);
 		}
-		
-		if (cameraError) {
-			super.setCamera(null);
-			super.reset();
-			try {
-				Thread.sleep(200);
-			} catch (InterruptedException ignore) {}
-		}
-		
+
 		// MediaRecorder should have been like this according to me:
 		// all configuration methods can be called at any time and
 		// changes take effects when prepare() is called
@@ -122,11 +94,10 @@ public abstract class VideoStream extends MediaStream {
 			}
 		}
 		super.setVideoEncoder(videoEncoder);
-		super.setPreviewDisplay(surfaceHolder.getSurface());
+		super.setPreviewDisplay(surface);
 		super.setVideoSize(quality.resX,quality.resY);
 		super.setVideoFrameRate(quality.frameRate);
 		super.setVideoEncodingBitRate(quality.bitRate);
-		//super.setOrientationHint(quality.orientation); // FIXME: wrong orientation of the stream and setOrientationHint doesn't help
 		super.prepare();
 		
 		// Reset flash state to ensure that default behavior is to turn it off
@@ -137,26 +108,8 @@ public abstract class VideoStream extends MediaStream {
 
 	}
 	
-	/**
-	 * Call this one instead of setPreviewDisplay(Surface sv) and don't worry about the SurfaceHolder.Callback
-	 */
-	public void setPreviewDisplay(SurfaceHolder sh) {
-		surfaceHolder = sh;
-		surfaceHolderCallback = new SurfaceHolder.Callback() {
-			public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
-				Log.d(TAG,"Surface changed !");
-				surfaceHolder = holder;
-			}
-			public void surfaceCreated(SurfaceHolder holder) {
-				Log.d(TAG,"Surface created !");
-				surfaceHolder = holder;
-			}
-			public void surfaceDestroyed(SurfaceHolder holder) {
-				if (streaming) stop();
-				Log.d(TAG,"Surface destroyed !");
-			}
-		};
-		sh.addCallback(surfaceHolderCallback);
+	public void setPreviewDisplay(Surface surface) {
+		this.surface = surface;
 	}
 	
 	/** Turn flash on or off if phone has one */
@@ -205,10 +158,6 @@ public abstract class VideoStream extends MediaStream {
 
 	public void release() {
 		stop();
-		if (camera != null) camera.release();
-		if (surfaceHolderCallback != null && surfaceHolder != null) {
-			surfaceHolder.removeCallback(surfaceHolderCallback);
-		}
 		super.release();
 	}
 	

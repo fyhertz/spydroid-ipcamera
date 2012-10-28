@@ -18,12 +18,11 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-package net.majorkernelpanic.spydroid;
+package net.majorkernelpanic.networking;
 
 import java.io.IOException;
 import java.net.InetAddress;
-import java.util.ArrayList;
-import java.util.Iterator;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import net.majorkernelpanic.streaming.Stream;
 import net.majorkernelpanic.streaming.audio.AACStream;
@@ -68,32 +67,23 @@ public class Session {
 	
 	// Indicates if a session is already streaming audio or video
 	private static boolean cameraInUse = false;
+	private static Stream videoStream = null;
 	private static boolean micInUse = false;
-	private static int startedStreamCount = 0;
-	private static Object streamCountLock = new Object();
+	private static Stream audioStream = null;
+	private static AtomicInteger startedStreamCount = new AtomicInteger(0);
+	private static Handler handler;
 	
-	// Prevent two different sessions from using the same peripheral at the same time
-	private static final Object LOCK = new Object();
-	
-	class Track {
-		public static final int AUDIO = 1;
-		public static final int VIDEO = 2;
-		public Track(final Stream stream, final int type) {
-			this.stream = stream;
-			this.type = type;
-		}
-		public Stream stream;
-		public int type;
-	}
-	
-	private ArrayList<Track> tracks = new ArrayList<Track>(); 
 	private InetAddress destination;
-	private Handler handler;
+	private Stream[] streamList = new Stream[2];
 	
-	public Session(InetAddress destination, Handler handler) {
+	public Session(InetAddress destination) {
 		this.destination = destination;
-		this.handler = handler;
 	}
+
+	/** Set the handler that will be used to signal the main thread that a session has started or stopped */
+	public static void setHandler(Handler h) {
+		handler = h;
+	}	
 	
 	/** Set default video stream quality, it will be used by addVideoTrack */
 	public static void setDefaultVideoQuality(VideoQuality quality) {
@@ -113,6 +103,23 @@ public class Session {
 	/** Set the Surface required by MediaRecorder to record video */
 	public static void setSurfaceHolder(SurfaceHolder sh) {
 		surfaceHolder = sh;
+		surfaceHolder.addCallback(new SurfaceHolder.Callback() {
+			public void surfaceChanged(SurfaceHolder holder, int format,
+					int width, int height) {
+			}
+			public void surfaceCreated(SurfaceHolder holder) {
+			}
+			public void surfaceDestroyed(SurfaceHolder holder) {
+				Log.d(TAG,"Surface destroyed !!");
+				if (cameraInUse) {
+					cameraInUse = false;
+					videoStream.stop();
+					if ( audioStream==null || (audioStream != null && !audioStream.isStreaming()) )
+							handler.obtainMessage(Session.MESSAGE_STOP).sendToTarget();
+				}
+			}
+			
+		});
 	}
 	
 	/** Add the default video track with default configuration */
@@ -121,7 +128,8 @@ public class Session {
 	}
 	
 	/** Add video track with specified quality and encoder */
-	public void addVideoTrack(int encoder, int camera, VideoQuality videoQuality, boolean flash) throws IllegalStateException, IOException {
+	public synchronized void addVideoTrack(int encoder, int camera, VideoQuality videoQuality, boolean flash) throws IllegalStateException, IOException {
+		if (cameraInUse) return;
 		Stream stream = null;
 		VideoQuality.merge(videoQuality,defaultVideoQuality);
 		
@@ -139,10 +147,12 @@ public class Session {
 		if (stream != null) {
 			Log.d(TAG,"Quality is: "+videoQuality.resX+"x"+videoQuality.resY+"px "+videoQuality.frameRate+"fps, "+videoQuality.bitRate+"bps");
 			((VideoStream) stream).setVideoQuality(videoQuality);
-			((VideoStream) stream).setPreviewDisplay(surfaceHolder);
+			((VideoStream) stream).setPreviewDisplay(surfaceHolder.getSurface());
 			((VideoStream) stream).setFlashState(flash);
 			stream.setDestination(destination, 5006);
-			tracks.add(new Track(stream,Track.VIDEO));
+			streamList[0] = stream;
+			videoStream = stream;
+			cameraInUse = true;
 		}
 	}
 	
@@ -152,7 +162,8 @@ public class Session {
 	}
 	
 	/** Add audio track with specified encoder */
-	public void addAudioTrack(int encoder) {
+	public synchronized void addAudioTrack(int encoder) {
+		if (micInUse) return;
 		Stream stream = null;
 		
 		switch (encoder) {
@@ -172,7 +183,9 @@ public class Session {
 		
 		if (stream != null) {
 			stream.setDestination(destination, 5004);
-			tracks.add(new Track(stream,Track.AUDIO));
+			streamList[1] = stream;
+			audioStream = stream;
+			micInUse = true;
 		}
 		
 	}
@@ -185,41 +198,33 @@ public class Session {
 	public String getSessionDescriptor() throws IllegalStateException, IOException {
 		String sessionDescriptor = "";
 		// Prevent two different sessions from using the same peripheral at the same time
-		synchronized (LOCK) {
-			for (int i=0;i<tracks.size();i++) {
-				Track track = tracks.get(i);
-				if ((track.type == Track.VIDEO && !cameraInUse) || (track.type == Track.AUDIO && !micInUse)) {
-					sessionDescriptor += track.stream.generateSessionDescriptor();
-					sessionDescriptor += "a=control:trackID="+i+"\r\n";
-				}
+		for (int i=0;i<streamList.length;i++) {
+			if (streamList[i] != null && !streamList[i].isStreaming()) {
+				sessionDescriptor += streamList[i].generateSessionDescriptor();
+				sessionDescriptor += "a=control:trackID="+i+"\r\n";
 			}
 		}
 		return sessionDescriptor;
 	}
 	
 	public boolean trackExists(int id) {
-		try{
-			tracks.get(id);
-			return true;
-		} catch (IndexOutOfBoundsException e) {
-			return false;
-		}
+		return streamList[id]!=null;
 	}
 	
 	public int getTrackDestinationPort(int id) {
-		return tracks.get(id).stream.getDestinationPort();
+		return streamList[id].getDestinationPort();
 	}
 
 	public int getTrackLocalPort(int id) {
-		return tracks.get(id).stream.getLocalPort();
+		return streamList[id].getLocalPort();
 	}
 	
 	public void setTrackDestinationPort(int id, int port) {
-		tracks.get(id).stream.setDestination(destination,port);
+		streamList[id].setDestination(destination,port);
 	}
 	
 	public int getTrackSSRC(int id) {
-		return tracks.get(id).stream.getSSRC();
+		return streamList[id].getSSRC();
 	}
 	
 	/** The destination address for all the streams of the session
@@ -228,75 +233,48 @@ public class Session {
 	public void setDestination(InetAddress destination) {
 		this.destination =  destination;
 	}
-	
+
 	/** Start stream with id trackId */
 	public void start(int trackId) {
-		Track track = tracks.get(trackId);
-		String type = track.type==Track.VIDEO ? "Video stream" : "Audio stream";
-		Stream stream = track.stream;
+		String type = trackId==0 ? "Video stream" : "Audio stream";
+		Stream stream = streamList[trackId];
 		try {
 			if (stream!=null && !stream.isStreaming()) {
-				// Prevent two different sessions from using the same peripheral at the same time
-				synchronized (LOCK) {
-					if (track.type == Track.VIDEO) {
-						if (!cameraInUse) {
-							stream.prepare();
-							stream.start();
-							cameraInUse = true;
-						}
-					}
-					if (track.type == Track.AUDIO) {
-						if (!micInUse) {
-							stream.prepare();
-							stream.start();
-							micInUse = true;
-						}
-					}
-				}
-				synchronized (streamCountLock) {
-					if (startedStreamCount==0) handler.obtainMessage(MESSAGE_START).sendToTarget();
-					startedStreamCount++;
-				}
+				stream.prepare();
+				stream.start();
+				if (startedStreamCount.addAndGet(1)==1) handler.obtainMessage(Session.MESSAGE_START).sendToTarget();
 			}
-		} catch (IOException e) {
-			loge(type+" could not be started (IOException)");
-		} catch (IllegalStateException e) {
-			loge(type+" could not be started (IllegalStateException)");
-		} catch (RuntimeException e) {
-			loge(type+" could not be started, your phone doesn't support those settings");
+		} catch (Exception e) {
+			loge(type+" could not be started: "+(e.getMessage()!=null?e.getMessage():"error unknown"));
+			e.printStackTrace();
 		}
 	}
 
 	/** Start existing streams */
 	public void startAll() {
-		for (int i=0;i<tracks.size();i++) {
+		for (int i=0;i<streamList.length;i++) {
 			start(i);
 		}
 	}
-	
+
 	/** Stop existing streams */
 	public void stopAll() {
-		synchronized (streamCountLock) {
-			for (Iterator<Track> it = tracks.iterator();it.hasNext();) {
-				Stream stream = it.next().stream;
-				if (stream != null && stream.isStreaming()) {
-					stream.stop();
-					synchronized (streamCountLock) {
-						startedStreamCount--;
-						if (startedStreamCount==0) handler.obtainMessage(MESSAGE_STOP).sendToTarget();
-					}
-				}
+		for (int i=0;i<streamList.length;i++) {
+			if (streamList[i] != null && streamList[i].isStreaming()) {
+				streamList[i].stop();
+				if (startedStreamCount.addAndGet(-1)==0) handler.obtainMessage(Session.MESSAGE_STOP).sendToTarget();
 			}
 		}
 	}
 	
 	/** Delete all existing tracks & release associated resources */
 	public void flush() {
-		for (Iterator<Track> it = tracks.iterator();it.hasNext();) {
-			Track track = it.next();
-			track.stream.release();
-			if (track.type == Track.VIDEO) cameraInUse = false;
-			else if (track.type == Track.AUDIO) micInUse = false;
+		for (int i=0;i<streamList.length;i++) {
+			if (streamList[i] != null) {
+				streamList[i].release();
+				if (i == 0) cameraInUse = false;
+				else micInUse = false;
+			}
 		}
 	}
 	

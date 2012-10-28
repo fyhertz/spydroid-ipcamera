@@ -1,4 +1,4 @@
-package net.majorkernelpanic.spydroid;
+package net.majorkernelpanic.networking;
 
 import java.io.IOException;
 import java.net.URI;
@@ -14,7 +14,6 @@ import android.hardware.Camera.CameraInfo;
 
 /**
  * Parse a URI and configure a Session accordingly
- * 
  */
 public class UriParser {
 

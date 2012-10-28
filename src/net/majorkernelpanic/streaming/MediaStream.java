@@ -30,8 +30,8 @@ import android.net.LocalSocket;
 import android.net.LocalSocketAddress;
 
 /**
- *  A MediaRecorder that streams what it records using a packetizer specified with setPacketizer 
- *  Use it just like a regular MediaRecorder except for setOutputFile() that you don't need to call
+ *  A MediaRecorder that streams what it records using a packetizer from the rtp package.
+ *  You can't use this class directly !
  */
 public abstract class MediaStream extends MediaRecorder implements Stream {
 
@@ -64,6 +64,7 @@ public abstract class MediaStream extends MediaRecorder implements Stream {
 		
 	}
 
+	/** The stream will be sent to the address specified by this function **/
 	public void setDestination(InetAddress dest, int dport) {
 		this.packetizer.setDestination(dest, dport);
 	}
@@ -127,8 +128,7 @@ public abstract class MediaStream extends MediaRecorder implements Stream {
 			try {
 				super.stop();
 			}
-			catch (IllegalStateException ignore) {}
-			catch (RuntimeException ignore) {}
+			catch (Exception ignore) {}
 			finally {
 				super.reset();
 				streaming = false;

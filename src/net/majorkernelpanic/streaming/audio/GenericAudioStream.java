@@ -6,7 +6,6 @@ import java.net.SocketException;
 import java.net.UnknownHostException;
 
 import net.majorkernelpanic.streaming.Stream;
-
 import android.net.rtp.AudioCodec;
 import android.net.rtp.AudioGroup;
 import android.net.rtp.AudioStream;
@@ -15,7 +14,7 @@ import android.util.Log;
 
 /**
  * Encapsulation of the new rtp package from API 12
- * Allow the StreamingManager to use it
+ * No working :(
  */
 public class GenericAudioStream implements Stream {
 

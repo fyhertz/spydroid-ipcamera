@@ -2,8 +2,11 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
     <item android:id="@+id/options"
           android:icon="@drawable/options"
-          android:title="Options" />
+          android:title="@string/options" />
+    <!-- <item android:id="@+id/client"
+          android:icon="@drawable/options"
+          android:title="@string/client" /> -->
     <item android:id="@+id/quit"
           android:icon="@drawable/quit"
-          android:title="Quitter" />
+          android:title="@string/quit" />
 </menu>

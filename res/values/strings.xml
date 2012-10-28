@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="options">Options</string>
+    <string name="quit">Quit</string>
+    <string name="client">Client</string>
     <string name="app_name">Spydroid</string>
     <string name="help1">Activate Wifi</string>
     <string name="help2">Connect your phone to your Wifi network</string>

@@ -15,6 +15,7 @@ public interface Stream {
 	public int getLocalPort();
 	public int getDestinationPort();
 	public int getSSRC();
+	
 	public String generateSessionDescriptor() throws IllegalStateException, IOException;
 	
 	public boolean isStreaming();

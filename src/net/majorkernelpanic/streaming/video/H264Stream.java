@@ -30,6 +30,7 @@ import net.majorkernelpanic.rtp.H264Packetizer;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
 import android.media.MediaRecorder;
+import android.os.Environment;
 import android.util.Log;
 
 /**
@@ -58,9 +59,9 @@ public class H264Stream extends VideoStream {
 	private MP4Config testH264() throws IllegalStateException, IOException {
 		if (!qualityHasChanged && mp4Config!=null) return mp4Config;
 		
-		final String TESTFILE = "/sdcard/spydroid-test.mp4";
+		final String TESTFILE = Environment.getExternalStorageDirectory().getPath()+"/spydroid-test.mp4";
 		
-		Log.i(TAG,"Testing H264 support...");
+		Log.i(TAG,"Testing H264 support... Test file saved at: "+TESTFILE);
 		
 		// Save flash state & set it to false so that led remains off while testing h264
 		boolean savedFlashState = flashState;
@@ -99,7 +100,7 @@ public class H264Stream extends VideoStream {
 				Log.d(TAG,"MediaRecorder callback was called :)");
 				Thread.sleep(400);
 			} else {
-				Log.d(TAG,"MediaRecorder callback was not called :(");
+				Log.d(TAG,"MediaRecorder callback was not called after 6 seconds... :(");
 			}
 		} catch (InterruptedException e) {
 			e.printStackTrace();
@@ -107,6 +108,10 @@ public class H264Stream extends VideoStream {
 			stop();
 		}
 		
+		// Disable the callback
+		try {
+			this.setOnInfoListener(null);
+		} catch (Exception ignore) {}
 		
 		// Retrieve SPS & PPS & ProfileId with MP4Config
 		mp4Config = new MP4Config(TESTFILE);
@@ -141,7 +146,7 @@ public class H264Stream extends VideoStream {
 				testH264();
 				profile = mp4Config.getProfileLevel();
 				pps = mp4Config.getB64PPS();
-				sps = mp4Config.getB64PPS();
+				sps = mp4Config.getB64SPS();
 			} else {
 				String[] s = settings.getString(quality.frameRate+","+quality.resX+","+quality.resY, "").split(",");
 				profile = s[0];
@@ -152,7 +157,7 @@ public class H264Stream extends VideoStream {
 			testH264();
 			profile = mp4Config.getProfileLevel();
 			pps = mp4Config.getB64PPS();
-			sps = mp4Config.getB64PPS();
+			sps = mp4Config.getB64SPS();
 		}
 
 		return "m=video "+String.valueOf(getDestinationPort())+" RTP/AVP 96\r\n" +

@@ -18,7 +18,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-package net.majorkernelpanic.spydroid;
+package net.majorkernelpanic.networking;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -111,7 +111,7 @@ public class RtspServer {
 		public WorkerThread(final Socket client, final Handler handler) throws IOException {
 			this.input = new BufferedReader(new InputStreamReader(client.getInputStream()));
 			this.output = client.getOutputStream();
-			this.session = new Session(client.getInetAddress(), handler);
+			this.session = new Session(client.getInetAddress());
 			this.client = client;
 			this.handler = handler;
 		}
@@ -130,13 +130,13 @@ public class RtspServer {
 					response = processRequest(request);
 					// Send response
 					response.send(output);
-				} catch (IllegalStateException e1) {
-					loge("Client sent a bad request !");
-				} catch (SocketException e) {
+				} catch (SocketException ignore) {
 					// Client left
 					break;
-				} catch (IOException e) {
-					continue;
+				} catch (Exception e) {
+					loge("An error occured: "+e.getMessage()!=null?e.getMessage():"unknown error !");
+					e.printStackTrace();
+					break;
 				}
 			}
 
