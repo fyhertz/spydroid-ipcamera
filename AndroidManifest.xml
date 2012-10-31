@@ -2,8 +2,8 @@
 
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
       package="net.majorkernelpanic.spydroid"
-      android:versionCode="513"
-      android:versionName="5.1.3">
+      android:versionCode="600"
+      android:versionName="6.0">
       
     <uses-sdk android:minSdkVersion="10" />
     <uses-permission android:name="android.permission.CAMERA"></uses-permission>   
@@ -20,7 +20,7 @@
         <activity android:screenOrientation="portrait" 
                   android:name=".SpydroidActivity"
                   android:launchMode="singleInstance"
-                  android:theme="@android:style/Theme.Black.NoTitleBar.Fullscreen"
+                  android:theme="@android:style/Theme.Panel"
                   android:label="@string/app_name">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -28,13 +28,18 @@
             </intent-filter>
         </activity>
         <activity android:name="com.google.ads.AdActivity"
-              android:configChanges="keyboard|keyboardHidden|orientation|screenLayout|uiMode|screenSize|smallestScreenSize"/>
+                  android:configChanges="keyboard|keyboardHidden|orientation|screenLayout|uiMode|screenSize|smallestScreenSize"/>
         <activity android:name=".OptionsActivity"
-                  android:label="@string/app_name">
+                  android:label="@string/options_activity_title">
         </activity>
         <activity android:name=".ClientActivity"
-                  android:label="@string/app_name">
+                  android:screenOrientation="portrait"
+            	  android:theme="@android:style/Theme.Black.NoTitleBar.Fullscreen"
+                  android:label="@string/client_activity_title">
         </activity>
+        <activity android:name=".AboutActivity"
+                  android:label="@string/about_activity_title">
+        </activity>        
     </application>
 
 </manifest>

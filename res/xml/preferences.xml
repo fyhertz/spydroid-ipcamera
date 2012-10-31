@@ -60,22 +60,5 @@
             android:entryValues="@array/videoBitrateValues" />
 
     </PreferenceCategory>
-
-	<PreferenceCategory
-            android:title="Interfaces">
-
-		<CheckBoxPreference
-                android:key="enable_http"
-                android:title="HTTP server"
-                android:defaultValue="true"
-                android:summary="Enable/Disable the http interface" />
-	    
-        <CheckBoxPreference
-                android:key="enable_rtsp"
-                android:title="RTSP server"
-                android:defaultValue="true"
-                android:summary="Enable/Disable the rtsp interface" />
-        
-    </PreferenceCategory>
         
 </PreferenceScreen>

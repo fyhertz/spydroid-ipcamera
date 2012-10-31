@@ -23,6 +23,8 @@ package net.majorkernelpanic.spydroid;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import net.majorkernelpanic.networking.Session;
+
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
 import android.os.Bundle;
@@ -49,7 +51,9 @@ public class OptionsActivity extends PreferenceActivity {
         videoEncoder.setEnabled(settings.getBoolean("stream_video", true));
         audioEncoder.setEnabled(settings.getBoolean("stream_audio", true));
         
-        videoResolution.setSummary("Current resolution is "+settings.getInt("video_resX", 640)+"x"+settings.getInt("video_resY", 320)+"px");
+        videoResolution.setSummary("Current resolution is "+
+        		settings.getInt("video_resX", Session.defaultVideoQuality.resX)+"x"+
+        		settings.getInt("video_resY", Session.defaultVideoQuality.resY)+"px");
         videoFramerate.setSummary("Current framerate is "+Integer.parseInt(settings.getString("video_framerate", "15"))+"fps");
         videoBitrate.setSummary("Current bitrate is "+Integer.parseInt(settings.getString("video_bitrate", "500"))+"kbps");
         

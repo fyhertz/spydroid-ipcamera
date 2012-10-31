@@ -32,12 +32,6 @@ import android.media.MediaRecorder;
  */
 public class AACStream extends MediaStream {
 
-	public static boolean aacSupported = true;
-	
-	public static void setAACSupported(boolean b) {
-		aacSupported = b;
-	}
-	
 	public AACStream() {
 		super();
 		
@@ -47,10 +41,6 @@ public class AACStream extends MediaStream {
 	}
 
 	public void prepare() throws IllegalStateException, IOException {
-		
-		if (!aacSupported) {
-			throw new IllegalStateException("AAC not supported !");
-		}
 		
 		setAudioSource(MediaRecorder.AudioSource.CAMCORDER);
 		

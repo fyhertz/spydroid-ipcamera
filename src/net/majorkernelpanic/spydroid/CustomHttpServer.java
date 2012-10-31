@@ -31,6 +31,8 @@ import java.util.Iterator;
 import java.util.List;
 
 import net.majorkernelpanic.networking.HttpServer;
+import net.majorkernelpanic.networking.Session;
+import net.majorkernelpanic.streaming.video.VideoQuality;
 
 import org.apache.http.HttpException;
 import org.apache.http.HttpRequest;
@@ -45,27 +47,118 @@ import org.apache.http.protocol.HttpRequestHandler;
 
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
+import android.content.SharedPreferences.Editor;
 import android.media.AudioManager;
 import android.media.SoundPool;
 import android.media.SoundPool.OnLoadCompleteListener;
 import android.os.Handler;
+import android.preference.PreferenceManager;
+import android.util.Log;
 
 public class CustomHttpServer extends HttpServer {
 
-	/** Adds some request handler to allow the user to remotly launch souds on the phone **/
+	/** 
+	 * HTTP server of Spydroid
+	 * Its document root is assets/www, it contains a little user-friendly website to control spydroid from a browser
+	 * The default behavior of HttpServer is enhanced with 3 RequestHandlers, they are briefly described in this file
+	 **/
 	public CustomHttpServer(int port, Context context, Handler handler) {
 		super(port, context, handler);
 		addRequestHandler("/sound.htm*", new SoundRequestHandler(context, handler));
+		addRequestHandler("/config.json*", new ConfigRequestHandler(context));
 		addRequestHandler("/js/params.js", new SoundsListRequestHandler(handler));
 	}
 
 	private static boolean screenState = true;
-	
-	public void setScreenState(boolean state) {
+
+	/** Called with false when AndroidActivity stops and with true when it starts **/
+	public static void setScreenState(boolean state) {
 		screenState  = state;
 	}
 	
-	/** Send an array with all available sounds, and the screenState boolean that indicates if the app is on the foreground */
+	/** 
+	 * Send or set the configuration of spydroid  (stream encoder, resolution, framerate)
+	 * In other words, settings are persistent in the web interface 
+	 **/
+	static class ConfigRequestHandler implements HttpRequestHandler {
+		
+		private Context context;
+		
+		public ConfigRequestHandler(Context context) {
+			this.context = context;
+		}
+		
+		@Override
+		public void handle(HttpRequest request, HttpResponse response,
+				HttpContext httpContext) throws HttpException, IOException {
+			
+			SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(context);
+			final String uri = URLDecoder.decode(request.getRequestLine().getUri());
+			final List<NameValuePair> params = URLEncodedUtils.parse(URI.create(uri),"UTF-8");
+			String result = "Error";
+
+			if (params.size()>0) {
+				try {
+					// Set the configuration
+					if (params.get(0).getName().equals("set")) {
+						Editor editor = settings.edit();
+						editor.putBoolean("stream_audio", false);
+						editor.putBoolean("stream_video", false);
+						for (Iterator<NameValuePair> it = params.iterator();it.hasNext();) {
+							NameValuePair param = it.next();
+							if (param.getName().equals("h263") || param.getName().equals("h264")) {
+								editor.putBoolean("stream_video", true);
+								Session.defaultVideoQuality = VideoQuality.parseQuality(param.getValue());
+								editor.putInt("video_resX", Session.defaultVideoQuality.resX);
+								editor.putInt("video_resY", Session.defaultVideoQuality.resY);
+								editor.putString("video_framerate", String.valueOf(Session.defaultVideoQuality.frameRate));
+								editor.putString("video_bitrate", String.valueOf(Session.defaultVideoQuality.bitRate/1000));
+								editor.putString("video_encoder", param.getName().equals("h263")?"2":"1");
+							}
+							if (param.getName().equals("amr") || param.getName().equals("aac")) {
+								editor.putBoolean("stream_audio", true);
+								Session.defaultVideoQuality = VideoQuality.parseQuality(param.getValue());
+								editor.putString("audio_encoder", param.getName().equals("amr")?"3":"5");
+							}
+						}	
+						editor.commit();
+						result = "[]";
+					}
+					// Send the current configuration
+					else if (params.get(0).getName().equals("get")) {
+						result = "{\"streamAudio\":" + settings.getBoolean("stream_audio", false) + "," +
+								"\"audioEncoder\":\"" + (Integer.parseInt(settings.getString("audio_encoder", "3"))==3?"AMR-NB":"AAC") + "\"," +
+								"\"streamVideo\":" + settings.getBoolean("stream_video", true) + "," +
+								"\"videoEncoder\":\"" + (Integer.parseInt(settings.getString("video_encoder", "2"))==2?"H.263":"H.264") + "\"," +
+								"\"videoResX\":" + settings.getInt("video_resX", Session.defaultVideoQuality.resX) + "," +
+								"\"videoResY\":" + settings.getInt("video_resY", Session.defaultVideoQuality.resY) + "," +
+								"\"videoFramerate\":" + settings.getString("video_framerate", String.valueOf(Session.defaultVideoQuality.frameRate)) + "," +
+								"\"videoBitrate\":" + settings.getString("video_bitrate", String.valueOf(Session.defaultVideoQuality.bitRate/1000)) + "}";
+					}
+				} catch (Exception e) {
+					Log.e(TAG,"Error !");
+					e.printStackTrace();
+				}
+			}
+
+			final String finalResult = result;
+			EntityTemplate body = new EntityTemplate(new ContentProducer() {
+				public void writeTo(final OutputStream outstream) throws IOException {
+					OutputStreamWriter writer = new OutputStreamWriter(outstream, "UTF-8"); 
+					writer.write(finalResult);
+					writer.flush();
+				}
+			});
+
+			response.setStatusCode(HttpStatus.SC_OK);
+        	body.setContentType("application/json; charset=UTF-8");
+        	response.setEntity(body);
+			
+		}
+	}
+	
+	/** Send an array with all available sounds, and a boolean that indicates if the app is on the foreground **/
 	static class SoundsListRequestHandler implements HttpRequestHandler {
 
 		private Handler handler;
@@ -93,6 +186,7 @@ public class CustomHttpServer extends HttpServer {
         	body.setContentType("application/json; charset=UTF-8");
         	response.setEntity(body);
         	
+        	// Bring SpydrdoiActivity to the foreground
         	if (!screenState) {
     			Intent i = new Intent(context,SpydroidActivity.class);
     			i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
@@ -102,7 +196,7 @@ public class CustomHttpServer extends HttpServer {
 		}
 	}
 	
-	/**	Play a sound on the phone based on the uri */
+	/**	Play a sound on the phone **/
 	static class SoundRequestHandler implements HttpRequestHandler {
 
 		private Handler handler;
@@ -146,10 +240,9 @@ public class CustomHttpServer extends HttpServer {
 	        				}
 	        			}
 	        		}
-				} catch (IllegalArgumentException e) {
-
-				} catch (IllegalAccessException e) {
-
+				} catch (Exception e) {
+					Log.e(TAG,"Error !");
+					e.printStackTrace();
 				}
 			}
 			

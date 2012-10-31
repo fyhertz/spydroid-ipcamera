@@ -33,7 +33,7 @@ public class VideoQuality {
 		this.bitRate = bitRate;
 		this.resX = resX;
 		this.resY = resY;
-		
+		merge(this,defaultVideoQualiy);
 	}
 	
 	public int frameRate = 0;

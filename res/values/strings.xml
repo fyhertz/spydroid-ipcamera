@@ -4,12 +4,16 @@
     <string name="quit">Quit</string>
     <string name="client">Client</string>
     <string name="app_name">Spydroid</string>
-    <string name="help1">Activate Wifi</string>
-    <string name="help2">Connect your phone to your Wifi network</string>
-    <string name="help3">Open chrome or firefox on your PC and visite the URL below</string>
-    <string name="help4">Have fun !!</string>
-    <string name="warning">Wifi should be enabled !</string>
+    <string name="description">Capture live video and audio streaming from your smartphone with Spydroid</string>
+    <string name="line1">In chrome or firefox type</string>
+    <string name="line2">Or in VLC open</string>
+    <string name="about_activity_title">About</string>
+    <string name="client_activity_title">Client</string>
+    <string name="options_activity_title">Settings</string>
+    <string name="warning">Turn the wifi on and join a network !</string>
     <string name="streaming">Streaming !</string>
     <string name="notification_title">Spydroid</string>
     <string name="notification_content">Beware ! Spydroid is running ;)</string>
+    <string name="connection">Connect</string>
+    <string name="ask_client_ip">Enter the IP of the other phone and press connect</string>
 </resources>

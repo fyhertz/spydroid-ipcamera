@@ -205,7 +205,7 @@ public class RtspServer {
 				}
 				
 				p = Pattern.compile("client_port=(\\d+)-(\\d+)",Pattern.CASE_INSENSITIVE);
-				m = p.matcher(request.headers.get("Transport"));
+				m = p.matcher(request.headers.get("transport"));
 				
 				if (!m.find()) {
 					int port = session.getTrackDestinationPort(trackId);
@@ -313,7 +313,7 @@ public class RtspServer {
 			while ( (line = input.readLine()) != null && line.length()>3 ) {
 				matcher = rexegHeader.matcher(line);
 				matcher.find();
-				request.headers.put(matcher.group(1),matcher.group(2));
+				request.headers.put(matcher.group(1).toLowerCase(),matcher.group(2));
 			}
 			if (line==null) throw new SocketException("Client disconnected");
 			
@@ -344,8 +344,11 @@ public class RtspServer {
 			int seqid = -1;
 			
 			try {
-				seqid = Integer.parseInt(request.headers.get("Cseq"));
-			} catch (Exception ignore) {}
+				seqid = Integer.parseInt(request.headers.get("cseq").replace(" ",""));
+			} catch (Exception e) {
+				Log.e(TAG,"Error parsing CSeq: "+(e.getMessage()!=null?e.getMessage():""));
+				e.printStackTrace();
+			}
 			
 			String response = 	"RTSP/1.0 "+status+"\r\n" +
 					"Server: MajorKernelPanic RTSP Server\r\n" +

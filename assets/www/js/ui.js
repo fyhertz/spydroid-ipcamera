@@ -1,6 +1,6 @@
 (function () {
 
-    //var host = "192.168.2.33",
+    //var host = "192.168.0.105",
     var host = /(.+):/.exec(window.location.host)[1],
 
     generateURI = function (h) {
@@ -32,6 +32,8 @@
 	// Params
 	cache = /[0-9]+/.exec($('#cache').val())[0];
 	
+	$.get('config.json?set&'+videoEncoder+'&'+audioEncoder);
+
 	return {
 	    uria:"rtsp://"+h+":"+8086+"?"+audioEncoder,
 	    uriv:"rtsp://"+h+":"+8086+"?"+videoEncoder+'&flash='+flash,
@@ -320,6 +322,20 @@
 	});
 
 	$('.popup').css({'top':($(window).height()-$('.popup').height())/2,'left':($(window).width()-$('.popup').width())/2});
+
+	$.getJSON('config.json?get',function (config) {
+	    $('#resolution,#framerate,#bitrate,#audioEncoder,#videoEncoder').children().removeAttr('selected').each(function (c) {
+		if ($(this).val()===config.videoResX+'x'+config.videoResY || 
+		    $(this).val()===config.videoFramerate+" fps" || 
+		    $(this).val()===config.videoBitrate+" bps" || 
+		    $(this).val()===config.audioEncoder ||
+		    $(this).val()===config.videoEncoder ) {
+		    $(this).attr('selected','true');
+		}
+	    });	    
+	    if (config.streamAudio===false) $('#audioEnabled').removeAttr('checked');
+	    if (config.streamVideo===false) $('#videoEnabled').removeAttr('checked');
+	});
 
     };
 

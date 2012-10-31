@@ -16,160 +16,198 @@
         android:layout_height="fill_parent"
         android:gravity="center" />
    
-    <RelativeLayout
-    	android:layout_width="fill_parent"
-    	android:layout_height="fill_parent">
-    
-		<ImageView
-            android:id="@+id/spydroid"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_alignParentTop="true"
-            android:layout_marginTop="24dp"
-            android:src="@drawable/spydroid" />
-        
-        <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-              xmlns:ads="http://schemas.android.com/apk/lib/com.google.ads"
-               android:id="@+id/adcontainer"
-              android:orientation="vertical"
-              android:layout_alignParentBottom="true"
-              android:layout_width="fill_parent"
-              android:layout_height="wrap_content">
-        
-	        <com.google.ads.AdView android:id="@+id/adView"
-	                         android:layout_width="wrap_content"
-	                         android:layout_height="wrap_content"
-	                         ads:adUnitId="a1503ac1fd4e2ac"
-	                         ads:adSize="BANNER"
-	                         ads:testDevices="TEST_EMULATOR, 0019d431063b5e, BX9033M47E"
-	                         ads:loadAdOnCreate="true"/>
-        
-        </LinearLayout>
-        
-        <LinearLayout
-            android:id="@+id/bar"
-    		android:layout_width="fill_parent"
-		  	android:layout_height="50dp"
-		  	android:layout_above="@id/adcontainer"
-	    	android:layout_marginBottom="20dp"
-	      	android:layout_marginLeft="20dp"
-	      	android:layout_marginRight="20dp"
-	      	android:orientation="horizontal">
-        
-			<ImageView
-			    android:layout_margin="10dp"
-		        android:id="@+id/led"
-		        android:layout_width="35dp"
-		        android:layout_height="35dp"
-		        android:layout_gravity="center_vertical"
-		        android:src="@drawable/led_green" />
-            
-			<TextView 
-			    android:paddingLeft="0dp"
-			    android:paddingTop="12dp"
-			    android:paddingBottom="7dp"
-			    android:paddingRight="0dp"
-			    android:layout_width="wrap_content"
-	            android:layout_height="wrap_content"
-	    		android:id="@+id/status"
-		    	android:textColor="#FFFFFF"
-		    	android:textSize="17dp"
-		    	android:textStyle="bold" />
-        
-		</LinearLayout>
-		
-        <RelativeLayout
-            android:id="@+id/text"
-            android:background="@drawable/blue_button"
-            android:layout_below="@id/spydroid"
-			android:layout_width="fill_parent"
-			android:layout_height="wrap_content"
-			android:layout_margin="20dp" >
-            
-            <TextView
-                style="@style/style1"
-	            android:layout_width="wrap_content"
-	            android:layout_height="wrap_content"
-	            android:padding="10dp"
-	            android:text="1)"
-	            android:id="@+id/stepone" />
-            
-            
-			<TextView
-			    style="@style/style1"
-	            android:layout_width="wrap_content"
-	            android:layout_height="wrap_content"
-	            android:layout_toRightOf="@id/stepone"
-	            android:padding="10dp"
-	            android:id="@+id/help1"
-	            android:text="@string/help1"
-	            android:textColor="#FFFFFF"/>
-            
-			<TextView
-			    style="@style/style1"
-	            android:layout_width="wrap_content"
-	            android:layout_height="wrap_content"
-	            android:layout_below="@id/help1"
-	            android:padding="10dp"
-	            android:text="2)"
-	            android:id="@+id/steptwo"/>
+	<RelativeLayout 
+		android:layout_width="fill_parent"
+		android:layout_height="fill_parent">
+   
+	    
+		<LinearLayout
+		    android:layout_width="fill_parent"
+		    android:layout_height="wrap_content"
+		    android:gravity="center"
+		    android:layout_gravity="center"
+		    android:layout_above="@+id/adcontainer"
+		    android:layout_alignParentTop="true"
+		    android:orientation="vertical" >
+		     
+		    <!-- Logo and version -->
+			 <LinearLayout
+			     android:orientation="horizontal"
+			     android:gravity="center" 
+			     android:layout_width="fill_parent"
+			     android:layout_height="wrap_content">
+			 
+			   <RelativeLayout
+			       android:gravity="center" 
+			       android:background="@android:color/black"
+			       android:paddingTop="10dp"
+			       android:paddingBottom="10dp"
+			       android:layout_width="fill_parent"
+			       android:layout_height="wrap_content" >
 			
-			<TextView
-			    style="@style/style1"
-	            android:layout_width="wrap_content"
-	            android:layout_height="wrap_content"
-	            android:layout_toRightOf="@id/steptwo"
-	            android:layout_below="@id/help1"
-	            android:padding="10dp"
-	            android:text="@string/help2"
-	            android:id="@+id/help2"/>
+			       <ImageView
+			           android:id="@+id/imageView1"
+			           android:layout_width="80dp"
+			           android:layout_height="80dp"
+			           android:src="@drawable/icon" />
 			
-			<TextView
-			    style="@style/style1"
-	            android:layout_width="wrap_content"
-	            android:layout_height="wrap_content"
-	            android:layout_below="@id/help2"
-	            android:padding="10dp"
-	            android:text="3)"
-	            android:id="@+id/stepthree"/>		
-						
-			<TextView
-			    style="@style/style1"
-	            android:layout_width="wrap_content"
-	            android:layout_height="wrap_content"
-	            android:layout_toRightOf="@id/stepthree"
-	            android:layout_below="@id/help2"
-	            android:padding="10dp"
-	            android:text="@string/help3"
-	            android:id="@+id/help3"/>
+			       <TextView
+			           android:textColor="@android:color/white"
+			           android:id="@+id/textView1"
+			           android:layout_width="wrap_content"
+			           android:layout_height="wrap_content"
+			           android:layout_alignTop="@+id/imageView1"
+			           android:layout_marginLeft="18dp"
+			           android:layout_marginTop="20dp"
+			           android:layout_toRightOf="@+id/imageView1"
+			           android:text="Spydroid"
+			           android:textSize="19dp" />
 			
-			<TextView
-			    style="@style/style1"
-	            android:layout_width="wrap_content"
-	            android:layout_height="wrap_content"
-	            android:layout_below="@id/help3"
-	            android:padding="10dp"
-	            android:text="4)"
-	            android:id="@+id/stepfour"/>		
-						
-			<TextView
-			    style="@style/style1"
-	            android:layout_width="wrap_content"
-	            android:layout_height="wrap_content"
-	            android:layout_toRightOf="@id/stepfour"
-	            android:layout_below="@id/help3"
-	            android:padding="10dp"
-	            android:text="@string/help4"/>
+			       <TextView
+			           android:id="@+id/version"
+			           android:layout_width="wrap_content"
+			           android:layout_height="wrap_content"
+			           android:layout_alignLeft="@+id/textView1"
+			           android:layout_below="@+id/textView1"
+			           android:text="v5.1.3"
+			           android:textSize="18dp" />
+			   </RelativeLayout>
+			  
+			  </LinearLayout>
+		  
+		     <TextView
+		          android:layout_width="match_parent"
+		          android:layout_height="wrap_content"
+		          android:layout_margin="20dp"
+		          android:text="@string/description"
+		          android:gravity="center"
+		          android:textSize="17dp" />        
+		     
+		     <FrameLayout 
+		         android:layout_width="match_parent"
+		         android:layout_height="wrap_content" >
+				 <TextView
+				      android:visibility="gone"
+				      android:id="@+id/streaming"
+				      android:layout_gravity="center"
+				      android:gravity="center"
+				      android:textColor="#11FF11"
+		              android:layout_height="wrap_content"
+		              android:layout_width="200dp"
+		              android:text="STREAMING !"
+		              android:textSize="20dp" />
+		         <TextView
+				      android:id="@+id/advice"
+				      android:visibility="gone"
+				      android:layout_gravity="center"
+				      android:gravity="center"
+				      android:textColor="#DD1111"
+		              android:layout_height="wrap_content"
+		              android:layout_width="200dp"
+		              android:text="@string/warning"
+		              android:textSize="20dp" />
+			     <LinearLayout
+			         android:id="@+id/information"
+			         android:layout_width="fill_parent"
+			         android:layout_height="wrap_content"
+			         android:layout_gravity="top"
+			         android:gravity="center"
+			         android:orientation="vertical" >
+			       
+			          <TextView
+			              android:layout_width="wrap_content"
+			              android:layout_height="wrap_content"
+			              android:text="@string/line1"
+			              android:textSize="15dp" />
 			
-        </RelativeLayout>
+			          <TextView
+			              android:layout_width="wrap_content"
+			              android:layout_height="wrap_content"
+			              android:layout_marginBottom="10dp"
+			              android:id="@+id/line1"
+			              android:textColor="@android:color/white"
+			              android:textSize="15dp" />
+			
+			          <TextView
+			              android:layout_width="wrap_content"
+			              android:layout_height="wrap_content"
+			              android:text="@string/line2"
+			              android:textSize="15dp" />
+			
+			          <TextView
+			              android:layout_width="wrap_content"
+			              android:layout_height="wrap_content"
+			              android:id="@+id/line2"
+			              android:textColor="@android:color/white"
+			              android:textSize="15dp" />
+			          
+					</LinearLayout>
+				</FrameLayout>
+		      
+		     <RelativeLayout
+		         android:paddingTop="20dp"
+		         android:layout_width="wrap_content"
+		         android:layout_height="wrap_content"
+		         android:layout_gravity="center"
+		         android:gravity="center" >
 
-    </RelativeLayout>
+		         <ImageView
+		             android:layout_alignParentLeft="true"
+		             android:id="@+id/button_settings"
+		             android:padding="7dp"
+		             android:layout_width="55dp"
+		             android:layout_height="55dp"
+		             android:src="@drawable/settings" />
+		         
+		         <ImageView
+		             android:padding="7dp"
+		             android:id="@+id/button_client"
+		             android:layout_width="55dp"
+		             android:layout_height="55dp"
+		             android:layout_toRightOf="@id/button_settings"
+		             android:src="@drawable/monitor" />
+
+				<ImageView
+		             android:id="@+id/button_about"
+		             android:padding="7dp"
+		             android:layout_width="55dp"
+		             android:layout_height="55dp"
+		             android:layout_toRightOf="@id/button_client"
+		             android:src="@drawable/about" />
+		         
+		     </RelativeLayout>
+		     
+		  </LinearLayout>
+		 
+		  <ImageView
+		    android:id="@+id/logo"
+		    android:src="@drawable/icon"
+		    android:layout_width="wrap_content"
+		    android:layout_height="wrap_content"
+		    android:visibility="invisible" />
+
+		  <LinearLayout
+		      xmlns:ads="http://schemas.android.com/apk/lib/com.google.ads"
+		      xmlns:android="http://schemas.android.com/apk/res/android"
+		      android:id="@+id/adcontainer"
+		      android:layout_width="fill_parent"
+		      android:layout_height="wrap_content"
+		      android:layout_alignParentBottom="true"
+		      android:layout_alignParentLeft="true"
+		      android:orientation="vertical" >
+
+		      <com.google.ads.AdView
+		          android:id="@+id/adView"
+		          android:layout_width="match_parent"
+		          android:layout_height="wrap_content"
+		          ads:adSize="BANNER"
+		          ads:adUnitId="a1503ac1fd4e2ac"
+		          ads:loadAdOnCreate="true"
+		          ads:testDevices="TEST_EMULATOR, 0019d431063b5e, BX9033M47E" >
+		      </com.google.ads.AdView>
+
+		  </LinearLayout>
     
-    <ImageView
-	     android:id="@+id/logo"
-	     android:src="@drawable/icon"
-	     android:layout_width="wrap_content"
-	     android:layout_height="wrap_content"
-	     android:visibility="invisible" />
+    </RelativeLayout>
     
 </FrameLayout>

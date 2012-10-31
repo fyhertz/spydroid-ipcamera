@@ -60,19 +60,19 @@ public class Session {
 	public final static int AUDIO_AAC = 5; // Only for ICS
 
 	// Default configuration
+	public static VideoQuality defaultVideoQuality = VideoQuality.defaultVideoQualiy.clone();
 	private static int defaultVideoEncoder = VIDEO_H264, defaultAudioEncoder = AUDIO_AMRNB;
-	private static VideoQuality defaultVideoQuality = VideoQuality.defaultVideoQualiy.clone();
 	private static int defaultCamera = CameraInfo.CAMERA_FACING_BACK;
-	private static SurfaceHolder surfaceHolder;
 	
 	// Indicates if a session is already streaming audio or video
 	private static boolean cameraInUse = false;
 	private static Stream videoStream = null;
 	private static boolean micInUse = false;
 	private static Stream audioStream = null;
+	
 	private static AtomicInteger startedStreamCount = new AtomicInteger(0);
 	private static Handler handler;
-	
+	private static SurfaceHolder surfaceHolder;
 	private InetAddress destination;
 	private Stream[] streamList = new Stream[2];
 	

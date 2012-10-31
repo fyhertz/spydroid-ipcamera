@@ -22,10 +22,8 @@ package net.majorkernelpanic.spydroid;
 
 import java.io.IOException;
 
-import net.majorkernelpanic.spydroid.CustomHttpServer;
 import net.majorkernelpanic.networking.RtspServer;
 import net.majorkernelpanic.networking.Session;
-import net.majorkernelpanic.streaming.audio.AACStream;
 import net.majorkernelpanic.streaming.video.H264Stream;
 import net.majorkernelpanic.streaming.video.VideoQuality;
 import android.app.Activity;
@@ -46,19 +44,17 @@ import android.os.Message;
 import android.os.PowerManager;
 import android.preference.PreferenceManager;
 import android.support.v4.app.NotificationCompat;
-import android.view.Display;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
+import android.view.View.OnClickListener;
 import android.view.animation.Animation;
-import android.view.animation.Animation.AnimationListener;
-import android.view.animation.AnimationSet;
-import android.view.animation.RotateAnimation;
-import android.view.animation.TranslateAnimation;
+import android.view.animation.AnimationUtils;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -70,36 +66,36 @@ public class SpydroidActivity extends Activity implements OnSharedPreferenceChan
     static final public String TAG = "SpydroidActivity"; 
     
     private CustomHttpServer httpServer = null;
-    private ImageView logo, led;
     private PowerManager.WakeLock wl;
     private RtspServer rtspServer = null;
     private SurfaceHolder holder;
     private SurfaceView camera;
-    private TextView console, status;
-    private VideoQuality defaultVideoQuality = new VideoQuality();
-    private Display display;
+    private TextView line1, line2, version, signWifi, signStreaming;
+    private ImageView buttonSettings, buttonClient, buttonAbout;
+    private LinearLayout signInformation;
     private Context context;
-    
+    private Animation pulseAnimation;
+
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         
         setContentView(R.layout.main);
 
         camera = (SurfaceView)findViewById(R.id.smallcameraview);
-        logo = (ImageView)findViewById(R.id.logo);
-        //console = (TextView) findViewById(R.id.console);
-        status = (TextView) findViewById(R.id.status);
-        display = getWindowManager().getDefaultDisplay();
         context = this.getApplicationContext();
-        led = (ImageView)findViewById(R.id.led);
+        line1 = (TextView)findViewById(R.id.line1);
+        line2 = (TextView)findViewById(R.id.line2);
+        version = (TextView)findViewById(R.id.version);
+        buttonSettings = (ImageView)findViewById(R.id.button_settings);
+        buttonClient = (ImageView)findViewById(R.id.button_client);
+        buttonAbout = (ImageView)findViewById(R.id.button_about);
+        signWifi = (TextView)findViewById(R.id.advice);
+        signStreaming = (TextView)findViewById(R.id.streaming);
+        signInformation = (LinearLayout)findViewById(R.id.information);
+        pulseAnimation = AnimationUtils.loadAnimation(this, R.anim.pulse);
         
         SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(this);
         H264Stream.setPreferences(settings);
-        AACStream.setAACSupported(android.os.Build.VERSION.SDK_INT>=14);
-        defaultVideoQuality.resX = settings.getInt("video_resX", 640);
-        defaultVideoQuality.resY = settings.getInt("video_resY", 480);
-        defaultVideoQuality.frameRate = Integer.parseInt(settings.getString("video_framerate", "15"));
-        defaultVideoQuality.bitRate = Integer.parseInt(settings.getString("video_bitrate", "500"))*1000; // 500 kb/s
         
         settings.registerOnSharedPreferenceChangeListener(this);
        	
@@ -110,45 +106,67 @@ public class SpydroidActivity extends Activity implements OnSharedPreferenceChan
         wl = pm.newWakeLock(PowerManager.SCREEN_DIM_WAKE_LOCK, "net.majorkernelpanic.spydroid.wakelock");
     
     	// Print version number
-        /*try {
-			log("<b>Spydroid v"+this.getPackageManager().getPackageInfo(this.getPackageName(), 0 ).versionName+"</b>");
-		} catch (NameNotFoundException e) {
-			log("<b>Spydroid</b>");
-		}*/
+        try {
+			version.setText("v"+this.getPackageManager().getPackageInfo(this.getPackageName(), 0 ).versionName);
+		} catch (Exception e) {
+			version.setText("v???");
+		}
         
         Session.setSurfaceHolder(holder);
         Session.setHandler(handler);
-        Session.setDefaultVideoQuality(defaultVideoQuality);
-        Session.setDefaultAudioEncoder(settings.getBoolean("stream_audio", true)?Integer.parseInt(settings.getString("audio_encoder", "1")):0);
-        Session.setDefaultVideoEncoder(settings.getBoolean("stream_video", true)?Integer.parseInt(settings.getString("video_encoder", "1")):0);
+        Session.setDefaultAudioEncoder(settings.getBoolean("stream_audio", false)?Integer.parseInt(settings.getString("audio_encoder", "3")):0);
+        Session.setDefaultVideoEncoder(settings.getBoolean("stream_video", true)?Integer.parseInt(settings.getString("video_encoder", "2")):0);
+        Session.setDefaultVideoQuality(new VideoQuality(settings.getInt("video_resX", 0), 
+        		settings.getInt("video_resY", 0), 
+        		Integer.parseInt(settings.getString("video_framerate", "0")), 
+        		Integer.parseInt(settings.getString("video_bitrate", "0"))*1000));
         
-        if (settings.getBoolean("enable_rtsp", true)) rtspServer = new RtspServer(8086, handler);
-        if (settings.getBoolean("enable_http", true)) httpServer = new CustomHttpServer(8080, this.getApplicationContext(), handler);
+        rtspServer = new RtspServer(8086, handler);
+        httpServer = new CustomHttpServer(8080, this.getApplicationContext(), handler);
+
+        buttonSettings.setOnClickListener(new OnClickListener() {
+			public void onClick(View v) {
+	            // Starts QualityListActivity where user can change the quality of the stream
+				Intent intent = new Intent(context,OptionsActivity.class);
+	            startActivityForResult(intent, 0);
+			}
+		});        
+        buttonClient.setOnClickListener(new OnClickListener() {
+			public void onClick(View v) {
+				// Starts ClientActivity, the user can then capture the stream from another phone running Spydroid
+	            Intent intent = new Intent(context,ClientActivity.class);
+	            startActivityForResult(intent, 0);
+			}
+		});
+        buttonAbout.setOnClickListener(new OnClickListener() {
+			public void onClick(View v) {
+	            // Display some information
+	            Intent intent = new Intent(context,AboutActivity.class);
+	            startActivityForResult(intent, 0);
+			}
+		});        
         
     }
     
+    // Save preferences when modified in the OptionsActivity
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
     	if (key.equals("video_resX")) {
-    		defaultVideoQuality.resX = sharedPreferences.getInt("video_resX", 640);
-    		Session.setDefaultVideoQuality(defaultVideoQuality);
+    		Session.defaultVideoQuality.resX = sharedPreferences.getInt("video_resX", 0);
     	}
     	else if (key.equals("video_resY"))  {
-    		defaultVideoQuality.resY = sharedPreferences.getInt("video_resY", 480);
-    		Session.setDefaultVideoQuality(defaultVideoQuality);
+    		Session.defaultVideoQuality.resY = sharedPreferences.getInt("video_resY", 0);
     	}
     	else if (key.equals("video_framerate")) {
-    		defaultVideoQuality.frameRate = Integer.parseInt(sharedPreferences.getString("video_framerate", "15"));
-    		Session.setDefaultVideoQuality(defaultVideoQuality);
+    		Session.defaultVideoQuality.frameRate = Integer.parseInt(sharedPreferences.getString("video_framerate", "0"));
     	}
     	else if (key.equals("video_bitrate")) {
-    		defaultVideoQuality.bitRate = Integer.parseInt(sharedPreferences.getString("video_bitrate", "500"))*1000;
-    		Session.setDefaultVideoQuality(defaultVideoQuality);
+    		Session.defaultVideoQuality.bitRate = Integer.parseInt(sharedPreferences.getString("video_bitrate", "0"))*1000;
     	}
     	else if (key.equals("stream_audio") || key.equals("audio_encoder")) { 
-    		Session.setDefaultAudioEncoder(sharedPreferences.getBoolean("stream_audio", true)?Integer.parseInt(sharedPreferences.getString("audio_encoder", "1")):0);
+    		Session.setDefaultAudioEncoder(sharedPreferences.getBoolean("stream_audio", true)?Integer.parseInt(sharedPreferences.getString("audio_encoder", "3")):0);
     	}
     	else if (key.equals("stream_video") || key.equals("video_encoder")) {
-    		Session.setDefaultVideoEncoder(sharedPreferences.getBoolean("stream_video", true)?Integer.parseInt(sharedPreferences.getString("video_encoder", "1")):0);
+    		Session.setDefaultVideoEncoder(sharedPreferences.getBoolean("stream_video", true)?Integer.parseInt(sharedPreferences.getString("video_encoder", "2")):0);
     	}
     	else if (key.equals("enable_http")) {
     		if (sharedPreferences.getBoolean("enable_http", true)) {
@@ -168,6 +186,7 @@ public class SpydroidActivity extends Activity implements OnSharedPreferenceChan
     
     public void onStart() {
     	super.onStart();
+    	
     	// Lock screen
     	wl.acquire();
     	
@@ -197,7 +216,6 @@ public class SpydroidActivity extends Activity implements OnSharedPreferenceChan
     	if (!streaming) displayIpAddress();
     	startServers();
     	registerReceiver(wifiStateReceiver,new IntentFilter(WifiManager.NETWORK_STATE_CHANGED_ACTION));
-    	//handler.postDelayed(logoAnimation, 7000);
     }
     
     public void onPause() {
@@ -205,7 +223,6 @@ public class SpydroidActivity extends Activity implements OnSharedPreferenceChan
     	if (rtspServer != null) rtspServer.stop();
     	if (httpServer != null) httpServer.setScreenState(false);
     	unregisterReceiver(wifiStateReceiver);
-    	//handler.removeCallbacks(logoAnimation);
     }
     
     public void onDestroy() {
@@ -233,7 +250,7 @@ public class SpydroidActivity extends Activity implements OnSharedPreferenceChan
     	Intent intent;
     	
         switch (item.getItemId()) {
-       /* case R.id.client:
+        /*case R.id.client:
             // Starts ClientActivity where user can view stream from another phone
             intent = new Intent(this.getBaseContext(),ClientActivity.class);
             startActivityForResult(intent, 0);
@@ -244,6 +261,7 @@ public class SpydroidActivity extends Activity implements OnSharedPreferenceChan
             startActivityForResult(intent, 0);
             return true;
         case R.id.quit:
+        	// Quits Spydroid i.e. stops the HTTP server
         	if (httpServer != null) httpServer.stop();
         	finish();	
             return true;
@@ -283,7 +301,7 @@ public class SpydroidActivity extends Activity implements OnSharedPreferenceChan
     
     private boolean streaming = false;
     
-    // The Handler that gets information back from the RtspServer
+    // The Handler that gets information back from the RtspServer and Session
     private final Handler handler = new Handler() {
     	
     	public void handleMessage(Message msg) { 
@@ -295,13 +313,12 @@ public class SpydroidActivity extends Activity implements OnSharedPreferenceChan
     			log((String)msg.obj);
     			break;
     		case Session.MESSAGE_START:
-    			if (!streaming) handler.postDelayed(ledAnimation, 100);
+    			//if (!streaming) handler.postDelayed(ledAnimation, 100);
     			streaming = true;
-    			status.setText(R.string.streaming);
+    			streamingState(1);
     			break;
     		case Session.MESSAGE_STOP:
     			streaming = false;
-    			handler.removeCallbacks(ledAnimation);
     			displayIpAddress();
     			break;
     		case Session.MESSAGE_ERROR:
@@ -317,88 +334,50 @@ public class SpydroidActivity extends Activity implements OnSharedPreferenceChan
 		WifiInfo info = wifiManager.getConnectionInfo();
     	if (info!=null && info.getNetworkId()>-1) {
 	    	int i = info.getIpAddress();
-	    	status.setText("http://");
-	    	status.append(String.format("%d.%d.%d.%d", i & 0xff, i >> 8 & 0xff,i >> 16 & 0xff,i >> 24 & 0xff));
-	    	status.append(":8080");
-	    	led.setImageResource(R.drawable.led_green);
+	    	String ip = String.format("%d.%d.%d.%d", i & 0xff, i >> 8 & 0xff,i >> 16 & 0xff,i >> 24 & 0xff);
+	    	line1.setText("HTTP://");
+	    	line1.append(ip);
+	    	line1.append(":8080");
+	    	line2.setText("RTSP://");
+	    	line2.append(ip);
+	    	line2.append(":8086");
+	    	streamingState(0);
     	} else {
-    		led.setImageResource(R.drawable.led_red);
-    		status.setText(R.string.warning);
+    		line1.setText("HTTP://xxx.xxx.xxx.xxx:8080");
+    		line2.setText("RTSP://xxx.xxx.xxx.xxx:8086");
+    		streamingState(2);
     	}
     }
     
     public void log(String s) {
-    	/*String t = console.getText().toString();
-    	if (t.split("\n").length>8) {
-    		console.setText(t.substring(t.indexOf("\n")+1, t.length()));
-    	}
-    	console.append(Html.fromHtml(s+"<br />"));*/
     	Toast.makeText(context, s, Toast.LENGTH_SHORT).show();
     }
 
-	private Runnable logoAnimation = new Runnable() {
-		public void run() {
-			runLogoAnimation();
-			handler.postDelayed(this,7000);
-		}
-	};
-    
-	private boolean ledState = true; 
-	
-	private void toggleLed() {
-		if (ledState) {
-			ledState = false;
-			led.setImageResource(R.drawable.led_green);
-		} else {
-			ledState = true;
-			led.setImageResource(getResources().getColor(android.R.color.transparent));
+	private void streamingState(int state) {
+		// Not streaming
+		if (state==0) {
+			signStreaming.clearAnimation();
+			signWifi.clearAnimation();
+			signStreaming.setVisibility(View.GONE);
+			signInformation.setVisibility(View.VISIBLE);
+			signWifi.setVisibility(View.GONE);
+		} else if (state==1) {
+			// Streaming
+			signWifi.clearAnimation();
+			signStreaming.setVisibility(View.VISIBLE);
+			signStreaming.startAnimation(pulseAnimation);
+			signInformation.setVisibility(View.INVISIBLE);
+			signWifi.setVisibility(View.GONE);
+		} else if (state==2) {
+			// No wifi !
+			signStreaming.clearAnimation();
+			signStreaming.setVisibility(View.GONE);
+			signInformation.setVisibility(View.INVISIBLE);
+			signWifi.setVisibility(View.VISIBLE);
+			signWifi.startAnimation(pulseAnimation);
 		}
 	}
-	
-	private Runnable ledAnimation = new Runnable() {
-		public void run() {
-			toggleLed();
-			handler.postDelayed(this,900);
-		}
-	};
-	
-	private void runLogoAnimation() { 
-		int width = display.getWidth(), height = display.getHeight();
-		int side = (int) (Math.random()*4);
-		int position = (int) (side<2?(width-256)*Math.random():(height-256)*Math.random());
-		
-		RotateAnimation rotateAnimation = new RotateAnimation(0, side==0?180:(side==1?0:(side==2?90:270)),Animation.RELATIVE_TO_SELF,0.5f,Animation.RELATIVE_TO_SELF,0.5f);
-		TranslateAnimation translateAnimation = new TranslateAnimation(
-				Animation.ABSOLUTE, side<2?position:(side==2?-200:width), 
-				Animation.ABSOLUTE, side<2?position:(side==2?-100:width-80), 
-				Animation.ABSOLUTE, side>=2?position:(side==0?-200:height), 
-				Animation.ABSOLUTE, side>=2?position:(side==0?-110:height-80));
-		
-		rotateAnimation.setDuration(0);
-		rotateAnimation.setFillAfter(true);
-		translateAnimation.setStartOffset(1500);
-		translateAnimation.setDuration(1500);
-		translateAnimation.setRepeatCount(1);
-		translateAnimation.setRepeatMode(Animation.REVERSE);
-		translateAnimation.setFillAfter(true);
-		
-		AnimationSet animationSet = new AnimationSet(true);
-		
-		animationSet.setAnimationListener(new AnimationListener() {
-			public void onAnimationEnd(Animation animation) {
-				logo.setVisibility(View.INVISIBLE);
-			}
-			public void onAnimationRepeat(Animation animation) {}
-			public void onAnimationStart(Animation animation) {}
-		});
-		
-		animationSet.addAnimation(rotateAnimation);
-		animationSet.addAnimation(translateAnimation);
-		
-		logo.startAnimation(animationSet);
-		logo.setVisibility(View.VISIBLE);
-		
-	}
+
     
     
 }
