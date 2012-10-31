@@ -65,7 +65,7 @@ public class RtspServer {
 	public void stop() {
 		try {
 			listenerThread.server.close();
-		} catch (IOException e) {
+		} catch (Exception e) {
 			Log.e(TAG,"Error when close was called on serversocket: "+e.getMessage());
 		}
 	}

@@ -132,16 +132,16 @@ public class BasicHttpServer {
     		registry.register("*", new HttpFileHandler(assetManager));
     		firstStart = false;
     	}
-    	running = true;
     	requestListenerThread = new RequestListenerThread(port, assetManager, registry);
     	requestListenerThread.start();
+    	running = true;
     }
     
     public void stop() {
     	if (!running) return;
         try {
         	requestListenerThread.serversocket.close();
-		} catch (IOException e) {
+		} catch (Exception e) {
 			Log.e(TAG,"Error when close was called on serversocket: "+e.getMessage());
 		}
         running = false;

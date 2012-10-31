@@ -221,7 +221,7 @@ public class SpydroidActivity extends Activity implements OnSharedPreferenceChan
     public void onPause() {
     	super.onPause();
     	if (rtspServer != null) rtspServer.stop();
-    	if (httpServer != null) httpServer.setScreenState(false);
+    	CustomHttpServer.setScreenState(false);
     	unregisterReceiver(wifiStateReceiver);
     }
     
@@ -279,7 +279,7 @@ public class SpydroidActivity extends Activity implements OnSharedPreferenceChan
     		}
     	}
     	if (httpServer != null) {
-    		httpServer.setScreenState(true);
+    		CustomHttpServer.setScreenState(true);
     		try {
     			httpServer.start();
     		} catch (IOException e) {
@@ -313,7 +313,6 @@ public class SpydroidActivity extends Activity implements OnSharedPreferenceChan
     			log((String)msg.obj);
     			break;
     		case Session.MESSAGE_START:
-    			//if (!streaming) handler.postDelayed(ledAnimation, 100);
     			streaming = true;
     			streamingState(1);
     			break;
