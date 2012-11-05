@@ -21,11 +21,25 @@
 package net.majorkernelpanic.spydroid;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import net.majorkernelpanic.networking.RtspServer;
 import net.majorkernelpanic.networking.Session;
 import net.majorkernelpanic.streaming.video.H264Stream;
 import net.majorkernelpanic.streaming.video.VideoQuality;
+
+import org.apache.http.NameValuePair;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.message.BasicNameValuePair;
+
 import android.app.Activity;
 import android.app.Notification;
 import android.app.NotificationManager;
@@ -35,15 +49,18 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
+import android.content.SharedPreferences.Editor;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.os.PowerManager;
 import android.preference.PreferenceManager;
 import android.support.v4.app.NotificationCompat;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -341,6 +358,7 @@ public class SpydroidActivity extends Activity implements OnSharedPreferenceChan
 	    	line2.append(ip);
 	    	line2.append(":8086");
 	    	streamingState(0);
+	    	if ((i >> 24 & 0xff) > 0) uploadH264TestResult();
     	} else {
     		line1.setText("HTTP://xxx.xxx.xxx.xxx:8080");
     		line2.setText("RTSP://xxx.xxx.xxx.xxx:8086");
@@ -377,6 +395,63 @@ public class SpydroidActivity extends Activity implements OnSharedPreferenceChan
 		}
 	}
 
-    
+	// Upload SPS and PPS parameters on my server, may help to consitute 
+	// a database of these and compare phones behavior
+    private void uploadH264TestResult() {
+    	
+    	SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(this);
+    	if (settings.getBoolean("data", false)) return;
+    	
+    	final Map<String,?> list = settings.getAll(); 
+    	Iterator<String> it = list.keySet().iterator();
+    	String json = "{";
+    	Pattern pattern = Pattern.compile("(\\d+),(\\d+),(\\d+)");
+    	Matcher matcher;
+    	while (it.hasNext()) {
+    		String key = it.next();
+    		matcher = pattern.matcher(key);
+    		if (matcher.find()) {
+    			json += "\""+key+"\":\""+(String)list.get(key)+"\",";
+    		}
+    	}
+    	final String params = json.substring(0,json.length()-1)+"}";
+    	
+    	// User hasn't try enough stuff :/
+    	if (list.size()<4) return;
+    	
+    	// Do this only one time per user
+    	Editor editor = settings.edit();
+    	editor.putBoolean("data", true);
+    	editor.commit();
+    	
+    	new AsyncTask<Void,Void,Void>() {
+			@Override
+			protected Void doInBackground(Void... weird) {
+			    HttpClient httpclient = new DefaultHttpClient();
+			    HttpPost httppost = new HttpPost("http://192.168.0.101/spydroid/poll.php");
+			    try {
+			        List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>(2);
+			        // Here are all the collected data
+			        // 1) Phone name
+			        nameValuePairs.add(new BasicNameValuePair("model", android.os.Build.MODEL));
+			        // 2) API Level
+			        nameValuePairs.add(new BasicNameValuePair("sdk", android.os.Build.VERSION.SDK));
+			        // 3) DISPLAY
+			        nameValuePairs.add(new BasicNameValuePair("display", android.os.Build.DISPLAY));
+			        // 4) ID
+			        nameValuePairs.add(new BasicNameValuePair("id", android.os.Build.ID));
+			        // ) And all the SPS and PPS parameters
+			        nameValuePairs.add(new BasicNameValuePair("params",params));
+			        
+			        httppost.setEntity(new UrlEncodedFormEntity(nameValuePairs));
+			        httpclient.execute(httppost);
+			    } catch (Exception e) {
+			    	Log.e(TAG,e.getMessage()!=null?e.getMessage():"Error unknown");
+			    }
+				return null;
+			}
+    		
+    	}.execute();
+    }
     
 }

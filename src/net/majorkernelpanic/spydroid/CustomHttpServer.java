@@ -100,6 +100,7 @@ public class CustomHttpServer extends HttpServer {
 
 			if (params.size()>0) {
 				try {
+					
 					// Set the configuration
 					if (params.get(0).getName().equals("set")) {
 						Editor editor = settings.edit();
@@ -125,16 +126,16 @@ public class CustomHttpServer extends HttpServer {
 						editor.commit();
 						result = "[]";
 					}
-					// Send the current configuration
+					
+					// Send the current streaming configuration to the client
 					else if (params.get(0).getName().equals("get")) {
 						result = "{\"streamAudio\":" + settings.getBoolean("stream_audio", false) + "," +
 								"\"audioEncoder\":\"" + (Integer.parseInt(settings.getString("audio_encoder", "3"))==3?"AMR-NB":"AAC") + "\"," +
 								"\"streamVideo\":" + settings.getBoolean("stream_video", true) + "," +
 								"\"videoEncoder\":\"" + (Integer.parseInt(settings.getString("video_encoder", "2"))==2?"H.263":"H.264") + "\"," +
-								"\"videoResX\":" + settings.getInt("video_resX", Session.defaultVideoQuality.resX) + "," +
-								"\"videoResY\":" + settings.getInt("video_resY", Session.defaultVideoQuality.resY) + "," +
-								"\"videoFramerate\":" + settings.getString("video_framerate", String.valueOf(Session.defaultVideoQuality.frameRate)) + "," +
-								"\"videoBitrate\":" + settings.getString("video_bitrate", String.valueOf(Session.defaultVideoQuality.bitRate/1000)) + "}";
+								"\"videoResolution\":\"" + settings.getInt("video_resX", Session.defaultVideoQuality.resX) + "x" + settings.getInt("video_resY", Session.defaultVideoQuality.resY) + "\"," +
+								"\"videoFramerate\":\"" + settings.getString("video_framerate", String.valueOf(Session.defaultVideoQuality.frameRate)) + " fps\"," +
+								"\"videoBitrate\":\"" + settings.getString("video_bitrate", String.valueOf(Session.defaultVideoQuality.bitRate/1000)) + " kbps\"}";
 					}
 				} catch (Exception e) {
 					Log.e(TAG,"Error !");

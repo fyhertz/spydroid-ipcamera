@@ -48,7 +48,11 @@ public class OptionsActivity extends PreferenceActivity {
         final Preference audioEnabled = findPreference("stream_audio");
         final Preference audioEncoder = findPreference("audio_encoder");
         
-        videoEncoder.setEnabled(settings.getBoolean("stream_video", true));
+        boolean videoState = settings.getBoolean("stream_video", true);
+        videoEncoder.setEnabled(videoState);
+		videoResolution.setEnabled(videoState);
+		videoBitrate.setEnabled(videoState);
+		videoFramerate.setEnabled(videoState);        
         audioEncoder.setEnabled(settings.getBoolean("stream_audio", true));
         
         videoResolution.setSummary("Current resolution is "+

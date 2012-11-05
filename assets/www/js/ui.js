@@ -325,9 +325,9 @@
 
 	$.getJSON('config.json?get',function (config) {
 	    $('#resolution,#framerate,#bitrate,#audioEncoder,#videoEncoder').children().removeAttr('selected').each(function (c) {
-		if ($(this).val()===config.videoResX+'x'+config.videoResY || 
-		    $(this).val()===config.videoFramerate+" fps" || 
-		    $(this).val()===config.videoBitrate+" bps" || 
+		if ($(this).val()===config.videoResolution || 
+		    $(this).val()===config.videoFramerate || 
+		    $(this).val()===config.videoBitrate || 
 		    $(this).val()===config.audioEncoder ||
 		    $(this).val()===config.videoEncoder ) {
 		    $(this).attr('selected','true');

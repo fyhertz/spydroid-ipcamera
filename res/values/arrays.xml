@@ -14,7 +14,7 @@
     
     
     <string-array name="audioEncoderArray">
-        <item>AMR</item>
+        <item>AMR-NB</item>
         <item>AAC</item>
     </string-array>
 
