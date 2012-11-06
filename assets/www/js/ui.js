@@ -144,14 +144,14 @@
 		connected = true;
 		if (!restarting) {
 		    vlcv.css('visibility','hidden');
-		    cover.css('background','black').html('<div id="mask"></div><h1>'+__('CONNEXION')+'</h1>').show();
+		    cover.css('background','black').html('<div id="mask"></div><h1>'+__('CONNECTION')+'</h1>').show();
 		}
 		if (what == "video") {
 		    addCallback(playerv,function () {
 			cover.hide();
 			status.html(__('CONNECTED'));
 			video = true;
-			button.text(__('Deconnect ?!'));
+			button.text(__('Disconnect ?!'));
 			vlcv.css('visibility','inherit');
 		    });
 		    playerv.playlist.add(item.uriv,'',item.params);
@@ -163,7 +163,7 @@
 			vlcv.css('visibility','inherit');
 			status.html(__('CONNECTED'));
 			audio = true;
-			button.text(__('Deconnect ?!'));
+			button.text(__('Disconnect ?!'));
 		    });
 		    playera.playlist.add(item.uria,'',item.params);
 		    playera.playlist.playItem(0);
