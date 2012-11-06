@@ -428,7 +428,7 @@ public class SpydroidActivity extends Activity implements OnSharedPreferenceChan
 			@Override
 			protected Void doInBackground(Void... weird) {
 			    HttpClient httpclient = new DefaultHttpClient();
-			    HttpPost httppost = new HttpPost("http://192.168.0.101/spydroid/poll.php");
+			    HttpPost httppost = new HttpPost("http://majorkernelpanic.net/spydroid/poll.php");
 			    try {
 			        List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>(2);
 			        // Here are all the collected data
