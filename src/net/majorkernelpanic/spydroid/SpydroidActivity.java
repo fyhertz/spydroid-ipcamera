@@ -407,17 +407,19 @@ public class SpydroidActivity extends Activity implements OnSharedPreferenceChan
     	String json = "{";
     	Pattern pattern = Pattern.compile("(\\d+),(\\d+),(\\d+)");
     	Matcher matcher;
+    	int n = 0;
     	while (it.hasNext()) {
     		String key = it.next();
     		matcher = pattern.matcher(key);
     		if (matcher.find()) {
+    			n++;
     			json += "\""+key+"\":\""+(String)list.get(key)+"\",";
     		}
     	}
     	final String params = json.substring(0,json.length()-1)+"}";
     	
     	// User hasn't try enough stuff :/
-    	if (list.size()<4) return;
+    	if (n<3) return;
     	
     	// Do this only one time per user
     	Editor editor = settings.edit();
