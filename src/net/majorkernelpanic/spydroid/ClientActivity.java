@@ -351,13 +351,17 @@ public class ClientActivity extends Activity implements OnCompletionListener, On
 	
 	private void stopStreaming() {
 		try {
-			layoutContainer.removeView(videoView);
-			videoView.stopPlayback();
-			videoView = null;
+			if (videoView != null && videoView.isPlaying()) {
+				layoutContainer.removeView(videoView);
+				videoView.stopPlayback();
+				videoView = null;
+			}
 		} catch (Exception ignore) {}
 		try {
-			audioStream.stop();
-			audioStream.reset();
+			if (audioStream != null && audioStream.isPlaying()) {
+				audioStream.stop();
+				audioStream.reset();
+			}
 		} catch (Exception ignore) {}
 	}
 	
@@ -373,16 +377,27 @@ public class ClientActivity extends Activity implements OnCompletionListener, On
 
 	@Override
 	public void onCompletion(MediaPlayer mp) {
-		layoutControl.setVisibility(View.GONE);
-		progressBar.setVisibility(View.GONE);
-		layoutForm.setVisibility(View.VISIBLE);
+		runOnUiThread(new Runnable() {
+			@Override
+			public void run() {
+				layoutControl.setVisibility(View.GONE);
+				progressBar.setVisibility(View.GONE);
+				layoutForm.setVisibility(View.VISIBLE);
+				stopStreaming();
+			}
+		});
 	}
 
 	@Override
 	public void onPrepared(MediaPlayer mp) {
-		progressBar.setVisibility(View.GONE);
-		layoutControl.setVisibility(View.VISIBLE);
-		videoView.start();
+		runOnUiThread(new Runnable() {
+			@Override
+			public void run() {
+				progressBar.setVisibility(View.GONE);
+				layoutControl.setVisibility(View.VISIBLE);
+				videoView.start();
+			}
+		});
 	}
 	
 	static class MyVideoView extends VideoView {

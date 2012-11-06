@@ -176,6 +176,7 @@ public class Session {
 			stream = new GenericAudioStream();
 			break;
 		case AUDIO_AAC:
+			if (Integer.parseInt(android.os.Build.VERSION.SDK)<14) throw new IllegalStateException("This phone does not support AAC :/");
 			Log.d(TAG,"Audio streaming: AAC (experimental)");
 			stream = new AACStream();
 			break;
