@@ -67,6 +67,7 @@ import android.widget.VideoView;
 
 /** 
  * Allow a user with two smartphones to control one from the other
+ * Feature disabled, do not work well enough :( because of MediaPlayer that really really sucks
  **/
 public class ClientActivity extends Activity implements OnCompletionListener, OnPreparedListener, OnItemSelectedListener {
 
@@ -245,7 +246,6 @@ public class ClientActivity extends Activity implements OnCompletionListener, On
 			@Override
 			protected Void doInBackground(Void... params) {
 				HttpClient client = new DefaultHttpClient();
-				// FIXME: saving the new conf on the server isn't a good idea
 		        //HttpGet request = new HttpGet("http://"+editTextIP.getText().toString()+":8080?set&"+uriParameters);
 		        try {
 					Thread.sleep(2000);

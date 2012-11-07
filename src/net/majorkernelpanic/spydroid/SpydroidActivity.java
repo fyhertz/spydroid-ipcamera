@@ -104,7 +104,7 @@ public class SpydroidActivity extends Activity implements OnSharedPreferenceChan
         line2 = (TextView)findViewById(R.id.line2);
         version = (TextView)findViewById(R.id.version);
         buttonSettings = (ImageView)findViewById(R.id.button_settings);
-        buttonClient = (ImageView)findViewById(R.id.button_client);
+        //buttonClient = (ImageView)findViewById(R.id.button_client);
         buttonAbout = (ImageView)findViewById(R.id.button_about);
         signWifi = (TextView)findViewById(R.id.advice);
         signStreaming = (TextView)findViewById(R.id.streaming);
@@ -148,13 +148,13 @@ public class SpydroidActivity extends Activity implements OnSharedPreferenceChan
 	            startActivityForResult(intent, 0);
 			}
 		});        
-        buttonClient.setOnClickListener(new OnClickListener() {
+        /*buttonClient.setOnClickListener(new OnClickListener() {
 			public void onClick(View v) {
 				// Starts ClientActivity, the user can then capture the stream from another phone running Spydroid
 	            Intent intent = new Intent(context,ClientActivity.class);
 	            startActivityForResult(intent, 0);
 			}
-		});
+		});*/
         buttonAbout.setOnClickListener(new OnClickListener() {
 			public void onClick(View v) {
 	            // Display some information

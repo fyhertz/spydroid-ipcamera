@@ -1,27 +1,28 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="fill_parent"
-    android:layout_height="fill_parent">
+    android:padding="0px"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
 
    <SurfaceView
         android:id="@+id/smallcameraview"
-        android:layout_width="fill_parent"
-        android:layout_height="fill_parent"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
         android:gravity="center" />
    
    <ImageView
         android:background="@drawable/background"
-        android:layout_width="fill_parent"
-        android:layout_height="fill_parent"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
         android:gravity="center" />
    
 	<RelativeLayout 
-		android:layout_width="fill_parent"
-		android:layout_height="fill_parent">
+		android:layout_width="match_parent"
+		android:layout_height="match_parent">
    
 	    
 		<LinearLayout
-		    android:layout_width="fill_parent"
+		    android:layout_width="match_parent"
 		    android:layout_height="wrap_content"
 		    android:gravity="center"
 		    android:layout_gravity="center"
@@ -33,11 +34,11 @@
 			 <LinearLayout
 			     android:orientation="horizontal"
 			     android:gravity="center" 
-			     android:layout_width="fill_parent"
+			     android:layout_width="match_parent"
 			     android:layout_height="wrap_content">
 			 
 			   <RelativeLayout
-			       android:layout_width="fill_parent"
+			       android:layout_width="match_parent"
 			       android:layout_height="wrap_content"
 			       android:background="#001629"
 			       android:gravity="center"
@@ -107,7 +108,7 @@
 		              android:textSize="20dp" />
 			     <LinearLayout
 			         android:id="@+id/information"
-			         android:layout_width="fill_parent"
+			         android:layout_width="match_parent"
 			         android:layout_height="wrap_content"
 			         android:layout_gravity="top"
 			         android:gravity="center"
@@ -150,6 +151,7 @@
 		         android:layout_gravity="center"
 		         android:gravity="center" >
 
+		         <!-- Settings -->
 		         <ImageView
 		             android:layout_alignParentLeft="true"
 		             android:id="@+id/button_settings"
@@ -158,20 +160,23 @@
 		             android:layout_height="55dp"
 		             android:src="@drawable/settings" />
 		         
-		         <ImageView
+		         <!-- Client -->
+		         <!-- Feature disabled, do not work well enough :( because of MediaPlayer that really really sucks -->
+		         <!-- <ImageView
 		             android:padding="7dp"
 		             android:id="@+id/button_client"
 		             android:layout_width="55dp"
 		             android:layout_height="55dp"
 		             android:layout_toRightOf="@id/button_settings"
-		             android:src="@drawable/monitor" />
+		             android:src="@drawable/monitor" />  -->
 
+		         <!-- About -->
 				<ImageView
 		             android:id="@+id/button_about"
 		             android:padding="7dp"
 		             android:layout_width="55dp"
 		             android:layout_height="55dp"
-		             android:layout_toRightOf="@id/button_client"
+		             android:layout_toRightOf="@id/button_settings"
 		             android:src="@drawable/about" />
 		         
 		     </RelativeLayout>
@@ -189,7 +194,7 @@
 		      xmlns:ads="http://schemas.android.com/apk/lib/com.google.ads"
 		      xmlns:android="http://schemas.android.com/apk/res/android"
 		      android:id="@+id/adcontainer"
-		      android:layout_width="fill_parent"
+		      android:layout_width="match_parent"
 		      android:layout_height="wrap_content"
 		      android:layout_alignParentBottom="true"
 		      android:layout_alignParentLeft="true"
