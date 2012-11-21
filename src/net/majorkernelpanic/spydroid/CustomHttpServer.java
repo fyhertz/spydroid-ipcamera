@@ -61,21 +61,66 @@ public class CustomHttpServer extends HttpServer {
 	/** 
 	 * HTTP server of Spydroid
 	 * Its document root is assets/www, it contains a little user-friendly website to control spydroid from a browser
-	 * The default behavior of HttpServer is enhanced with 3 RequestHandlers, they are briefly described in this file
+	 * The default behavior of HttpServer is enhanced with 4 RequestHandlers, they are briefly described in this file
 	 **/
 	public CustomHttpServer(int port, Context context, Handler handler) {
 		super(port, context, handler);
-		addRequestHandler("/sound.htm*", new SoundRequestHandler(context, handler));
-		addRequestHandler("/config.json*", new ConfigRequestHandler(context));
-		addRequestHandler("/js/params.js", new SoundsListRequestHandler(handler));
+		// Starts a sound on the phone
+		addRequestHandler("/server/sound.htm*", new SoundRequestHandler(context, handler));
+		// A script containing the list of the prerecorded sounds
+		addRequestHandler("/server/params.js", new SoundsListRequestHandler(handler));
+		// Used to fetch or rewrite some settings such as the framerate/bitrate...
+		addRequestHandler("/server/config.json*", new ConfigRequestHandler(context));
+		// Return a JSON containing information about the state of the application
+		addRequestHandler("/server/state.json*", new StateRequestHandler(context));
 	}
+	
+	/** 
+	 * Return a JSON containing information about the state of the application
+	 **/
+	static class StateRequestHandler implements HttpRequestHandler {
+		
+		private Context context;
+		
+		public StateRequestHandler(Context context) {
+			this.context = context;
+		}
+		
+		@Override
+		public void handle(HttpRequest request, HttpResponse response,
+				HttpContext httpContext) throws HttpException, IOException {
+			
+			final String uri = URLDecoder.decode(request.getRequestLine().getUri());
+			final List<NameValuePair> params = URLEncodedUtils.parse(URI.create(uri),"UTF-8");
+			
+			EntityTemplate body = new EntityTemplate(new ContentProducer() {
+				public void writeTo(final OutputStream outstream) throws IOException {
+					OutputStreamWriter writer = new OutputStreamWriter(outstream, "UTF-8");
+					writer.write("{");
+					if (SpydroidActivity.lastCaughtException!=null) {
+						String lastError = SpydroidActivity.lastCaughtException.getMessage();
+						writer.write("\"lastError\":\""+(lastError!=null?lastError:"unknown error")+"\",");
+						writer.write("\"lastStackTrace\":\""+SpydroidActivity.lastCaughtException.getStackTrace().toString()+"\",");
+					}
+					writer.write("\"cameraInUse\":\""+Session.isCameraInUse()+"\",");
+					writer.write("\"microphoneInUse\":\""+Session.isMicrophoneInUse()+"\"");
+					writer.write("}");
+					writer.flush();
+				}
+			});
+			
+			if (params.size()>0) {
+				if (params.get(0).getName().equals("clear")) {
+					SpydroidActivity.lastCaughtException = null;
+				}
+			}
 
-	private static boolean screenState = true;
-
-	/** Called with false when AndroidActivity stops and with true when it starts **/
-	public static void setScreenState(boolean state) {
-		screenState  = state;
-	}
+			response.setStatusCode(HttpStatus.SC_OK);
+        	body.setContentType("application/json; charset=UTF-8");
+        	response.setEntity(body);
+			
+		}
+	}	
 	
 	/** 
 	 * Send or set the configuration of spydroid  (stream encoder, resolution, framerate)
@@ -178,7 +223,7 @@ public class CustomHttpServer extends HttpServer {
 						writer.write("'"+raws[i].getName() + "',");
 					}
 					writer.write("'"+raws[raws.length-1].getName() + "'];");
-					writer.write("var screenState = "+(screenState?"1":"0")+";");
+					writer.write("var screenState = "+(SpydroidActivity.activityPaused?"1":"0")+";");
 					writer.flush();
 				}
 			});
@@ -188,7 +233,7 @@ public class CustomHttpServer extends HttpServer {
         	response.setEntity(body);
         	
         	// Bring SpydrdoiActivity to the foreground
-        	if (!screenState) {
+        	if (!SpydroidActivity.activityPaused) {
     			Intent i = new Intent(context,SpydroidActivity.class);
     			i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
     			context.startActivity(i);

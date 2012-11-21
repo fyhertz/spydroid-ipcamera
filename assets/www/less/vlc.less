@@ -48,8 +48,9 @@
     position: relative;
 
     #upper-layer {
+	display: table;
 	position: absolute;
-	background: black;
+	background: url("../images/eye.png") center no-repeat;
 	top: 0px;
 	left: 0px;
 	width: @vlcWidth;
@@ -58,11 +59,17 @@
 	overflow: hidden;
 
 	h1 {
-	    color: white;
-	    line-height: @vlcHeight;
-	    text-align: center;
 	    font-size: 20px;
 	    letter-spacing: 8px;
+	}
+
+	#wrapper {
+	    display: table-cell;
+	    vertical-align: middle;
+
+	    p {
+		text-align: center;
+	    }
 	}
 
 	#mask {

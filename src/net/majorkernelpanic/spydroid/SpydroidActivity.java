@@ -93,6 +93,10 @@ public class SpydroidActivity extends Activity implements OnSharedPreferenceChan
     private Context context;
     private Animation pulseAnimation;
 
+    /** The HttpServer will use those variables to send reports about the state of the app to the http interface **/
+    public static boolean activityPaused = true;
+    public static Exception lastCaughtException;
+    
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         
@@ -238,7 +242,7 @@ public class SpydroidActivity extends Activity implements OnSharedPreferenceChan
     public void onPause() {
     	super.onPause();
     	if (rtspServer != null) rtspServer.stop();
-    	CustomHttpServer.setScreenState(false);
+    	activityPaused = false;
     	unregisterReceiver(wifiStateReceiver);
     }
     
@@ -296,7 +300,7 @@ public class SpydroidActivity extends Activity implements OnSharedPreferenceChan
     		}
     	}
     	if (httpServer != null) {
-    		CustomHttpServer.setScreenState(true);
+    		activityPaused = true;
     		try {
     			httpServer.start();
     		} catch (IOException e) {
@@ -323,10 +327,10 @@ public class SpydroidActivity extends Activity implements OnSharedPreferenceChan
     	
     	public void handleMessage(Message msg) { 
     		switch (msg.what) {
-    		case RtspServer.MESSAGE_LOG:
-    			log((String)msg.obj);
-    			break;
     		case RtspServer.MESSAGE_ERROR:
+    			lastCaughtException = (Exception)msg.obj;
+    			break;
+    		case RtspServer.MESSAGE_LOG:
     			log((String)msg.obj);
     			break;
     		case Session.MESSAGE_START:
@@ -336,9 +340,6 @@ public class SpydroidActivity extends Activity implements OnSharedPreferenceChan
     		case Session.MESSAGE_STOP:
     			streaming = false;
     			displayIpAddress();
-    			break;
-    		case Session.MESSAGE_ERROR:
-    			log((String)msg.obj);
     			break;
     		}
     	}

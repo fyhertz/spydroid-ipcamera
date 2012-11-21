@@ -64,7 +64,7 @@ public class H264Packetizer extends AbstractPacketizer {
 		super();
 	}
 	
-	public void start() {
+	public void start() throws IOException {
 		
 		// We reinitialize everything so that the packetizer can be reused
 		sync = new Semaphore(0);
@@ -74,9 +74,9 @@ public class H264Packetizer extends AbstractPacketizer {
 		// This will skip the MPEG4 header if this step fails we can't stream anything :(
 		try {
 			skipHeader();
-		}
-		catch (IOException e)  {
-			return;
+		} catch (IOException e) {
+			Log.e(TAG,"Couldn't skip mp4 header :/");
+			throw new IOException("Couldn't skip mp4 header :/");
 		}
 		
 		// We start the two threads of the packetizer

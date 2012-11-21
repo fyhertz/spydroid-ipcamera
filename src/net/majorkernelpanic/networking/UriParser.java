@@ -83,7 +83,7 @@ public class UriParser {
 		// Uri has no parameters: the default behavior is to add one h264 track and one amrnb track
 		else {
 			session.addVideoTrack();
-			session.addAudioTrack();
+			//session.addAudioTrack();
 		}
 	}
 	

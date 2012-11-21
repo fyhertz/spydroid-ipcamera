@@ -134,8 +134,8 @@ public class RtspServer {
 					// Client left
 					break;
 				} catch (Exception e) {
-					loge("An error occured: "+e.getMessage()!=null?e.getMessage():"unknown error !");
-					e.printStackTrace();
+					// Display an error on user interface
+					handler.obtainMessage(MESSAGE_ERROR, e).sendToTarget();
 					break;
 				}
 			}
@@ -152,7 +152,7 @@ public class RtspServer {
 			
 		}
 		
-		public Response processRequest(Request request) throws IllegalStateException, IOException{
+		public Response processRequest(Request request) throws IllegalStateException, IOException {
 			Response response = new Response(request);
 			
 			/* ********************************************************************************** */
@@ -160,17 +160,23 @@ public class RtspServer {
 			/* ********************************************************************************** */
 			if (request.method.toUpperCase().equals("DESCRIBE")) {
 				
-				// Parse the requested URI and configure the session
-				UriParser.parse(request.uri,session);
-				
-				String requestContent = session.getSessionDescriptor();
-				String requestAttributes = 
-						"Content-Base: "+client.getLocalAddress().getHostAddress()+":"+client.getLocalPort()+"/\r\n" +
-						"Content-Type: application/sdp\r\n";
-				
-				response.status = Response.STATUS_OK;
-				response.attributes = requestAttributes;
-				response.content = requestContent;
+				try {
+					// Parse the requested URI and configure the session
+					UriParser.parse(request.uri,session);
+					String requestContent = session.getSessionDescriptor();
+					String requestAttributes = 
+							"Content-Base: "+client.getLocalAddress().getHostAddress()+":"+client.getLocalPort()+"/\r\n" +
+							"Content-Type: application/sdp\r\n";
+					
+					response.attributes = requestAttributes;
+					response.content = requestContent;
+				} catch (IllegalStateException e) {
+					response.status = Response.STATUS_INTERNAL_SERVER_ERROR;
+					throw e;
+				} catch (IOException e) {
+					response.status = Response.STATUS_INTERNAL_SERVER_ERROR;
+					throw e;
+				}
 				
 			}
 			
@@ -227,9 +233,15 @@ public class RtspServer {
 							"Session: "+ "1185d20035702ca" + "\r\n" +
 							"Cache-Control: no-cache\r\n";
 					response.status = Response.STATUS_OK;
+				} catch (IllegalStateException e) {
+					response.status = Response.STATUS_INTERNAL_SERVER_ERROR;
+					throw e;
+				} catch (IOException e) {
+					response.status = Response.STATUS_INTERNAL_SERVER_ERROR;
+					throw e;
 				} catch (RuntimeException e) {
 					response.status = Response.STATUS_INTERNAL_SERVER_ERROR;
-					throw new RuntimeException("Could not start stream, configuration probably not supported by phone");
+					throw new RuntimeException("Could not start stream, configuration probably not supported by phone, try other settings !");
 				}
 				
 			}
@@ -277,12 +289,6 @@ public class RtspServer {
 			Log.v(TAG,message);
 		}
 		
-		// Display an error on user interface
-		private void loge(String error) {
-			handler.obtainMessage(MESSAGE_LOG, error).sendToTarget();
-			Log.e(TAG,error);
-		}
-
 	}
 	
 	static class Request {

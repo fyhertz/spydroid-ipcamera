@@ -68,7 +68,7 @@ public class H264Stream extends VideoStream {
 		flashState = false;
 		
 		// That means the H264Stream will behave as a regular MediaRecorder object
-		// it will not start the packetizer thread and can be used to save the video
+		// it will not start the packetizer thread and can be used to save video
 		// in a file
 		setMode(MODE_DEFAULT);
 		

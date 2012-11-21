@@ -1,10 +1,113 @@
 (function () {
 
-    //var host = "192.168.0.105",
-    var host = /(.+):/.exec(window.location.host)[1],
+    var host = "192.168.0.105",
+    //var host = /(.+):/.exec(window.location.host)[1],
 
-    generateURI = function (h) {
-	var audioEncoder, videoEncoder, cache, rotation, flash, res;
+    // Encapsulation of vlc plugin
+    Stream = function (object,type,callbacks) {
+	var restarting = false, starting = false, error = false, restartTimer, startTimer,
+
+	// Register an event listener
+	registerEvent = function (object, event, handler) {
+	    if (object.attachEvent) {
+		object.attachEvent (event, handler);
+	    } else if (object.addEventListener) {
+		object.addEventListener (event, handler, false);
+	    } else {
+		object["on" + event] = handler;
+	    }
+	},
+	
+	// Indicates if the camera/microphone is currently being used
+	inUse = function (callback) {
+	    $.getJSON('server/state.json',function (json) {
+		if (type==='audio') callback(json.microphoneInUse==='true');
+		else callback(json.cameraInUse==='true');
+	    });
+	};
+
+	registerEvent(object,'MediaPlayerEncounteredError',function (event) {
+	    error = true;
+	    if (restarting) {
+		clearInterval(restartTimer);
+		restarting = false;
+	    }
+	    if (starting) {
+		clearInterval(startTimer);
+		starting = false;
+	    }	    
+	    callbacks.onError();
+	});
+
+	return {
+
+	    restart: function () {
+		if (!restarting) {
+		    object.playlist.stop();
+		    object.playlist.clear();
+		    object.playlist.items.clear();
+		    // Wait 2 secs restarting the stream
+		    restarting = true;
+		    restartTimer = setInterval(function () {
+			inUse(function (b) {
+			    if (!b) {
+				this.start();
+				clearInterval(restartTimer);
+			    }
+			}.bind(this));
+		    }.bind(this),1000);
+		}
+	    },
+
+	    start: function () {
+		if (!object.playlist.isPlaying) {
+		    starting = true;
+		    error = false;
+		    startTimer = setInterval(function () {
+			if (object.playlist.isPlaying) {
+			    restarting = false;
+			    starting = false;
+			    clearInterval(startTimer);
+			}
+		    },300);
+		    var item = generateURI(host,type);
+		    object.playlist.add(type==='video'?item.uriv:item.uria,'',item.params);
+		    object.playlist.playItem(0);
+		}
+	    },
+
+	    stop: function () {
+		if (restarting) {
+		    clearInterval(restartTimer);
+		    restarting = false;
+		}
+		if (starting) {
+		    clearInterval(startTimer);
+		    starting = false;
+		}
+		object.playlist.stop();
+		object.playlist.clear();
+		object.playlist.items.clear(); // Not working very well :/
+	    },
+
+	    getState: function() {
+		if (restarting) return 'restarting';
+		else if (starting) return 'starting'
+		else if (object.playlist.isPlaying) return 'streaming';
+		else if (error) return 'error';
+		else return 'idle';
+	    },
+
+	    isStreaming: function () {
+		return object.playlist.isPlaying;
+	    }
+
+	}
+	
+    },
+
+    generateURI = function (h,type) {
+	var audioEncoder, videoEncoder, cache, rotation, flash, camera, res;
 
 	// Audio conf
 	if ($('#audioEnabled').attr('checked')) {
@@ -29,181 +132,46 @@
 	// Flash
 	if ($('#flashEnabled').val()==='1') flash = 'on'; else flash = 'off';
 
+	// Camera
+	camera = $('#cameraId').val();
+
 	// Params
 	cache = /[0-9]+/.exec($('#cache').val())[0];
 	
-	$.get('config.json?set&'+videoEncoder+'&'+audioEncoder);
+	if (type==='video') $.get('/server/config.json?set&'+videoEncoder+'&'+audioEncoder);
 
 	return {
 	    uria:"rtsp://"+h+":"+8086+"?"+audioEncoder,
-	    uriv:"rtsp://"+h+":"+8086+"?"+videoEncoder+'&flash='+flash,
+	    uriv:"rtsp://"+h+":"+8086+"?"+videoEncoder+'&flash='+flash+'&camera='+camera,
 	    params:[':network-caching='+cache]
 	}
     },
-    
-    Vlc = function () {
-	var vlcv = $('#xvlcv'), vlca = $('#xvlca'), playerv = vlcv[0], playera = vlca[0],
-	connected = false, restarting = false,
-	cover = $('#vlc-container #upper-layer'),
-	status = $('#status'),
-	button = $('#connect>div>h1');
-	video = false, audio = false;
 
-	// No activex plugin ? 
-	if (typeof playerv.playlist == "undefined") {
-	    vlcv.hide();
-	    vlcv = $('#vlcv');
-	    vlca = $('#vlca');
-	    vlcv.show();
-	    playerv = vlcv[0];
-	    playera = vlca[0];
+    testActivxAndMozillaPlugin = function () {
+
+	// TODO: console.log(object.VersionInfo);
+
+	// Test if the activx plugin is installed 
+	if (typeof $('#xvlcv')[0].playlist != "undefined") {
+	    return 1;
+	} else {
+	    $('#xvlcv').css('display','none');
+	    $('#vlcv').css('display','block');
 	}
 
-	// No firefox plugin ?
-	if (typeof playerv.playlist == "undefined") {
+	// Test if the mozilla plugin is installed
+	if (typeof $('#vlca')[0].playlist == "undefined") {
+	    // Plugin not detected, alert user !
 	    $('#glass').fadeIn(1000);
 	    $('#error-noplugin').fadeIn(1000);
-	}
-
-	var registerEvent = function (player, event, handler) {
-	    if (player.attachEvent) {
-		player.attachEvent (event, handler);
-	    } else if (player.addEventListener) {
-		player.addEventListener (event, handler, false);
-	    } else {
-		player["on" + event] = handler;
-	    }
-	},
-
-	init = function () {
-	    vlcv.css('visibility','hidden');
-	    cover.html('').css('background','url("images/eye.png") center no-repeat').show();
-	},
-
-	stop = function (what) {
-	    if (what == undefined || what == "video") {
-		playerv.playlist.stop();
-		playerv.playlist.clear();
-		playerv.playlist.items.clear(); // Not working very well :/
-		video = false;
-	    }
-	    if (what == undefined || what == "audio") {
-		playera.playlist.stop();
-		playera.playlist.clear();
-		playera.playlist.items.clear();
-		audio = false;
-	    }
-	    connected = video || audio;
-	    if (!connected && !restarting) {
-		init();
-		status.html(__('NOT CONNECTED')); 
-		button.html(__('Connect !!')); 
-	    }
-	},
-
-	error = function () {
-	    cover.html('<h1>'+__('ERROR')+' :(</h1>');
-	    status.html(__('ERROR'));
-	    button.text(__('Connect !!'));
-	    connected = false;
-	},
-
-	addCallback = function (vlc,f) {
-	    var t = setInterval(function () {
-		if (vlc.playlist.isPlaying) {
-		    clearInterval(t);
-		    f();
-		}
-	    },100);
-	};
-
-	registerEvent(playera,'MediaPlayerEncounteredError',function (event) {
-	    error();
-	});
-	registerEvent(playerv,'MediaPlayerEncounteredError',function (event) {
-	    error();
-	});
-	registerEvent(playerv,'MediaPlayerPlaying',function (event) {	   
-	    // Do not work well
-	});
-	registerEvent(playera,'MediaPlayerPlaying',function (event) {	    
-	    // Do not work well	    
-	});
-	registerEvent(playerv,'MediaPlayerBuffering',function (event) {
-	    // Do not work well
-	});
-	
-	return {
-
-	    init: function () {
-		init();
-	    },
-
-	    play: function (what) {
-		var item = generateURI(host);
-		connected = true;
-		if (!restarting) {
-		    vlcv.css('visibility','hidden');
-		    cover.css('background','black').html('<div id="mask"></div><h1>'+__('CONNECTION')+'</h1>').show();
-		}
-		if (what == "video") {
-		    addCallback(playerv,function () {
-			cover.hide();
-			status.html(__('CONNECTED'));
-			video = true;
-			button.text(__('Disconnect ?!'));
-			vlcv.css('visibility','inherit');
-		    });
-		    playerv.playlist.add(item.uriv,'',item.params);
-		    playerv.playlist.playItem(0);
-		}
-		if (what == "audio") {
-		    addCallback(playera,function () {
-			cover.hide();
-			vlcv.css('visibility','inherit');
-			status.html(__('CONNECTED'));
-			audio = true;
-			button.text(__('Disconnect ?!'));
-		    });
-		    playera.playlist.add(item.uria,'',item.params);
-		    playera.playlist.playItem(0);
-		}
-	    },
-
-	    stop: function (what) {
-		stop(what);
-	    },
-
-	    restart: function (what) {
-		if (!restarting) {
-		    restarting = true;
-		    vlcv.css('visibility','hidden');
-		    cover.css('background','black').html('<div id="mask"></div><h1>'+__('UPDATING SETTINGS')+'</h1>').show();
-		    stop(what);
-		    setTimeout(function () {
-			this.play(what);
-			restarting = false;
-		    }.bind(this),2000);
-		}
-	    },
-
-	    isStreamingVideo: function() {
-		return video;
-	    },
-
-	    isStreamingAudio: function() {
-		return audio;
-	    },
-
-	    isConnected: function() {
-		return connected;
-	    }
-	    
+	    return 0;
+	} else {
+	    return 2;
 	}
 
     },
 
-    displaySoundsList = function () {
+    loadSoundsList = function () {
 	var list = $('#soundslist'), category, name;
 	sounds.forEach(function (e) {
 	    category = e.match(/([a-z0-9]+)_/)[1];
@@ -225,25 +193,121 @@
 	$('#tooltip #'+title).show();
     },
 
-    loadSpydroidUI = function () {
-	var vlc = Vlc(), wait = false;
+    videoStream, videoPlugin, audioStream, oldVideoState = 'idle',oldAudioState = 'idle', lastError,
 
-	vlc.init();
+    updateStatus = function () {
+	if (videoStream.getState()===oldVideoState && audioStream.getState()===oldAudioState) return;
 
-	$('h1,h2,span,p').translate();
+	var status = $('#status'), button = $('#connect>div>h1'), cover = $('#vlc-container #upper-layer');
+
+	// STATUS
+	if (videoStream.getState()==='starting' || videoStream.getState()==='restarting' || 
+	    audioStream.getState()==='starting' || audioStream.getState()==='restarting') {
+	    status.html(__('Trying to connect...'))
+	} else {
+	    if (!videoStream.isStreaming() && !audioStream.isStreaming()) status.html(__('NOT CONNECTED')); 
+	    else if (videoStream.isStreaming() && !audioStream.isStreaming()) status.html(__('Streaming video but not audio'));
+	    else if (!videoStream.isStreaming() && audioStream.isStreaming()) status.html(__('Streaming audio but not video'));
+	    else status.html(__('Streaming audio and video'));
+	}
+
+	// BUTTON
+	if ((videoStream.getState()==='idle' || videoStream.getState()==='error') && 
+	    (audioStream.getState()==='idle' || audioStream.getState()==='error')) {
+	    button.html(__('Connect !!')); 
+	} else button.text(__('Disconnect ?!'));
+
+	// WINDOW
+	if (videoStream.getState()==='error' || audioStream.getState()==='error') {
+	    cover.html('<div id="wrapper"><h1>An error occurred :(</h1><p>'+__(lastError!==undefined?lastError:'Change some settings and retry')+'</p></div>');
+	} else if (videoStream.getState()==='restarting' || audioStream.getState()==='restarting') {
+	    videoPlugin.css('visibility','hidden'); 
+	    cover.css('background','black').html('<div id="mask"></div><div id="wrapper"><h1>'+__('UPDATING SETTINGS')+'</h1></div>').show();
+	} else if (videoStream.getState()==='streaming') {
+	    videoPlugin.css('visibility','inherit');
+	    cover.hide();
+	}
+
+	if (videoStream.getState()==='idle') {
+	    if (audioStream.getState()==='streaming') {
+		videoPlugin.css('visibility','hidden'); 
+		cover.html('').css('background','url("images/speaker.png") center no-repeat').show();
+	    } else if (audioStream.getState()==='idle') {
+		videoPlugin.css('visibility','hidden'); 
+		cover.html('').css('background','url("images/eye.png") center no-repeat').show();
+	    }
+	}
+
+
+	oldVideoState = videoStream.getState();
+	oldAudioState = audioStream.getState();
+
+    },
+
+    // Disable input for one sec to prevent user from flooding the RTSP server by clicking around too quickly
+    disableAndEnable = function (input) {
+	input.attr('disabled','true');
+	setTimeout(function () {
+	    input.removeAttr('disabled');
+	},1000);
+    },
+
+    setupEvents = function () {
+	var audioPlugin, test,
+	cover = $('#vlc-container #upper-layer'),
+	status = $('#status'),
+	button = $('#connect>div>h1');	
+
+	$('.popup').css({'top':($(window).height()-$('.popup').height())/2,'left':($(window).width()-$('.popup').width())/2});
+	$('.popup #close').click(function (){
+	    $('#glass').fadeOut();
+	    $('.popup').fadeOut();
+	});
+	
+	test = testActivxAndMozillaPlugin();
+
+	if (test===1) {
+	    // Activx plugin detected
+	    videoPlugin = $('#xvlcv');
+	    audioPlugin = $('#xvlca');
+	} else if (test===2) {
+	    // Mozilla plugin detected
+	    videoPlugin = $('#vlcv');
+	    audioPlugin = $('#vlca');
+	} else {
+	    // No plugin installed, spydroid probably won't work
+	    // We assume the Mozilla plugin is installed, just in case :/
+	    videoPlugin = $('#vlcv');
+	    audioPlugin = $('#vlca');
+	}
+
+	videoStream = Stream(videoPlugin[0],'video',{onError:function () {
+	    $.getJSON('server/state.json',function (json) {lastError = json.lastError;console.log(json.lastError);});
+	}});	
+
+	audioStream = Stream(audioPlugin[0],'audio',{onError:function () {
+	    $.getJSON('server/state.json',function (json) {lastError = json.lastError;console.log(json.lastError);});	    
+	}});
+
+	setInterval(function () {updateStatus();},400);
 
 	$('#connect').click(function () {
-	    if (!wait) {
-		wait = true;
-		setTimeout(function () {wait = false;},1000);
-		if (!vlc.isConnected()) {
-		    if ($('#videoEnabled').attr('checked')) vlc.play('video');
-		    if ($('#audioEnabled').attr('checked')) vlc.play('audio');
-		} else vlc.stop();
+	    if ((videoStream.getState()!=='idle' && videoStream.getState()!=='error') || 
+		(audioStream.getState()!=='idle' && audioStream.getState()!=='error')) {
+		videoStream.stop();
+		audioStream.stop();
+	    } else {
+		if (!$('#videoEnabled').attr('checked') && !$('#audioEnabled').attr('checked')) return;
+		videoPlugin.css('visibility','hidden'); 
+		cover.css('background','black').html('<div id="mask"></div><div id="wrapper"><h1>'+__('CONNECTION')+'</h1></div>').show();
+		if ($('#videoEnabled').attr('checked')) videoStream.start();
+		if ($('#audioEnabled').attr('checked')) audioStream.start();
 	    }
 	});
 	
 	$('#torch-button').click(function () {
+	    if ($(this).attr('disabled')!==undefined || videoStream.getState()==='starting') return;
+	    disableAndEnable($(this));
 	    if ($('#flashEnabled').val()=='0') {
 		$('#flashEnabled').val('1');
 		$(this).addClass('torch-on');
@@ -251,39 +315,50 @@
 		$('#flashEnabled').val('0');
 		$(this).removeClass('torch-on');
 	    }
-	    if (vlc.isStreamingVideo()) vlc.restart("video");
+	    if (videoStream.getState()==='streaming') videoStream.restart();
 	});
 
+	$('.camera-not-selected').live('click',function () {
+	    if ($(this).attr('disabled')!==undefined || videoStream.getState()==='starting') return;
+	    $('#cameras span').addClass('camera-not-selected');
+	    $(this).removeClass('camera-not-selected');
+	    disableAndEnable($('.camera-not-selected'));
+	    $('#cameraId').val($(this).attr('data-id'));
+	    if (videoStream.getState()==='streaming') videoStream.restart();
+	}) 
+	
 	$('.audio select,').change(function () {
-	    if (vlc.isStreamingAudio()) {
-		vlc.restart("audio");
+	    if (audioStream.isStreaming()) {
+		audioStream.restart();
 	    }
 	});
 
 	$('.audio input').change(function () {
-	    if (vlc.isConnected()) {
-		if ($('#audioEnabled').attr('checked')) vlc.play('audio'); else vlc.stop('audio');
+	    if (audioStream.isStreaming() || videoStream.isStreaming()) {
+		if ($('#audioEnabled').attr('checked')) audioStream.restart(); else audioStream.stop();
+		disableAndEnable($(this));
 	    }
 	});
 
 	$('.video select').change(function () {
-	    if (vlc.isStreamingVideo()) {
-		vlc.restart("video");
+	    if (videoStream.isStreaming()) {
+		videoStream.restart();
 	    }
 	});
 
 	$('.video input').change(function () {
-	    if (vlc.isConnected()) {
-		if ($('#videoEnabled').attr('checked')) vlc.play('video'); else vlc.stop('video');
+	    if (audioStream.isStreaming() || videoStream.isStreaming()) {
+		if ($('#videoEnabled').attr('checked')) videoStream.restart(); else videoStream.stop();
+		disableAndEnable($(this));
 	    }
 	});
 
 	$('.cache select').change(function () {
-	    if (vlc.isStreamingVideo()) {
-		vlc.restart("video");
+	    if (videoStream.isStreaming()) {
+		videoStream.restart();
 	    }
-	    if (vlc.isStreamingAudio()) {
-		vlc.restart("audio");
+	    if (audioStream.isStreaming()) {
+		audioStream.restart();
 	    }
 	});
 
@@ -293,11 +368,8 @@
 	    updateTooltip($(this).attr('id'));
 	});
 
-	testScreenState();
-	displaySoundsList();
-
 	$('.sound').click(function () {
-	    $.get('/sound.htm?name='+$(this).attr('id'));
+	    $.get('/server/sound.htm?name='+$(this).attr('id'));
 	});
 
 	$('#hide-tooltip').click(function () {
@@ -316,14 +388,7 @@
 	    $('#need-help').hide();
 	});
 
-	$('.popup #close').click(function (){
-	    $('#glass').fadeOut();
-	    $('.popup').fadeOut();
-	});
-
-	$('.popup').css({'top':($(window).height()-$('.popup').height())/2,'left':($(window).width()-$('.popup').width())/2});
-
-	$.getJSON('config.json?get',function (config) {
+	$.getJSON('/server/config.json?get',function (config) {
 	    $('#resolution,#framerate,#bitrate,#audioEncoder,#videoEncoder').children().removeAttr('selected').each(function (c) {
 		if ($(this).val()===config.videoResolution || 
 		    $(this).val()===config.videoFramerate || 
@@ -340,7 +405,19 @@
     };
 
     $(document).ready(function () {
-	loadSpydroidUI();
+
+	// Translate the interface in the appropriate language
+	$('h1,h2,span,p').translate();
+
+	// Verify that the screen is not turned off
+	testScreenState();
+
+	// Fetch the list of sounds on the phone
+	loadSoundsList(); 
+
+	// Bind DOM events to the js API
+	setupEvents();
+
     });
 
 }());

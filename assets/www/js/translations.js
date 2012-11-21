@@ -12,7 +12,7 @@
 	    8:"Disconnect ?!",
 	    9:"STATUS",
 	    10:"NOT CONNECTED",
-	    11:"ERROR",
+	    11:"ERROR :(",
 	    12:"CONNECTION",
 	    13:"UPDATING SETTINGS",
 	    14:"CONNECTED",
@@ -28,8 +28,16 @@
 	    24:"You need to install VLC first !",
 	    25:"During the installation make sure to check the firefox plugin !",
 	    26:"Close",
-	    27:"You must leave the screen of your smartphone on !"
+	    27:"You must leave the screen of your smartphone on !",
+	    28:"Front facing camera",
+	    29:"Back facing camera",
+	    30:"Switch between cameras",
+	    31:"Streaming video but not audio",
+	    32:"Streaming audio but not video",
+	    33:"Streaming audio and video",
+	    34:"Trying to connect..."
 	},
+
 	fr: {
 	    1:"À propos",
 	    2:"Retour",
@@ -41,7 +49,7 @@
 	    8:"Déconnecter ?!",
 	    9:"STATUT",
 	    10:"DÉCONNECTÉ",
-	    11:"ERREUR",
+	    11:"ERREUR :(",
 	    12:"CONNEXION",
 	    13:"M.A.J.",
 	    14:"CONNECTÉ",
@@ -57,8 +65,16 @@
 	    24:"Tu dois d'abord installer VLC !!",
 	    25:"Pendant l'installation laisse cochée l'option plugin mozilla !",
 	    26:"Fermer",
-	    27:"Tu dois laisser l'écran de ton smartphone allumé"
+	    27:"Tu dois laisser l'écran de ton smartphone allumé",
+	    28:"Caméra face avant",
+	    29:"Caméra face arrière",
+	    30:"Choisir la caméra",
+	    31:"Streaming de la vidéo",
+	    32:"Streaming de l'audio",
+	    33:"Streaming de l'audio et de la vidéo",
+	    34:"Connexion en cours..."
 	},
+
 	de : {
 	    1:"Apropos",
 	    2:"Zurück",
@@ -70,7 +86,7 @@
 	    8:"Verbinden ?!",
 	    9:"STATUS",
 	    10:"NICHT VERBUNDEN",
-	    11:"FEHLER",
+	    11:"FEHLER :(",
 	    12:"VERBINDUNG",
 	    13:"UPDATE",
 	    14:"VERBUNDEN",

@@ -7,12 +7,28 @@
     animation: @animation;
 }
 
+.transition(@transition,@transition2) {
+    -moz-transition: @transition, @transition2;
+    -ms-transition: @transition, @transition2;
+    -o-transition: @transition, @transition2;
+    -webkit-transition: @transition, @transition2;
+    transition: @transition, @transition2;
+}
 .transition(@transition) {
     -moz-transition: @transition;
     -ms-transition: @transition;
     -o-transition: @transition;
     -webkit-transition: @transition;
     transition: @transition;
+}
+
+
+.transform(@transformation) {
+    -moz-transform: @transformation; 
+    -ms-transform: @transformation;
+    -o-transform: @transformation;
+    -webkit-transform: @transformation;
+    transform: @transformation;
 }
 
 .border-radius(@radius: 5px) {

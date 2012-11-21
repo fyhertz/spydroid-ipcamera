@@ -11,7 +11,7 @@
     <script src="js/less-1.2.2.min.js" type="text/javascript"></script>
     <script src="js/jquery-1.7.1.min.js" type="text/javascript"></script>
     <script src="js/translations.js" type="text/javascript"></script>
-    <script src="js/params.js" type="text/javascript"></script>
+    <script src="server/params.js" type="text/javascript"></script>
     <script src="js/ui.js" type="text/javascript"></script>
 
     <!--[if lt IE 9 ]>    
@@ -50,8 +50,8 @@
 	       toolbar="false"
 	       width="640px"
 	       height="480px"
-	       id="vlcv"
-	       style="display:none;">
+	       style="visibility:hidden;display:none;"
+	       id="vlcv">
 	</embed>
 	<object id="xvlca" width="1px" height="1px" classid="clsid:9BE31822-FDAD-461B-AD51-BE1D1C159921" style="position:absolute;top:0;left:0;visibility:hidden;">
 	  <param name="toolbar" value="false" />
@@ -159,10 +159,21 @@
 	  </div> <!-- Section 2 -->
 
 	  <!-- Section 3 -->
+	  <div class="section" id="cameras">
+	    <div class="title"><h1>Switch between cameras</h1></div>
+	    <div class="section-content">
+	      <span data-id="back">Back facing camera</span>
+	      <span data-id="front" class="camera-not-selected">Front facing camera</span>
+	      <img src="images/camera.png" alt="Lamp" width="90px" height="90px"></img>
+	      <input type="hidden" id="cameraId" value="0"></input>
+	    </div>
+	  </div> <!-- Section 3 -->
+
+	  <!-- Section 4 -->
 	  <div class="section selected" id="sounds">
 	    <div class="title"><h1>Play a prerecorded sound</h1></div>
 	    <div id="soundslist" class="section-content"></div>
-	  </div> <!-- Section 3 -->
+	  </div> <!-- Section 4 -->
 
 	</div> <!-- Accordion -->
 
@@ -184,6 +195,12 @@
 	  <div id="content">
 	    <p>This will simply toggle the led in front of you're phone, so that even in the deepest darkness, you will not be blind...</p>
 	    <p>Or you could use this to surprise your victim !</p>
+	  </div>
+	</div>
+	<div id="cameras">
+	  <div id="title"><h1>Switch between cameras</h1></div>
+	  <div id="content">
+	    <p>Useful if your phone has two cameras</p>
 	  </div>
 	</div>
 	<div id="sounds">

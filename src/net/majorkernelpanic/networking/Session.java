@@ -47,10 +47,9 @@ public class Session {
 
 	public final static String TAG = "Session";
 
-	// Message types for UI thread
+	// Thos two messages will inform the handler if there is streaming going on or not
 	public static final int MESSAGE_START = 3;
 	public static final int MESSAGE_STOP = 4;
-	public static final int MESSAGE_ERROR = 5; 
 	
 	// Available encoders
 	public final static int VIDEO_H264 = 1;
@@ -80,6 +79,16 @@ public class Session {
 		this.destination = destination;
 	}
 
+	/** Indicates whether or not a camera is being used in a session **/
+	public static boolean isCameraInUse() {
+		return cameraInUse;
+	}
+	
+	/** Indicates whether or not the microphone is being used in a session **/
+	public static boolean isMicrophoneInUse() {
+		return micInUse;
+	}
+	
 	/** Set the handler that will be used to signal the main thread that a session has started or stopped */
 	public static void setHandler(Handler h) {
 		handler = h;
@@ -129,7 +138,7 @@ public class Session {
 	
 	/** Add video track with specified quality and encoder */
 	public synchronized void addVideoTrack(int encoder, int camera, VideoQuality videoQuality, boolean flash) throws IllegalStateException, IOException {
-		if (cameraInUse) return;
+		if (cameraInUse) throw new IllegalStateException("Camera already in use by another client");
 		Stream stream = null;
 		VideoQuality.merge(videoQuality,defaultVideoQuality);
 		
@@ -163,7 +172,7 @@ public class Session {
 	
 	/** Add audio track with specified encoder */
 	public synchronized void addAudioTrack(int encoder) {
-		if (micInUse) return;
+		if (micInUse) throw new IllegalStateException("Microphone already in use by another client");
 		Stream stream = null;
 		
 		switch (encoder) {
@@ -200,9 +209,13 @@ public class Session {
 		String sessionDescriptor = "";
 		// Prevent two different sessions from using the same peripheral at the same time
 		for (int i=0;i<streamList.length;i++) {
-			if (streamList[i] != null && !streamList[i].isStreaming()) {
-				sessionDescriptor += streamList[i].generateSessionDescriptor();
-				sessionDescriptor += "a=control:trackID="+i+"\r\n";
+			if (streamList[i] != null) {
+				if (!streamList[i].isStreaming()) {
+					sessionDescriptor += streamList[i].generateSessionDescriptor();
+					sessionDescriptor += "a=control:trackID="+i+"\r\n";
+				} else {
+					throw new IllegalStateException("Make sure all streams are stopped before calling getSessionDescriptor()");
+				}
 			}
 		}
 		return sessionDescriptor;
@@ -236,23 +249,18 @@ public class Session {
 	}
 
 	/** Start stream with id trackId */
-	public void start(int trackId) {
+	public void start(int trackId) throws IllegalStateException, IOException {
 		String type = trackId==0 ? "Video stream" : "Audio stream";
 		Stream stream = streamList[trackId];
-		try {
-			if (stream!=null && !stream.isStreaming()) {
-				stream.prepare();
-				stream.start();
-				if (startedStreamCount.addAndGet(1)==1) handler.obtainMessage(Session.MESSAGE_START).sendToTarget();
-			}
-		} catch (Exception e) {
-			loge(type+" could not be started: "+(e.getMessage()!=null?e.getMessage():"error unknown"));
-			e.printStackTrace();
+		if (stream!=null && !stream.isStreaming()) {
+			stream.prepare();
+			stream.start();
+			if (startedStreamCount.addAndGet(1)==1) handler.obtainMessage(Session.MESSAGE_START).sendToTarget();
 		}
 	}
 
 	/** Start existing streams */
-	public void startAll() {
+	public void startAll() throws IllegalStateException, IOException {
 		for (int i=0;i<streamList.length;i++) {
 			start(i);
 		}
@@ -277,12 +285,6 @@ public class Session {
 				else micInUse = false;
 			}
 		}
-	}
-	
-	/** Send some error report to the ui thread*/
-	private void loge(String error) {
-		handler.obtainMessage(MESSAGE_ERROR,error).sendToTarget();
-		Log.e(TAG,error);
 	}
 	
 }

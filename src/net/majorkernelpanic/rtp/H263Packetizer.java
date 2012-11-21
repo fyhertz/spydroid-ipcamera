@@ -37,9 +37,16 @@ public class H263Packetizer extends AbstractPacketizer implements Runnable {
 		super();
 	}
 	
-	public void start() {
+	public void start() throws IOException {
 		if (!running) {
 			running = true;
+			// This will skip the MPEG4 header if this step fails we can't stream anything :(
+			try {
+				skipHeader();
+			} catch (IOException e) {
+				Log.e(TAG,"Couldn't skip mp4 header :/");
+				throw new IOException("Couldn't skip mp4 header :/");
+			}			
 			new Thread(this).start();
 		}
 	}
@@ -52,13 +59,6 @@ public class H263Packetizer extends AbstractPacketizer implements Runnable {
 		long time, duration = 0, ts = 0;
 		int i = 0, j = 0, tr;
 		boolean firstFragment = true;
-		
-		try {
-			skipHeader();
-		} catch (IOException e) {
-			Log.e(TAG,"Couldn't skip mp4 header :/");
-			return;
-		}
 		
 		// Each packet we send has a two byte long header (See section 5.1 of RFC 4629)
 		buffer[rtphl] = 0;

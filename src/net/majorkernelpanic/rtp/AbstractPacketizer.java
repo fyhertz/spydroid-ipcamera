@@ -20,6 +20,7 @@
 
 package net.majorkernelpanic.rtp;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.InetAddress;
 
@@ -60,7 +61,7 @@ abstract public class AbstractPacketizer {
 	}
 	
 	public abstract void stop();
-	public abstract void start();
+	public abstract void start() throws IOException;
 	
     // Useful for debug
     protected String printBuffer(int start,int end) {

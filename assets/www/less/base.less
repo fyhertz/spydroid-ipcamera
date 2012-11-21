@@ -36,6 +36,7 @@ body {
     font-size: @baseFontSize;
     color: @textColor;
     line-height: @baseLineHeight;
+    text-shadow: 0px 0px 3px black,0px 0px 3px black;
 
 }
 
@@ -191,7 +192,44 @@ section {
 	    text-align: center;
 	}
 	.sound:hover {
-	    color: darken(red,30%);
+	    color: lighten(red,20%);
+	}
+    }
+
+    #cameras {
+	.section-content {
+	    padding-top: 40px;
+	}
+	span:nth-child(1) {
+	    .transform(rotate(-35deg));
+	}
+	span:nth-child(2) {
+	    .transform(rotate(-30deg));
+	}
+	span {
+	    .transition(opacity 0.3s, color 0.3s);
+	    font-size: 18px;
+	    padding: 15px;
+	    display: block;
+	    margin-left:40px;
+	    filter: alpha(opacity=100);
+	    opacity: 1.0;
+	}
+	span.camera-not-selected {
+	    filter: alpha(opacity=20);
+	    opacity: 0.2;	    
+	}
+	span.camera-not-selected:hover {
+	    filter: alpha(opacity=100);
+	    opacity: 1.0;	    
+	    color: lighten(red,20%);
+	}
+	img {
+	    display: block;
+	    margin: 30px auto;
+	    filter: alpha(opacity=20);
+	    opacity: 0.2;
+	    clear: both;	
 	}
     }
 
@@ -241,7 +279,7 @@ section {
     }
 
     a {.transition(color 0.4s);}
-    a:hover {color: darken(red,30%);}
+    a:hover {color: lighten(red,20%);}
 
     p {
 	font-size: 16px;

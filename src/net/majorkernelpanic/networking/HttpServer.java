@@ -82,7 +82,8 @@ public class HttpServer extends BasicHttpServer{
 	protected static Context context;
 	
 	/** Allow user to start streams (a session contains one or more streams) from the HTTP server by requesting 
-	 * this URL: http://ip/spydroid.sdp (the RTSP server is not needed here) **/
+	 * this URL: http://ip/spydroid.sdp (the RTSP server is not needed here) 
+	 **/
 	static class DescriptorRequestHandler implements HttpRequestHandler {
 
 		private static Session session;
