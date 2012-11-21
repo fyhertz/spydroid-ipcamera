@@ -328,7 +328,9 @@ public class SpydroidActivity extends Activity implements OnSharedPreferenceChan
     	public void handleMessage(Message msg) { 
     		switch (msg.what) {
     		case RtspServer.MESSAGE_ERROR:
-    			lastCaughtException = (Exception)msg.obj;
+    			Exception e = (Exception)msg.obj;
+    			lastCaughtException = e;
+    			log(e.getMessage()!=null?e.getMessage():"An error occurred !");
     			break;
     		case RtspServer.MESSAGE_LOG:
     			log((String)msg.obj);
