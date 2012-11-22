@@ -102,7 +102,7 @@ public abstract class VideoStream extends MediaStream {
 		
 			// We reconnect to camera to change flash state if needed
 			Parameters parameters = camera.getParameters();
-			if (parameters.getFlashMode()==null) {
+			if (parameters.getFlashMode()==null && flashState) {
 				// The phone has no flash
 				throw new IllegalStateException("Can't turn the flash on !");
 			} else {
