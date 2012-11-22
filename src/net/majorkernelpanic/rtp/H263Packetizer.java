@@ -68,6 +68,7 @@ public class H263Packetizer extends AbstractPacketizer implements Runnable {
 			skipHeader();
 		} catch (IOException e) {
 			Log.e(TAG,"Couldn't skip mp4 header :/");
+			return;
 		}	
 		
 		// Each packet we send has a two byte long header (See section 5.1 of RFC 4629)
