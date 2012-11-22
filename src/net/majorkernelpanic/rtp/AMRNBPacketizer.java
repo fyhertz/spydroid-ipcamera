@@ -110,8 +110,7 @@ public class AMRNBPacketizer extends AbstractPacketizer implements Runnable {
 			
 		} catch (IOException e) {
 			running = false;
-			Log.e(TAG,"IOException: "+e.getMessage()!=null?e.getMessage():"unknown error");
-			e.printStackTrace();
+			Log.d(TAG,"IOException: "+e.getMessage()!=null?e.getMessage():"unknown error");
 		}
 		
 		Log.d(TAG,"Packetizer stopped !");
@@ -126,8 +125,7 @@ public class AMRNBPacketizer extends AbstractPacketizer implements Runnable {
 		while (sum<length) {
 			len = is.read(buffer, offset+sum, length-sum);
 			if (len<0) {
-				Log.d(TAG,"End of stream");
-				running = false;
+				throw new IOException("End of stream");
 			}
 			else sum+=len;
 		}

@@ -103,9 +103,9 @@ public abstract class VideoStream extends MediaStream {
 		try {
 		
 			// We reconnect to camera to change flash state if needed
-			Parameters parameters = camera.getParameters();
-			parameters.setFlashMode(flashState?Parameters.FLASH_MODE_TORCH:Parameters.FLASH_MODE_OFF);
-			camera.setParameters(parameters);
+			//Parameters parameters = camera.getParameters();
+			//parameters.setFlashMode(flashState?Parameters.FLASH_MODE_TORCH:Parameters.FLASH_MODE_OFF);
+			//camera.setParameters(parameters);
 			camera.setDisplayOrientation(quality.orientation);
 			camera.unlock();
 			super.setCamera(camera);
