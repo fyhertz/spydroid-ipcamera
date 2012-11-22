@@ -145,6 +145,7 @@ public class H264Packetizer extends AbstractPacketizer {
 				}
 			} catch (IOException e) {
 				Log.e(TAG,"Couldn't skip mp4 header :/");
+				return;
 			}
 			
 			try {
