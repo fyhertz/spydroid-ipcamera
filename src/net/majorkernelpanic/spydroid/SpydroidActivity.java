@@ -360,7 +360,6 @@ public class SpydroidActivity extends Activity implements OnSharedPreferenceChan
 	    	line2.append(ip);
 	    	line2.append(":8086");
 	    	streamingState(0);
-	    	if ((i >> 24 & 0xff) > 0) uploadH264TestResult();
     	} else {
     		line1.setText("HTTP://xxx.xxx.xxx.xxx:8080");
     		line2.setText("RTSP://xxx.xxx.xxx.xxx:8086");
@@ -396,66 +395,5 @@ public class SpydroidActivity extends Activity implements OnSharedPreferenceChan
 			signWifi.startAnimation(pulseAnimation);
 		}
 	}
-
-	// Upload SPS and PPS parameters on my server, may help to consitute 
-	// a database of these and compare phones behavior
-    private void uploadH264TestResult() {
-    	
-    	SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(this);
-    	if (settings.getBoolean("data", false)) return;
-    	
-    	final Map<String,?> list = settings.getAll(); 
-    	Iterator<String> it = list.keySet().iterator();
-    	String json = "{";
-    	Pattern pattern = Pattern.compile("(\\d+),(\\d+),(\\d+)");
-    	Matcher matcher;
-    	int n = 0;
-    	while (it.hasNext()) {
-    		String key = it.next();
-    		matcher = pattern.matcher(key);
-    		if (matcher.find()) {
-    			n++;
-    			json += "\""+key+"\":\""+(String)list.get(key)+"\",";
-    		}
-    	}
-    	final String params = json.substring(0,json.length()-1)+"}";
-    	
-    	// User hasn't try enough stuff :/
-    	if (n<3) return;
-    	
-    	// Do this only one time per user
-    	Editor editor = settings.edit();
-    	editor.putBoolean("data", true);
-    	editor.commit();
-    	
-    	new AsyncTask<Void,Void,Void>() {
-			@Override
-			protected Void doInBackground(Void... weird) {
-			    HttpClient httpclient = new DefaultHttpClient();
-			    HttpPost httppost = new HttpPost("http://majorkernelpanic.net/spydroid/poll.php");
-			    try {
-			        List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>(2);
-			        // Here are all the collected data
-			        // 1) Phone name
-			        nameValuePairs.add(new BasicNameValuePair("model", android.os.Build.MODEL));
-			        // 2) API Level
-			        nameValuePairs.add(new BasicNameValuePair("sdk", android.os.Build.VERSION.SDK));
-			        // 3) DISPLAY
-			        nameValuePairs.add(new BasicNameValuePair("display", android.os.Build.DISPLAY));
-			        // 4) ID
-			        nameValuePairs.add(new BasicNameValuePair("id", android.os.Build.ID));
-			        // ) And all the SPS and PPS parameters
-			        nameValuePairs.add(new BasicNameValuePair("params",params));
-			        
-			        httppost.setEntity(new UrlEncodedFormEntity(nameValuePairs));
-			        httpclient.execute(httppost);
-			    } catch (Exception e) {
-			    	Log.e(TAG,e.getMessage()!=null?e.getMessage():"Error unknown");
-			    }
-				return null;
-			}
-    		
-    	}.execute();
-    }
     
 }
