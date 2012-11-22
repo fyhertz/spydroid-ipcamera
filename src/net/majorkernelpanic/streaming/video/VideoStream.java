@@ -24,6 +24,7 @@ import java.io.IOException;
 
 import net.majorkernelpanic.streaming.MediaStream;
 import android.hardware.Camera;
+import android.hardware.Camera.CameraInfo;
 import android.hardware.Camera.Parameters;
 import android.media.MediaRecorder;
 import android.util.Log;
@@ -38,31 +39,41 @@ public abstract class VideoStream extends MediaStream {
 	protected SurfaceHolder.Callback surfaceHolderCallback = null;
 	protected Surface surface = null;
 	protected boolean flashState = false,  qualityHasChanged = false;
-	protected int videoEncoder, cameraId;
+	protected int videoEncoder, cameraId = 0;
 	protected Camera camera;
 
-	public VideoStream(int cameraId) {
+	/** 
+	 * Don't use this class directly
+	 * @param cameraId Can be either CameraInfo.CAMERA_FACING_BACK or CameraInfo.CAMERA_FACING_FRONT
+	 */
+	public VideoStream(int camera) {
 		super();
-		this.cameraId = cameraId;
+		CameraInfo cameraInfo = new CameraInfo();
+		int numberOfCameras = Camera.getNumberOfCameras();
+		for (int i=0;i<numberOfCameras;i++) {
+			Camera.getCameraInfo(i, cameraInfo);
+			if (cameraInfo.facing == camera) {
+				this.cameraId = i;
+				break;
+			}
+		}
 	}
 	
 	public void stop() {
 		super.stop();
-		if (streaming) {
-			if (camera != null) {
-				try {
-					camera.reconnect();
-				} catch (Exception e) {
-					Log.e(TAG,e.getMessage()!=null?e.getMessage():"unknown error");
-				}
-				camera.stopPreview();
-				try {
-					camera.release();
-				} catch (Exception e) {
-					Log.e(TAG,e.getMessage()!=null?e.getMessage():"unknown error");
-				}
-				camera = null;
+		if (camera != null) {
+			try {
+				camera.reconnect();
+			} catch (Exception e) {
+				Log.e(TAG,e.getMessage()!=null?e.getMessage():"unknown error");
 			}
+			camera.stopPreview();
+			try {
+				camera.release();
+			} catch (Exception e) {
+				Log.e(TAG,e.getMessage()!=null?e.getMessage():"unknown error");
+			}
+			camera = null;
 		}
 	}
 

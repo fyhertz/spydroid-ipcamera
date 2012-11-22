@@ -28,6 +28,7 @@ import android.media.MediaRecorder;
 import android.net.LocalServerSocket;
 import android.net.LocalSocket;
 import android.net.LocalSocketAddress;
+import android.util.Log;
 
 /**
  *  A MediaRecorder that streams what it records using a packetizer from the rtp package.
@@ -82,7 +83,7 @@ public abstract class MediaStream extends MediaRecorder implements Stream {
 			this.mode = mode;
 		}
 		else {
-			throw new IllegalStateException("Can't call setMode() while streaming !");
+			throw new IllegalStateException("You can't call setMode() while streaming !");
 		}
 	}
 	
@@ -106,8 +107,8 @@ public abstract class MediaStream extends MediaRecorder implements Stream {
 	}
 	
 	public void start() throws IllegalStateException {
+		super.start();
 		try {
-			super.start();
 			if (mode==MODE_STREAMING) {
 				// receiver.getInputStream contains the data from the camera
 				// the packetizer encapsulates this stream in an RTP stream and send it over the network
@@ -116,14 +117,15 @@ public abstract class MediaStream extends MediaRecorder implements Stream {
 			}
 			streaming = true;
 		} catch (IOException e) {
+			super.stop();
 			throw new IllegalStateException("Something happened with the local sockets :/ Start failed");
 		} catch (NullPointerException e) {
+			super.stop();
 			throw new IllegalStateException("setPacketizer() should be called before start(). Start failed");
 		}
 	}
 	
 	public void stop() {
-		if (mode==MODE_STREAMING) packetizer.stop();
 		if (streaming) {
 			try {
 				super.stop();
@@ -131,8 +133,9 @@ public abstract class MediaStream extends MediaRecorder implements Stream {
 			catch (Exception ignore) {}
 			finally {
 				super.reset();
-				streaming = false;
 				closeSockets();
+				if (mode==MODE_STREAMING) packetizer.stop();
+				streaming = false;
 			}
 		}
 	}

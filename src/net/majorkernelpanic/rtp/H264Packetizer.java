@@ -86,8 +86,19 @@ public class H264Packetizer extends AbstractPacketizer {
 	}
 	
 	public void stop() {
+		// We wait until the packetizer threads returns
+		try {
+			is.close();
+		} catch (IOException e1) {}
 		producer.running = false;
+		try {
+			producer.join();
+		} catch (InterruptedException e) {}
 		consumer.running = false;
+		consumer.interrupt();
+		try {
+			consumer.join();
+		} catch (InterruptedException e) {}
 	}
 	
 	/*************************************************************************************/
@@ -195,11 +206,12 @@ public class H264Packetizer extends AbstractPacketizer {
 					//Log.d(TAG,"Sending chunk: "+chunk.size);
 					while (chunk.size-cursor>3) send();
 				}
-			} catch (InterruptedException e) {
-				e.printStackTrace();
+			} catch (InterruptedException ignore) {
 			} catch (IOException e) {
-				Log.e(TAG,"IOException: "+e.getMessage());
-				e.printStackTrace();
+				Log.e(TAG,"IOException: "+e.getMessage()!=null?e.getMessage():"unknown error");
+			} catch (NullPointerException ignore) {
+				// May happen if the thread is interrupted and chunks is empty...
+				// It's not a problem
 			}
 			
 			Log.d(TAG,"H264 packetizer stopped !");

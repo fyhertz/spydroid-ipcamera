@@ -249,7 +249,7 @@
     onError = function (type) {
 	lastError=undefined;
 	$.getJSON('server/state.json?clear',function (json) {
-	    lastError = json.lastError;console.log(json.lastError);
+	    lastError = json.lastError;
 	    if (json.activityPaused==='0' && type==='video') {
 		screenState=0;
 		testScreenState();

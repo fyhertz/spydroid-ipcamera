@@ -33,6 +33,8 @@ public class H263Packetizer extends AbstractPacketizer implements Runnable {
 	public final static String TAG = "H263Packetizer";
 	private final static int MAXPACKETSIZE = 1400;
 	
+	private Thread t;
+	
 	public H263Packetizer() {
 		super();
 	}
@@ -47,12 +49,20 @@ public class H263Packetizer extends AbstractPacketizer implements Runnable {
 				Log.e(TAG,"Couldn't skip mp4 header :/");
 				throw new IOException("Couldn't skip mp4 header :/");
 			}			
-			new Thread(this).start();
+			t = new Thread(this);
+			t.start();
 		}
 	}
 
 	public void stop() {
+		try {
+			is.close();
+		} catch (IOException ignore) {}
 		running = false;
+		// We wait until the packetizer thread returns
+		try {
+			t.join();
+		} catch (InterruptedException e) {}
 	}
 
 	public void run() {
