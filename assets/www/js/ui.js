@@ -276,7 +276,10 @@
 	status = $('#status'),
 	button = $('#connect>div>h1');	
 
-	$('.popup').css({'top':($(window).height()-$('.popup').height())/2,'left':($(window).width()-$('.popup').width())/2});
+	$('.popup').each(function () {
+	    $(this).css({'top':($(window).height()-$(this).height())/2,'left':($(window).width()-$(this).width())/2});
+	});
+
 	$('.popup #close').click(function (){
 	    $('#glass').fadeOut();
 	    $('.popup').fadeOut();
