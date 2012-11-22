@@ -103,22 +103,24 @@ public class CustomHttpServer extends HttpServer {
 						writer.write("\"lastStackTrace\":\""+SpydroidActivity.lastCaughtException.getStackTrace().toString()+"\",");
 					}
 					writer.write("\"cameraInUse\":\""+Session.isCameraInUse()+"\",");
-					writer.write("\"microphoneInUse\":\""+Session.isMicrophoneInUse()+"\"");
+					writer.write("\"microphoneInUse\":\""+Session.isMicrophoneInUse()+"\",");
+					writer.write("\"activityPaused\":\""+(SpydroidActivity.activityPaused?"1":"0")+"\"");
 					writer.write("}");
 					writer.flush();
+					
+					if (params.size()>0) {
+						if (params.get(0).getName().equals("clear")) {
+							SpydroidActivity.lastCaughtException = null;
+						}
+					}
+					
 				}
 			});
 			
-			if (params.size()>0) {
-				if (params.get(0).getName().equals("clear")) {
-					SpydroidActivity.lastCaughtException = null;
-				}
-			}
-
 			response.setStatusCode(HttpStatus.SC_OK);
         	body.setContentType("application/json; charset=UTF-8");
         	response.setEntity(body);
-			
+        	
 		}
 	}	
 	

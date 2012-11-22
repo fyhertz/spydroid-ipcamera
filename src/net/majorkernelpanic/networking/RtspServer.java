@@ -50,6 +50,7 @@ public class RtspServer {
 
 	private final Handler handler;
 	private final int port;
+	private boolean running = false;
 	private RequestListenerThread listenerThread;
 
 	public RtspServer(int port, Handler handler) {
@@ -58,11 +59,14 @@ public class RtspServer {
 	}
 	
 	public void start() throws IOException {
+		if (running) return;
+		running = true;
 		listenerThread = new RequestListenerThread(port,handler);
 		listenerThread.start();
 	}
 	
 	public void stop() {
+		running = false;
 		try {
 			listenerThread.server.close();
 		} catch (Exception e) {
@@ -123,21 +127,45 @@ public class RtspServer {
 			log("Connection from "+client.getInetAddress().getHostAddress());
 
 			while (!Thread.interrupted()) {
+
+				request = null;
+				response = null;
+				
+				// Parse the request
 				try {
-					// Parse the request
 					request = Request.parseRequest(input);
-					// Do something accordingly
-					response = processRequest(request);
-					// Send response
-					response.send(output);
-				} catch (SocketException ignore) {
-					// Client left
+				} catch (SocketException e) {
+					// Client has left
 					break;
 				} catch (Exception e) {
-					// Display an error on user interface
-					handler.obtainMessage(MESSAGE_ERROR, e).sendToTarget();
+					// We don't understand the request :/
+					response = new Response();
+					response.status = Response.STATUS_BAD_REQUEST;
+				}
+
+				// Do something accordingly like starting the streams, sending a session descriptor
+				if (request != null) {
+					try {
+						response = processRequest(request);
+					}
+					catch (Exception e) {
+						// This alerts the main thread that something has gone wrong in this thread
+						handler.obtainMessage(MESSAGE_ERROR, e).sendToTarget();
+						Log.e(TAG,e.getMessage()!=null?e.getMessage():"An error occurred");
+						e.printStackTrace();
+						response = new Response(request);
+					}
+				}
+
+				// We always send a response
+				// The client will receive an "INTERNAL SERVER ERROR" if an exception has been thrown at some point
+				try {
+					response.send(output);
+				} catch (IOException e) {
+					Log.e(TAG,"Response was not sent properly");
 					break;
 				}
+				
 			}
 
 			// Streaming stops when client disconnects
@@ -160,7 +188,6 @@ public class RtspServer {
 			/* ********************************************************************************** */
 			if (request.method.toUpperCase().equals("DESCRIBE")) {
 				
-				try {
 					// Parse the requested URI and configure the session
 					UriParser.parse(request.uri,session);
 					String requestContent = session.getSessionDescriptor();
@@ -170,13 +197,9 @@ public class RtspServer {
 					
 					response.attributes = requestAttributes;
 					response.content = requestContent;
-				} catch (IllegalStateException e) {
-					response.status = Response.STATUS_INTERNAL_SERVER_ERROR;
-					throw e;
-				} catch (IOException e) {
-					response.status = Response.STATUS_INTERNAL_SERVER_ERROR;
-					throw e;
-				}
+					
+					// If no exception has been thrown, we reply with OK
+					response.status = Response.STATUS_OK;
 				
 			}
 			
@@ -186,6 +209,7 @@ public class RtspServer {
 			else if (request.method.toUpperCase().equals("OPTIONS")) {
 				response.status = Response.STATUS_OK;
 				response.attributes = "Public: DESCRIBE,SETUP,TEARDOWN,PLAY,PAUSE\r\n";
+				response.status = Response.STATUS_OK;
 			}
 
 			/* ********************************************************************************** */
@@ -226,23 +250,15 @@ public class RtspServer {
 				ssrc = session.getTrackSSRC(trackId);
 				src = session.getTrackLocalPort(trackId);
 				session.setTrackDestinationPort(trackId, p1);
-				
-				try {
-					session.start(trackId);
-					response.attributes = "Transport: RTP/AVP/UDP;unicast;client_port="+p1+"-"+p2+";server_port="+src+"-"+(src+1)+";ssrc="+Integer.toHexString(ssrc)+";mode=play\r\n" +
-							"Session: "+ "1185d20035702ca" + "\r\n" +
-							"Cache-Control: no-cache\r\n";
-					response.status = Response.STATUS_OK;
-				} catch (IllegalStateException e) {
-					response.status = Response.STATUS_INTERNAL_SERVER_ERROR;
-					throw e;
-				} catch (IOException e) {
-					response.status = Response.STATUS_INTERNAL_SERVER_ERROR;
-					throw e;
-				} catch (RuntimeException e) {
-					response.status = Response.STATUS_INTERNAL_SERVER_ERROR;
-					throw new RuntimeException("Could not start stream, configuration probably not supported by phone, try other settings !");
-				}
+
+				session.start(trackId);
+				response.attributes = "Transport: RTP/AVP/UDP;unicast;client_port="+p1+"-"+p2+";server_port="+src+"-"+(src+1)+";ssrc="+Integer.toHexString(ssrc)+";mode=play\r\n" +
+						"Session: "+ "1185d20035702ca" + "\r\n" +
+						"Cache-Control: no-cache\r\n";
+				response.status = Response.STATUS_OK;
+
+				// If no exception has been thrown, we reply with OK
+				response.status = Response.STATUS_OK;
 				
 			}
 
@@ -251,12 +267,15 @@ public class RtspServer {
 			/* ********************************************************************************** */
 			else if (request.method.toUpperCase().equals("PLAY")) {
 				String requestAttributes = "RTP-Info: ";
-				if (session.trackExists(0)) requestAttributes += "url=rtsp://"+client.getLocalAddress()+":"+client.getLocalPort()+"/trackID="+0+";seq=0,";
-				if (session.trackExists(1)) requestAttributes += "url=rtsp://"+client.getLocalAddress()+":"+client.getLocalPort()+"/trackID="+1+";seq=0,";
+				if (session.trackExists(0)) requestAttributes += "url=rtsp://"+client.getLocalAddress().getHostAddress()+":"+client.getLocalPort()+"/trackID="+0+";seq=0,";
+				if (session.trackExists(1)) requestAttributes += "url=rtsp://"+client.getLocalAddress().getHostAddress()+":"+client.getLocalPort()+"/trackID="+1+";seq=0,";
 				requestAttributes = requestAttributes.substring(0, requestAttributes.length()-1) + "\r\nSession: 1185d20035702ca\r\n";
 				
-				response.status = Response.STATUS_OK;
 				response.attributes = requestAttributes;
+
+				// If no exception has been thrown, we reply with OK
+				response.status = Response.STATUS_OK;
+			
 			}
 
 
@@ -274,7 +293,9 @@ public class RtspServer {
 				response.status = Response.STATUS_OK;
 			}
 			
-			/* Method Unknown */
+			/* ********************************************************************************** */
+			/* ********************************* Unknown method ? ******************************* */
+			/* ********************************************************************************** */
 			else {
 				Log.e(TAG,"Command unknown: "+request);
 				response.status = Response.STATUS_BAD_REQUEST;
@@ -323,6 +344,7 @@ public class RtspServer {
 			}
 			if (line==null) throw new SocketException("Client disconnected");
 			
+			// It's not an error, it's just easier to follow what's happening in logcat with the request in red
 			Log.e(TAG,request.method+" "+request.uri);
 			
 			return request;
@@ -337,13 +359,18 @@ public class RtspServer {
 		public static final String STATUS_NOT_FOUND = "404 Not Found";
 		public static final String STATUS_INTERNAL_SERVER_ERROR = "500 Internal Server Error";
 		
-		public String status = STATUS_OK;
+		public String status = STATUS_INTERNAL_SERVER_ERROR;
 		public String content = "";
 		public String attributes = "";
 		private final Request request;
 		
 		public Response(Request request) {
 			this.request = request;
+		}
+		
+		public Response() {
+			// Be carefull if you modify the send() method because request might be null !
+			request = null;
 		}
 		
 		public void send(OutputStream output) throws IOException {
@@ -353,7 +380,6 @@ public class RtspServer {
 				seqid = Integer.parseInt(request.headers.get("cseq").replace(" ",""));
 			} catch (Exception e) {
 				Log.e(TAG,"Error parsing CSeq: "+(e.getMessage()!=null?e.getMessage():""));
-				e.printStackTrace();
 			}
 			
 			String response = 	"RTSP/1.0 "+status+"\r\n" +
@@ -364,7 +390,7 @@ public class RtspServer {
 					"\r\n" + 
 					content;
 			
-			Log.d(TAG,response);
+			Log.d(TAG,response.replace("\r", ""));
 			
 			output.write(response.getBytes());
 		}

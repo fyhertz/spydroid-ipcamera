@@ -80,7 +80,7 @@ import android.widget.Toast;
  */
 public class SpydroidActivity extends Activity implements OnSharedPreferenceChangeListener {
     
-    static final public String TAG = "SpydroidActivity"; 
+    static final public String TAG = "SpydroidActivity";
     
     private CustomHttpServer httpServer = null;
     private PowerManager.WakeLock wl;
@@ -235,13 +235,13 @@ public class SpydroidActivity extends Activity implements OnSharedPreferenceChan
     	super.onResume();
     	// Determines if user is connected to a wireless network & displays ip 
     	if (!streaming) displayIpAddress();
+    	activityPaused = true;
     	startServers();
     	registerReceiver(wifiStateReceiver,new IntentFilter(WifiManager.NETWORK_STATE_CHANGED_ACTION));
     }
     
     public void onPause() {
     	super.onPause();
-    	if (rtspServer != null) rtspServer.stop();
     	activityPaused = false;
     	unregisterReceiver(wifiStateReceiver);
     }
@@ -300,7 +300,6 @@ public class SpydroidActivity extends Activity implements OnSharedPreferenceChan
     		}
     	}
     	if (httpServer != null) {
-    		activityPaused = true;
     		try {
     			httpServer.start();
     		} catch (IOException e) {

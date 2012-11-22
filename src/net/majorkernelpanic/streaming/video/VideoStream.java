@@ -47,26 +47,36 @@ public abstract class VideoStream extends MediaStream {
 	}
 	
 	public void stop() {
+		super.stop();
 		if (streaming) {
-			try {
-				super.stop();
-				// We reconnect to camera just to stop the preview
-				if (camera != null) {
+			if (camera != null) {
+				try {
 					camera.reconnect();
-					camera.stopPreview();
-					camera.release();
-					camera = null;
+				} catch (Exception e) {
+					Log.e(TAG,e.getMessage()!=null?e.getMessage():"unknown error");
 				}
-			} catch (Exception e) {
-				Log.e(TAG,e.getMessage());
+				camera.stopPreview();
+				try {
+					camera.release();
+				} catch (Exception e) {
+					Log.e(TAG,e.getMessage()!=null?e.getMessage():"unknown error");
+				}
+				camera = null;
 			}
 		}
 	}
 
-	public void prepare() throws IllegalStateException, IOException {
+	// Don't forget to deal with the RuntimeExceptions !
+	// Camera.open, Camera.setParameter, Camera.unlock may throw one
+	public void prepare() throws IllegalStateException, IOException, RuntimeException {
 
 		if (camera == null) {
 			camera = Camera.open(cameraId);
+		}
+
+		// If an exception is thrown after the camera was open, we must absolutly release it !
+		try {
+		
 			// We reconnect to camera to change flash state if needed
 			Parameters parameters = camera.getParameters();
 			parameters.setFlashMode(flashState?Parameters.FLASH_MODE_TORCH:Parameters.FLASH_MODE_OFF);
@@ -74,37 +84,47 @@ public abstract class VideoStream extends MediaStream {
 			camera.setDisplayOrientation(quality.orientation);
 			camera.unlock();
 			super.setCamera(camera);
-		}
 
-		// MediaRecorder should have been like this according to me:
-		// all configuration methods can be called at any time and
-		// changes take effects when prepare() is called
-		super.setVideoSource(MediaRecorder.VideoSource.CAMERA);
-		super.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
-		if (mode==MODE_DEFAULT) {
-			super.setMaxDuration(1000);
-			super.setMaxFileSize(Integer.MAX_VALUE);
-		} else {
-			// On some phones a RuntimeException might be thrown :/
-			try {
-				super.setMaxDuration(0);
-				super.setMaxFileSize(Integer.MAX_VALUE); 
-			} catch (RuntimeException e) {
-				Log.e(TAG,"setMaxDuration or setMaxFileSize failed !");
+			// MediaRecorder should have been like this according to me:
+			// all configuration methods can be called at any time and
+			// changes take effects when prepare() is called
+			super.setVideoSource(MediaRecorder.VideoSource.CAMERA);
+			super.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
+			if (mode==MODE_DEFAULT) {
+				super.setMaxDuration(1000);
+				super.setMaxFileSize(Integer.MAX_VALUE);
+			} else {
+				// On some phones a RuntimeException might be thrown :/
+				try {
+					super.setMaxDuration(0);
+					super.setMaxFileSize(Integer.MAX_VALUE); 
+				} catch (RuntimeException e) {
+					Log.e(TAG,"setMaxDuration or setMaxFileSize failed !");
+				}
 			}
+			super.setVideoEncoder(videoEncoder);
+			super.setPreviewDisplay(surface);
+			super.setVideoSize(quality.resX,quality.resY);
+			super.setVideoFrameRate(quality.frameRate);
+			super.setVideoEncodingBitRate(quality.bitRate);
+
+			super.prepare();
+
+			// Reset flash state to ensure that default behavior is to turn it off
+			flashState = false;
+
+			// Quality has been updated
+			qualityHasChanged = false;
+		
+		} catch (RuntimeException e) {
+			camera.release();
+			camera = null;
+			throw e;
+		} catch (IOException e) {
+			camera.release();
+			camera = null;
+			throw e;
 		}
-		super.setVideoEncoder(videoEncoder);
-		super.setPreviewDisplay(surface);
-		super.setVideoSize(quality.resX,quality.resY);
-		super.setVideoFrameRate(quality.frameRate);
-		super.setVideoEncodingBitRate(quality.bitRate);
-		super.prepare();
-		
-		// Reset flash state to ensure that default behavior is to turn it off
-		flashState = false;
-		
-		// Quality has been updated
-		qualityHasChanged = false;
 
 	}
 	

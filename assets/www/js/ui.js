@@ -1,7 +1,7 @@
 (function () {
 
-    var host = "192.168.0.105",
-    //var host = /(.+):/.exec(window.location.host)[1],
+    //var host = "192.168.0.105",
+    var host = /(.+):/.exec(window.location.host)[1],
 
     // Encapsulation of vlc plugin
     Stream = function (object,type,callbacks) {
@@ -36,7 +36,7 @@
 		clearInterval(startTimer);
 		starting = false;
 	    }	    
-	    callbacks.onError();
+	    callbacks.onError(type);
 	});
 
 	return {
@@ -196,9 +196,9 @@
     videoStream, videoPlugin, audioStream, oldVideoState = 'idle',oldAudioState = 'idle', lastError,
 
     updateStatus = function () {
-	if (videoStream.getState()===oldVideoState && audioStream.getState()===oldAudioState) return;
+	var status = $('#status'), button = $('#connect>div>h1'), cover = $('#vlc-container #upper-layer'), error;
 
-	var status = $('#status'), button = $('#connect>div>h1'), cover = $('#vlc-container #upper-layer');
+	if (videoStream.getState()===oldVideoState && audioStream.getState()===oldAudioState) return;
 
 	// STATUS
 	if (videoStream.getState()==='starting' || videoStream.getState()==='restarting' || 
@@ -219,7 +219,9 @@
 
 	// WINDOW
 	if (videoStream.getState()==='error' || audioStream.getState()==='error') {
-	    cover.html('<div id="wrapper"><h1>An error occurred :(</h1><p>'+__(lastError!==undefined?lastError:'Change some settings and retry')+'</p></div>');
+	    videoPlugin.css('visibility','hidden'); 
+	    error = __(lastError!==undefined?lastError:'Connection failed !');
+	    cover.html('<div id="wrapper"><h1>An error occurred :(</h1><p>'+error+'</p></div>');
 	} else if (videoStream.getState()==='restarting' || audioStream.getState()==='restarting') {
 	    videoPlugin.css('visibility','hidden'); 
 	    cover.css('background','black').html('<div id="mask"></div><div id="wrapper"><h1>'+__('UPDATING SETTINGS')+'</h1></div>').show();
@@ -242,6 +244,19 @@
 	oldVideoState = videoStream.getState();
 	oldAudioState = audioStream.getState();
 
+    },
+
+    onError = function (type) {
+	lastError=undefined;
+	$.getJSON('server/state.json?clear',function (json) {
+	    lastError = json.lastError;console.log(json.lastError);
+	    if (json.activityPaused==='0' && type==='video') {
+		screenState=0;
+		testScreenState();
+	    }
+	});
+	if (videoStream.getState()!=='error') videoStream.stop();
+	if (audioStream.getState()!=='error') audioStream.stop();
     },
 
     // Disable input for one sec to prevent user from flooding the RTSP server by clicking around too quickly
@@ -281,17 +296,19 @@
 	    audioPlugin = $('#vlca');
 	}
 
-	videoStream = Stream(videoPlugin[0],'video',{onError:function () {
-	    $.getJSON('server/state.json',function (json) {lastError = json.lastError;console.log(json.lastError);});
+	videoStream = Stream(videoPlugin[0],'video',{onError:function (type) {
+	    onError(type);
 	}});	
 
-	audioStream = Stream(audioPlugin[0],'audio',{onError:function () {
-	    $.getJSON('server/state.json',function (json) {lastError = json.lastError;console.log(json.lastError);});	    
+	audioStream = Stream(audioPlugin[0],'audio',{onError:function (type) {
+	    onError(type);
 	}});
 
 	setInterval(function () {updateStatus();},400);
 
 	$('#connect').click(function () {
+	    if ($(this).attr('disabled')!==undefined) return;
+	    disableAndEnable($(this));
 	    if ((videoStream.getState()!=='idle' && videoStream.getState()!=='error') || 
 		(audioStream.getState()!=='idle' && audioStream.getState()!=='error')) {
 		videoStream.stop();
@@ -302,6 +319,7 @@
 		cover.css('background','black').html('<div id="mask"></div><div id="wrapper"><h1>'+__('CONNECTION')+'</h1></div>').show();
 		if ($('#videoEnabled').attr('checked')) videoStream.start();
 		if ($('#audioEnabled').attr('checked')) audioStream.start();
+		updateStatus();
 	    }
 	});
 	
