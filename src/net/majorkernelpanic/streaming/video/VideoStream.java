@@ -21,8 +21,6 @@
 package net.majorkernelpanic.streaming.video;
 
 import java.io.IOException;
-import java.util.concurrent.Semaphore;
-import java.util.concurrent.TimeUnit;
 
 import net.majorkernelpanic.streaming.MediaStream;
 import android.hardware.Camera;
@@ -103,9 +101,14 @@ public abstract class VideoStream extends MediaStream {
 		try {
 		
 			// We reconnect to camera to change flash state if needed
-			//Parameters parameters = camera.getParameters();
-			//parameters.setFlashMode(flashState?Parameters.FLASH_MODE_TORCH:Parameters.FLASH_MODE_OFF);
-			//camera.setParameters(parameters);
+			Parameters parameters = camera.getParameters();
+			if (parameters.getFlashMode()==null) {
+				// The phone has no flash
+				throw new IllegalStateException("Can't turn the flash on !");
+			} else {
+				parameters.setFlashMode(flashState?Parameters.FLASH_MODE_TORCH:Parameters.FLASH_MODE_OFF);
+				camera.setParameters(parameters);
+			}
 			camera.setDisplayOrientation(quality.orientation);
 			camera.unlock();
 			super.setCamera(camera);
@@ -159,11 +162,7 @@ public abstract class VideoStream extends MediaStream {
 	
 	/** Turn flash on or off if phone has one */
 	public void setFlashState(boolean state) {
-		// Test if phone has a flash
-		//if (context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_CAMERA_FLASH)) {
-			// Takes effect when configure() is called
-			flashState = state;
-		//}
+		flashState = state;
 	}
 	
 	public void setVideoSize(int width, int height) {
