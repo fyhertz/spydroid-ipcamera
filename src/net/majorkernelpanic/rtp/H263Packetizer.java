@@ -42,13 +42,6 @@ public class H263Packetizer extends AbstractPacketizer implements Runnable {
 	public void start() throws IOException {
 		if (!running) {
 			running = true;
-			// This will skip the MPEG4 header if this step fails we can't stream anything :(
-			try {
-				skipHeader();
-			} catch (IOException e) {
-				Log.e(TAG,"Couldn't skip mp4 header :/");
-				throw new IOException("Couldn't skip mp4 header :/");
-			}			
 			t = new Thread(this);
 			t.start();
 		}
@@ -69,6 +62,13 @@ public class H263Packetizer extends AbstractPacketizer implements Runnable {
 		long time, duration = 0, ts = 0;
 		int i = 0, j = 0, tr;
 		boolean firstFragment = true;
+		
+		// This will skip the MPEG4 header if this step fails we can't stream anything :(
+		try {
+			skipHeader();
+		} catch (IOException e) {
+			Log.e(TAG,"Couldn't skip mp4 header :/");
+		}	
 		
 		// Each packet we send has a two byte long header (See section 5.1 of RFC 4629)
 		buffer[rtphl] = 0;
@@ -121,7 +121,7 @@ public class H263Packetizer extends AbstractPacketizer implements Runnable {
 			e.printStackTrace();
 		}
 		
-		Log.d(TAG,"Packetizer stopped !");
+		Log.d(TAG,"H263 Packetizer stopped !");
 			
 	}
 
@@ -156,7 +156,7 @@ public class H263Packetizer extends AbstractPacketizer implements Runnable {
 				Log.e(TAG,"Malformed header :/ len: "+len+" available: "+is.available());
 				break;
 			}
-			Log.d(TAG,"Atom skipped: "+printBuffer(rtphl+4,rtphl+8)+" size: "+len);
+			Log.d(TAG,"Atom skipped: "+printBuffer(buffer,rtphl+4,rtphl+8)+" size: "+len);
 			is.read(buffer,rtphl,len-8);
 		}
 		

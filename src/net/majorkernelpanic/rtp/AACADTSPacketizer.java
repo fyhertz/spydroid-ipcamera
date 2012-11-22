@@ -37,6 +37,8 @@ public class AACADTSPacketizer extends AbstractPacketizer implements Runnable {
 
 	private final static String TAG = "AACADTSPacketizer";
 	
+	private Thread t;
+	
 	public AACADTSPacketizer() {
 		super();
 	}
@@ -44,12 +46,20 @@ public class AACADTSPacketizer extends AbstractPacketizer implements Runnable {
 	public void start() {
 		if (!running) {
 			running = true;
-			new Thread(this).start();
+			t = new Thread(this);
+			t.start();
 		}
 	}
 
 	public void stop() {
+		try {
+			is.close();
+		} catch (IOException ignore) {}
 		running = false;
+		// We wait until the packetizer thread returns
+		try {
+			t.join();
+		} catch (InterruptedException e) {}
 	}
 
 	public void run() {
@@ -97,10 +107,10 @@ public class AACADTSPacketizer extends AbstractPacketizer implements Runnable {
 
 			}
 		} catch (IOException e) {
-			Log.e(TAG,"IOException: "+e.getMessage());
+			Log.e(TAG,"IOException: "+e.getMessage()!=null?e.getMessage():"unknown error");
 			e.printStackTrace();
 		} catch (ArrayIndexOutOfBoundsException e) {
-			Log.e(TAG,"ArrayIndexOutOfBoundsException: "+e.getMessage());
+			Log.e(TAG,"ArrayIndexOutOfBoundsException: "+e.getMessage()!=null?e.getMessage():"unknown error");
 			e.printStackTrace();
 		} finally {
 			running = false;

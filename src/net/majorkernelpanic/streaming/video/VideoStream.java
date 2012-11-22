@@ -21,6 +21,8 @@
 package net.majorkernelpanic.streaming.video;
 
 import java.io.IOException;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
 
 import net.majorkernelpanic.streaming.MediaStream;
 import android.hardware.Camera;
@@ -59,7 +61,7 @@ public abstract class VideoStream extends MediaStream {
 		}
 	}
 	
-	public void stop() {
+	public synchronized void stop() {
 		super.stop();
 		if (camera != null) {
 			try {
@@ -80,9 +82,21 @@ public abstract class VideoStream extends MediaStream {
 	// Don't forget to deal with the RuntimeExceptions !
 	// Camera.open, Camera.setParameter, Camera.unlock may throw one
 	public void prepare() throws IllegalStateException, IOException, RuntimeException {
-
 		if (camera == null) {
 			camera = Camera.open(cameraId);
+			camera.setErrorCallback(new Camera.ErrorCallback() {
+				@Override
+				public void onError(int error, Camera camera) {
+					// On some phones when trying to use the camera facing front the media server will die
+					// Whether or not this callback may be called really depends on the phone
+					if (error == Camera.CAMERA_ERROR_SERVER_DIED) {
+						// In this case the application must release the camera and instantiate a new one
+						Log.e(TAG,"Media server died !");
+						// We don't know in what thread we are so stop needs to be synchronized
+						stop();
+					}	
+				}
+			});
 		}
 
 		// If an exception is thrown after the camera was open, we must absolutly release it !

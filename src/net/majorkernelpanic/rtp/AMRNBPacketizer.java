@@ -48,6 +48,8 @@ public class AMRNBPacketizer extends AbstractPacketizer implements Runnable {
     };
     private static final int[] sFrameBits = {95, 103, 118, 134, 148, 159, 204, 244};
 	
+    private Thread t;
+    
 	public AMRNBPacketizer() {
 		super();
 	}
@@ -55,12 +57,20 @@ public class AMRNBPacketizer extends AbstractPacketizer implements Runnable {
 	public void start() {
 		if (!running) {
 			running = true;
-			new Thread(this).start();
+			t = new Thread(this);
+			t.start();
 		}
 	}
 
 	public void stop() {
+		try {
+			is.close();
+		} catch (IOException ignore) {}
 		running = false;
+		// We wait until the packetizer thread returns
+		try {
+			t.join();
+		} catch (InterruptedException e) {}
 	}
 	
 	public void run() {
@@ -68,12 +78,13 @@ public class AMRNBPacketizer extends AbstractPacketizer implements Runnable {
 		int frameLength, frameType;
 		long ts = 0;
 		
-		// Skip raw amr header
-		fill(rtphl,AMR_HEADER_LENGTH);
-		
-		buffer[rtphl] = (byte) 0xF0;
-		
 		try {
+			
+			// Skip raw amr header
+			fill(rtphl,AMR_HEADER_LENGTH);
+			
+			buffer[rtphl] = (byte) 0xF0;
+			
 			while (running) {
 
 				// First we read the frame header
@@ -96,9 +107,10 @@ public class AMRNBPacketizer extends AbstractPacketizer implements Runnable {
 
 				socket.send(rtphl+1+AMR_FRAME_HEADER_LENGTH+frameLength);
 			}
+			
 		} catch (IOException e) {
 			running = false;
-			Log.e(TAG,"IOException: "+e.getMessage());
+			Log.e(TAG,"IOException: "+e.getMessage()!=null?e.getMessage():"unknown error");
 			e.printStackTrace();
 		}
 		
@@ -107,24 +119,19 @@ public class AMRNBPacketizer extends AbstractPacketizer implements Runnable {
 	}
 
 	
-	private int fill(int offset,int length) {
+	private int fill(int offset,int length) throws IOException {
 		
 		int sum = 0, len;
 		
 		while (sum<length) {
-			try { 
-				len = is.read(buffer, offset+sum, length-sum);
-				if (len<0) {
-					Log.d(TAG,"End of stream");
-					running = false;
-				}
-				else sum+=len;
-			} catch (IOException e) {
-				stop();
-				return sum;
+			len = is.read(buffer, offset+sum, length-sum);
+			if (len<0) {
+				Log.d(TAG,"End of stream");
+				running = false;
 			}
+			else sum+=len;
 		}
-		
+
 		return sum;
 			
 	}

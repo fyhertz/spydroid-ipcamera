@@ -70,6 +70,9 @@
 			    clearInterval(startTimer);
 			}
 		    },300);
+		    object.playlist.stop();
+		    object.playlist.clear();
+		    object.playlist.items.clear(); 
 		    var item = generateURI(host,type);
 		    object.playlist.add(type==='video'?item.uriv:item.uria,'',item.params);
 		    object.playlist.playItem(0);
@@ -87,7 +90,7 @@
 		}
 		object.playlist.stop();
 		object.playlist.clear();
-		object.playlist.items.clear(); // Not working very well :/
+		object.playlist.items.clear(); 
 	    },
 
 	    getState: function() {

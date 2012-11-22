@@ -71,14 +71,6 @@ public class H264Packetizer extends AbstractPacketizer {
 		chunks = new ConcurrentLinkedQueue<Chunk>();
 		fifo.flush();
 		
-		// This will skip the MPEG4 header if this step fails we can't stream anything :(
-		try {
-			skipHeader();
-		} catch (IOException e) {
-			Log.e(TAG,"Couldn't skip mp4 header :/");
-			throw new IOException("Couldn't skip mp4 header :/");
-		}
-		
 		// We start the two threads of the packetizer
 		long[] sleep = new long[1];
 		producer = new Producer(is, fifo, chunks, sync, sleep);
@@ -125,6 +117,35 @@ public class H264Packetizer extends AbstractPacketizer {
 		public void run() {
 			int sum;
 			long oldtime, duration;
+			
+			// This will skip the MPEG4 header if this step fails we can't stream anything :(
+			try {
+				int len = 0;
+				byte buffer[] = new byte[8];
+				// Skip all atoms preceding mdat atom
+				while (true) {
+					is.read(buffer,0,8);
+					if (buffer[4] == 'm' && buffer[5] == 'd' && buffer[6] == 'a' && buffer[7] == 't') break;
+					len = (buffer[3]&0xFF) + (buffer[2]&0xFF)*256 + (buffer[1]&0xFF)*65536;
+					if (len<8 || len>1000) {
+						Log.e(TAG,"Malformed header :/ len: "+len+" available: "+is.available());
+						break;
+					}
+					Log.d(TAG,"Atom skipped: "+printBuffer(buffer, rtphl+4,rtphl+8)+" size: "+len);
+					is.read(buffer,rtphl,len-8);
+				}
+
+				// Some phones do not set length correctly when stream is not seekable, still we need to skip the header
+				if (len<=0 || len>1000) {
+					while (true) {
+						while (is.read() != 'm');
+						is.read(buffer,0,3);
+						if (buffer[0] == 'd' && buffer[1] == 'a' && buffer[2] == 't') break;
+					}
+				}
+			} catch (IOException e) {
+				Log.e(TAG,"Couldn't skip mp4 header :/");
+			}
 			
 			try {
 				while (running) {
@@ -349,36 +370,6 @@ public class H264Packetizer extends AbstractPacketizer {
 		public void flush() {
 			tail = head = 0;
 		}
-		
-	}
-	
-	// The InputStream may start with a header that we need to skip
-	private void skipHeader() throws IOException {
-
-		int len = 0;
-		
-		// Skip all atoms preceding mdat atom
-		while (true) {
-			is.read(buffer,rtphl,8);
-			if (buffer[rtphl+4] == 'm' && buffer[rtphl+5] == 'd' && buffer[rtphl+6] == 'a' && buffer[rtphl+7] == 't') break;
-			len = (buffer[rtphl+3]&0xFF) + (buffer[rtphl+2]&0xFF)*256 + (buffer[rtphl+1]&0xFF)*65536;
-			if (len<8 || len>1000) {
-				Log.e(TAG,"Malformed header :/ len: "+len+" available: "+is.available());
-				break;
-			}
-			Log.d(TAG,"Atom skipped: "+printBuffer(rtphl+4,rtphl+8)+" size: "+len);
-			is.read(buffer,rtphl,len-8);
-		}
-		
-		// Some phones do not set length correctly when stream is not seekable, still we need to skip the header
-		if (len<=0 || len>1000) {
-			while (true) {
-				while (is.read() != 'm');
-				is.read(buffer,rtphl,3);
-				if (buffer[rtphl] == 'd' && buffer[rtphl+1] == 'a' && buffer[rtphl+2] == 't') break;
-			}
-		}
-		len = 0;
 		
 	}
 	
