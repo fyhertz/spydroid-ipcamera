@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.net.MulticastSocket;
 import java.net.SocketException;
 import java.util.Random;
 
@@ -47,7 +48,7 @@ public class RtpSocket {
 		upack.setAddress(dest);
 	}
 	
-	public RtpSocket() {
+	public RtpSocket() throws IOException {
 		
 		/*							     Version(2)  Padding(0)					 					*/
 		/*									 ^		  ^			Extension(0)						*/
@@ -67,11 +68,7 @@ public class RtpSocket {
 		/* Byte 8,9,10,11  ->  Sync Source Identifier            */
 		setLong((ssrc=(new Random()).nextInt()),8,12);
 		
-		try {
-			usock = new DatagramSocket();
-		} catch (SocketException e) {
-			
-		}
+		usock = new MulticastSocket();
 		upack = new DatagramPacket(buffer, 1);
 
 	}

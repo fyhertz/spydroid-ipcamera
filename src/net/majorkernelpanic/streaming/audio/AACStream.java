@@ -32,7 +32,7 @@ import android.media.MediaRecorder;
  */
 public class AACStream extends MediaStream {
 
-	public AACStream() {
+	public AACStream() throws IOException {
 		super();
 		
 		AACADTSPacketizer packetizer = new AACADTSPacketizer(); 

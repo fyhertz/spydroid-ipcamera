@@ -1,7 +1,9 @@
 package net.majorkernelpanic.networking;
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.URI;
+import java.net.UnknownHostException;
 import java.util.Iterator;
 import java.util.List;
 
@@ -17,6 +19,18 @@ import android.hardware.Camera.CameraInfo;
  */
 public class UriParser {
 
+	/**
+	 * Configure a Session according to the given URI
+	 * Here are some examples of URIs that can be used to configure a Session:
+	 * <ul><li>rtsp://xxx.xxx.xxx.xxx:8086?h264&flash=on</li>
+	 * <li>rtsp://xxx.xxx.xxx.xxx:8086?h263&camera=front&flash=on</li>
+	 * <li>rtsp://xxx.xxx.xxx.xxx:8086?h264=200-20-320-240</li>
+	 * <li>rtsp://xxx.xxx.xxx.xxx:8086?aac</li></ul>
+	 * @param uri The URI
+	 * @param session The Session that will be configured
+	 * @throws IllegalStateException
+	 * @throws IOException
+	 */
 	public static void parse(String uri, Session session) throws IllegalStateException, IOException {
 		boolean flash = false;
 		int camera = CameraInfo.CAMERA_FACING_BACK;
@@ -34,10 +48,31 @@ public class UriParser {
 					else flash = false;
 				}
 				
-				// CAMERA -> client can choose between the front facing camera and the back facing camera
+				// CAMERA -> the client can choose between the front facing camera and the back facing camera
 				else if (param.getName().equals("camera")) {
 					if (param.getValue().equals("back")) camera = CameraInfo.CAMERA_FACING_BACK;
 					else if (param.getValue().equals("front")) camera = CameraInfo.CAMERA_FACING_FRONT;
+				}
+				
+				// ROUTING SCHEME -> the client can choose between unicast or multicast
+				// If multicast is chosen, a multicast address can precised 
+				else if (param.getName().equals("multicast")) {
+					session.setRoutingScheme(Session.MULTICAST);
+					if (param.getValue()!=null) {
+						try {
+							InetAddress addr = InetAddress.getByName(param.getValue());
+							if (!addr.isMulticastAddress()) {
+								throw new IllegalStateException("Invalid multicast address");
+							}
+							session.setDestination(addr);
+						} catch (UnknownHostException e) {
+							throw new IllegalStateException("Invalid multicast address");
+						}
+					}
+					else {
+						// Default multicast address
+						session.setDestination(InetAddress.getByName("228.5.6.7"));
+					}
 				}
 				
 			}
@@ -80,7 +115,7 @@ public class UriParser {
 				
 			}
 		} 
-		// Uri has no parameters: the default behavior is to add one h264 track and one amrnb track
+		// Uri has no parameters: the default behavior is to only add one h263 track
 		else {
 			session.addVideoTrack();
 			//session.addAudioTrack();

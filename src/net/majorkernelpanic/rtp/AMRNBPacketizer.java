@@ -50,7 +50,7 @@ public class AMRNBPacketizer extends AbstractPacketizer implements Runnable {
 	
     private Thread t;
     
-	public AMRNBPacketizer() {
+	public AMRNBPacketizer() throws IOException {
 		super();
 	}
 

@@ -104,24 +104,13 @@ public class HttpServer extends BasicHttpServer{
 			}
 			
 			// Create new Session
-			session = new Session(socket.getInetAddress());
+			session = new Session(socket.getLocalAddress(), socket.getInetAddress());
 			
 			// Parse URI and configure the Session accordingly 
 			final String uri = URLDecoder.decode(request.getRequestLine().getUri());
 			UriParser.parse(uri, session);
 			
-			final String sessionDescriptor = 
-					"v=0\r\n" +
-					"o=- 15143872582342435176 15143872582342435176 IN IP4 "+socket.getLocalAddress().getHostName()+"\r\n"+
-					"s=Unnamed\r\n"+
-					"i=N/A\r\n"+
-					"c=IN IP4 "+socket.getLocalAddress().getHostAddress()+"\r\n"+
-					"t=0 0\r\n"+
-					"a=tool:spydroid\r\n"+
-					"a=recvonly\r\n"+
-					"a=type:broadcast\r\n"+
-					"a=charset:UTF-8\r\n"+
-					session.getSessionDescriptor();
+			final String sessionDescriptor = session.getSessionDescriptor();
 			
         	response.setStatusCode(HttpStatus.SC_OK);
         	EntityTemplate body = new EntityTemplate(new ContentProducer() {

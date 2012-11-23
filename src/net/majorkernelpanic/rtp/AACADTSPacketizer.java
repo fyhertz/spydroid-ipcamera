@@ -39,7 +39,7 @@ public class AACADTSPacketizer extends AbstractPacketizer implements Runnable {
 	
 	private Thread t;
 	
-	public AACADTSPacketizer() {
+	public AACADTSPacketizer() throws IOException {
 		super();
 	}
 

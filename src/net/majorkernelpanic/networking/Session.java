@@ -48,16 +48,20 @@ public class Session {
 	public final static String TAG = "Session";
 
 	// Thos two messages will inform the handler if there is streaming going on or not
-	public static final int MESSAGE_START = 3;
-	public static final int MESSAGE_STOP = 4;
+	public static final int MESSAGE_START = 0x03;
+	public static final int MESSAGE_STOP = 0x04;
 	
 	// Available encoders
-	public final static int VIDEO_H264 = 1;
-	public final static int VIDEO_H263 = 2;
-	public final static int AUDIO_AMRNB = 3;
-	public final static int AUDIO_ANDROID_AMR = 4;
-	public final static int AUDIO_AAC = 5; // Only for ICS
+	public final static int VIDEO_H264 = 0x01;
+	public final static int VIDEO_H263 = 0x02;
+	public final static int AUDIO_AMRNB = 0x03;
+	public final static int AUDIO_ANDROID_AMR = 0x04;
+	public final static int AUDIO_AAC = 0x05; // Only for ICS /!\
 
+	// Available routing scheme
+	public final static int UNICAST = 0x01;
+	public final static int MULTICAST = 0x02;
+	
 	// Default configuration
 	public static VideoQuality defaultVideoQuality = VideoQuality.defaultVideoQualiy.clone();
 	private static int defaultVideoEncoder = VIDEO_H264, defaultAudioEncoder = AUDIO_AMRNB;
@@ -72,24 +76,23 @@ public class Session {
 	private static AtomicInteger startedStreamCount = new AtomicInteger(0);
 	private static Handler handler;
 	private static SurfaceHolder surfaceHolder;
-	private InetAddress destination;
+	private InetAddress origin, destination;
+	private int routingScheme = Session.UNICAST;
 	private Stream[] streamList = new Stream[2];
+	private long timestamp;
 	
-	public Session(InetAddress destination) {
+	/** Creates a streaming session that can be customized by adding tracks
+	 * @param destination The destination address of the streams
+	 * @param origin The origin address of the streams
+	 */
+	public Session(InetAddress origin, InetAddress destination) {
 		this.destination = destination;
-	}
-
-	/** Indicates whether or not a camera is being used in a session **/
-	public static boolean isCameraInUse() {
-		return cameraInUse;
+		this.origin = origin;
+		// This timestamp is used in the session descriptor for the Origin parameter "o="
+		this.timestamp = System.currentTimeMillis();
 	}
 	
-	/** Indicates whether or not the microphone is being used in a session **/
-	public static boolean isMicrophoneInUse() {
-		return micInUse;
-	}
-	
-	/** Set the handler that will be used to signal the main thread that a session has started or stopped */
+	/** Specify a handler here. It will receive MESSAGE_START when a session starts and MESSAGE_STOP when the last session stops **/
 	public static void setHandler(Handler h) {
 		handler = h;
 	}	
@@ -131,12 +134,36 @@ public class Session {
 		});
 	}
 	
-	/** Add the default video track with default configuration */
+	/** The destination address for all the streams of the session
+	 * @param destination The destination address
+	 */
+	public void setDestination(InetAddress destination) {
+		this.destination =  destination;
+	}
+	
+	/** Defines the routing scheme that will be used for this session
+	 * @param routingScheme Can be either Session.UNICAST or Session.MULTICAST
+	 */
+	public void setRoutingScheme(int routingScheme) {
+		this.routingScheme = routingScheme;
+	}
+	
+	/** Add the default video track with default configuration
+	 * @throws IllegalStateException
+	 * @throws IOException
+	 */
 	public void addVideoTrack() throws IllegalStateException, IOException {
 		addVideoTrack(defaultVideoEncoder,defaultCamera,defaultVideoQuality,false);
 	}
 	
-	/** Add video track with specified quality and encoder */
+	/** Add video track with specified quality and encoder 
+	 * @param encoder Can be either Session.VIDEO_H264 or Session.VIDEO_H263
+	 * @param camera Can be either CameraInfo.CAMERA_FACING_BACK or CameraInfo.CAMERA_FACING_FRONT
+	 * @param videoQuality Will determine the bitrate,framerate and resolution of the stream
+	 * @param flash Set it to true to turn the flash on, if the phone has no flash, an exception IllegalStateException will be thrown
+	 * @throws IllegalStateException
+	 * @throws IOException
+	 */
 	public synchronized void addVideoTrack(int encoder, int camera, VideoQuality videoQuality, boolean flash) throws IllegalStateException, IOException {
 		if (cameraInUse) throw new IllegalStateException("Camera already in use by another client");
 		Stream stream = null;
@@ -165,13 +192,18 @@ public class Session {
 		}
 	}
 	
-	/** Add default audio track with default configuration */
-	public void addAudioTrack() {
+	/** Add default audio track with default configuration 
+	 * @throws IOException 
+	 */
+	public void addAudioTrack() throws IOException {
 		addAudioTrack(defaultAudioEncoder);
 	}
 	
-	/** Add audio track with specified encoder */
-	public synchronized void addAudioTrack(int encoder) {
+	/** Add audio track with specified encoder 
+	 * @param encoder Can be either Session.AUDIO_AMRNB or Session.AUDIO_AAC
+	 * @throws IOException
+	 */
+	public synchronized void addAudioTrack(int encoder) throws IOException {
 		if (micInUse) throw new IllegalStateException("Microphone already in use by another client");
 		Stream stream = null;
 		
@@ -201,28 +233,65 @@ public class Session {
 	}
 	
 	/** Return a session descriptor that can be stored in a file or sent to a client with RTSP
-	 * @return The session descriptor
+	 * @return A session descriptor that can be wrote in a .sdp file or sent using RTSP
 	 * @throws IllegalStateException
 	 * @throws IOException
 	 */
 	public String getSessionDescriptor() throws IllegalStateException, IOException {
-		String sessionDescriptor = "";
+		StringBuilder sessionDescriptor = new StringBuilder();
+		sessionDescriptor.append("v=0\r\n");
+		// The RFC 4566 (5.2) suggest to use an NTP timestamp here but we will simply use a UNIX timestamp
+		// FIXME: We assume that IPV4 are used
+		sessionDescriptor.append("o=- "+timestamp+" "+timestamp+" IN IP4 "+origin.getHostAddress()+"\r\n");
+		sessionDescriptor.append("s=Unnamed\r\n");
+		sessionDescriptor.append("i=N/A\r\n");
+		sessionDescriptor.append("c=IN IP4 "+destination.getHostAddress()+"\r\n");
+		// t=0 0 means the session is permanent (we don't know when it will stop)
+		sessionDescriptor.append("t=0 0\r\n");
+		sessionDescriptor.append("a=recvonly\r\n");
 		// Prevent two different sessions from using the same peripheral at the same time
 		for (int i=0;i<streamList.length;i++) {
 			if (streamList[i] != null) {
 				if (!streamList[i].isStreaming()) {
-					sessionDescriptor += streamList[i].generateSessionDescriptor();
-					sessionDescriptor += "a=control:trackID="+i+"\r\n";
+					sessionDescriptor.append(streamList[i].generateSessionDescriptor());
+					sessionDescriptor.append("a=control:trackID="+i+"\r\n");
 				} else {
 					throw new IllegalStateException("Make sure all streams are stopped before calling getSessionDescriptor()");
 				}
 			}
 		}
-		return sessionDescriptor;
+		return sessionDescriptor.toString();
+	}
+	
+	/**
+	 * This method returns the selected routing scheme of the session
+	 * The routing scheme can be either Session.UNICAST or Session.MULTICAST
+	 * @return The routing sheme of the session
+	 */
+	public String getRoutingScheme() {
+		return routingScheme==Session.UNICAST ? "unicast" : "multicast";
+	}
+	
+	public InetAddress getDestination() {
+		return destination;
+	}
+	
+	/** Indicates whether or not a camera is being used in a session **/
+	public static boolean isCameraInUse() {
+		return cameraInUse;
+	}
+	
+	/** Indicates whether or not the microphone is being used in a session **/
+	public static boolean isMicrophoneInUse() {
+		return micInUse;
 	}
 	
 	public boolean trackExists(int id) {
 		return streamList[id]!=null;
+	}
+	
+	public void setTrackDestinationPort(int id, int port) {
+		streamList[id].setDestination(destination,port);
 	}
 	
 	public int getTrackDestinationPort(int id) {
@@ -233,21 +302,10 @@ public class Session {
 		return streamList[id].getLocalPort();
 	}
 	
-	public void setTrackDestinationPort(int id, int port) {
-		streamList[id].setDestination(destination,port);
-	}
-	
 	public int getTrackSSRC(int id) {
 		return streamList[id].getSSRC();
 	}
 	
-	/** The destination address for all the streams of the session
-	 * @param destination The destination address
-	 */
-	public void setDestination(InetAddress destination) {
-		this.destination =  destination;
-	}
-
 	/** Start stream with id trackId */
 	public void start(int trackId) throws IllegalStateException, IOException {
 		String type = trackId==0 ? "Video stream" : "Audio stream";

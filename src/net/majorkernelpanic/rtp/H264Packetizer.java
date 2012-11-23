@@ -60,7 +60,7 @@ public class H264Packetizer extends AbstractPacketizer {
 		public long duration;
 	}
 	
-	public H264Packetizer() {
+	public H264Packetizer() throws IOException {
 		super();
 	}
 	
@@ -127,7 +127,7 @@ public class H264Packetizer extends AbstractPacketizer {
 					is.read(buffer,0,8);
 					if (buffer[4] == 'm' && buffer[5] == 'd' && buffer[6] == 'a' && buffer[7] == 't') break;
 					len = (buffer[3]&0xFF) + (buffer[2]&0xFF)*256 + (buffer[1]&0xFF)*65536;
-					if (len<8 || len>1000) {
+					if (len<10 || len>50) {
 						Log.e(TAG,"Malformed header :/ len: "+len+" available: "+is.available());
 						break;
 					}

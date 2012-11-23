@@ -32,7 +32,7 @@ import android.media.MediaRecorder;
  */
 public class AMRNBStream extends MediaStream {
 
-	public AMRNBStream() {
+	public AMRNBStream() throws IOException {
 		super();
 		
 		this.packetizer = new AMRNBPacketizer();

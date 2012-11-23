@@ -45,7 +45,7 @@ public class H264Stream extends VideoStream {
 	private Semaphore lock = new Semaphore(0);
 	private MP4Config mp4Config;
 	
-	public H264Stream(int cameraId) {
+	public H264Stream(int cameraId) throws IOException {
 		super(cameraId);
 		setVideoEncoder(MediaRecorder.VideoEncoder.H264);
 		this.packetizer = new H264Packetizer();

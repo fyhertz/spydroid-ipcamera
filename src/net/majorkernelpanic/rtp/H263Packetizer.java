@@ -35,7 +35,7 @@ public class H263Packetizer extends AbstractPacketizer implements Runnable {
 	
 	private Thread t;
 	
-	public H263Packetizer() {
+	public H263Packetizer() throws IOException {
 		super();
 	}
 	

@@ -31,7 +31,7 @@ import android.util.Log;
 
 public class H263Stream extends VideoStream {
 	
-	public H263Stream(int cameraId) {
+	public H263Stream(int cameraId) throws IOException {
 		super(cameraId);
 		setVideoEncoder(MediaRecorder.VideoEncoder.H263);
 		this.packetizer = new H263Packetizer();

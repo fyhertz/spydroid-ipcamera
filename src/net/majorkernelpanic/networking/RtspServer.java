@@ -115,7 +115,7 @@ public class RtspServer {
 		public WorkerThread(final Socket client, final Handler handler) throws IOException {
 			this.input = new BufferedReader(new InputStreamReader(client.getInputStream()));
 			this.output = client.getOutputStream();
-			this.session = new Session(client.getInetAddress());
+			this.session = new Session(client.getLocalAddress(),client.getInetAddress());
 			this.client = client;
 			this.handler = handler;
 		}
@@ -252,7 +252,7 @@ public class RtspServer {
 				session.setTrackDestinationPort(trackId, p1);
 
 				session.start(trackId);
-				response.attributes = "Transport: RTP/AVP/UDP;unicast;client_port="+p1+"-"+p2+";server_port="+src+"-"+(src+1)+";ssrc="+Integer.toHexString(ssrc)+";mode=play\r\n" +
+				response.attributes = "Transport: RTP/AVP/UDP;"+session.getRoutingScheme()+";destination="+session.getDestination().getHostAddress()+";client_port="+p1+"-"+p2+";server_port="+src+"-"+(src+1)+";ssrc="+Integer.toHexString(ssrc)+";mode=play\r\n" +
 						"Session: "+ "1185d20035702ca" + "\r\n" +
 						"Cache-Control: no-cache\r\n";
 				response.status = Response.STATUS_OK;
@@ -277,7 +277,6 @@ public class RtspServer {
 				response.status = Response.STATUS_OK;
 			
 			}
-
 
 			/* ********************************************************************************** */
 			/* ********************************** Method PAUSE ********************************** */

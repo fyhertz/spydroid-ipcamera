@@ -38,7 +38,7 @@ abstract public class AbstractPacketizer {
 	protected boolean running = false;
 	protected byte[] buffer;
 	
-	public AbstractPacketizer() {
+	public AbstractPacketizer() throws IOException {
 		socket = new RtpSocket();
 		buffer = socket.getBuffer();
 	}	
