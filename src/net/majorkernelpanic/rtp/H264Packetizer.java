@@ -131,8 +131,8 @@ public class H264Packetizer extends AbstractPacketizer {
 						Log.e(TAG,"Malformed header :/ len: "+len+" available: "+is.available());
 						break;
 					}
-					Log.d(TAG,"Atom skipped: "+printBuffer(buffer, rtphl+4,rtphl+8)+" size: "+len);
-					is.read(buffer,rtphl,len-8);
+					Log.d(TAG,"Atom skipped: "+printBuffer(buffer, 4, 8)+" size: "+len);
+					is.read(buffer, 0, len-8);
 				}
 
 				// Some phones do not set length correctly when stream is not seekable, still we need to skip the header
