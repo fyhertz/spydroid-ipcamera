@@ -228,7 +228,8 @@ public class SpydroidActivity extends Activity implements OnSharedPreferenceChan
     	
     public void onStop() {
     	super.onStop();
-    	wl.release();
+    	// A WakeLock should only be released when isHeld() is true !
+    	if (wl.isHeld()) wl.release();
     }
     
     public void onResume() {
