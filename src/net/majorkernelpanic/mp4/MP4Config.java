@@ -29,7 +29,6 @@ import java.io.RandomAccessFile;
  */
 public class MP4Config {
 
-	private final RandomAccessFile fis;
 	private final StsdBox stsdBox; 
 	private final MP4Parser mp4Parser;
 	
@@ -42,17 +41,21 @@ public class MP4Config {
 	public MP4Config (String path) throws IOException, FileNotFoundException {
 		
 		// We open the mp4 file
-		File file = new File(path);
-		fis = new RandomAccessFile(file, "r");
+		mp4Parser = new MP4Parser(path);
 
 		// We parse it
-		mp4Parser = new MP4Parser(fis);
+		try {
+			mp4Parser.parse();
+		} catch (IOException ignore) {
+			// Maybe enough of the file has been parsed and we can get the stsd box
+		}
 		
 		// We find the stsdBox
 		stsdBox = mp4Parser.getStsdBox();
 		
 		// We're done !
-		fis.close();
+		mp4Parser.close();
+		
 	}
 	
 	public String getProfileLevel() {

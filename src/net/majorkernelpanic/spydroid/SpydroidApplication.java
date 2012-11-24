@@ -9,7 +9,8 @@ public class SpydroidApplication extends android.app.Application {
 	@Override
 	  public void onCreate() {
 	      // The following line triggers the initialization of ACRA
-	      ACRA.init(this);
+		  // Please do not uncomment this line unless you change the form id or I will receive your crash reports !
+	      // ACRA.init(this);
 	      super.onCreate();
 	  }
 }
