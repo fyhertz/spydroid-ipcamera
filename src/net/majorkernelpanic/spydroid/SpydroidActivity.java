@@ -21,25 +21,12 @@
 package net.majorkernelpanic.spydroid;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
+import net.majorkernelpanic.networking.HttpServer;
 import net.majorkernelpanic.networking.RtspServer;
 import net.majorkernelpanic.networking.Session;
 import net.majorkernelpanic.streaming.video.H264Stream;
 import net.majorkernelpanic.streaming.video.VideoQuality;
-
-import org.apache.http.NameValuePair;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.message.BasicNameValuePair;
-
 import android.app.Activity;
 import android.app.Notification;
 import android.app.NotificationManager;
@@ -49,18 +36,15 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
-import android.content.SharedPreferences.Editor;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.os.PowerManager;
 import android.preference.PreferenceManager;
 import android.support.v4.app.NotificationCompat;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -251,8 +235,14 @@ public class SpydroidActivity extends Activity implements OnSharedPreferenceChan
     	super.onDestroy();
     	// Remove notification
     	((NotificationManager)getSystemService(Context.NOTIFICATION_SERVICE)).cancel(0);
-    	if (httpServer != null) httpServer.stop();
-    	if (rtspServer != null) rtspServer.stop();
+    	if (httpServer != null) {
+    		httpServer.stop();
+    		httpServer = null;
+    	}
+    	if (rtspServer != null) {
+    		rtspServer.stop();
+    		rtspServer = null;
+    	}
     }
     
     public void onBackPressed() {
@@ -328,13 +318,17 @@ public class SpydroidActivity extends Activity implements OnSharedPreferenceChan
     	public void handleMessage(Message msg) { 
     		switch (msg.what) {
     		case RtspServer.MESSAGE_ERROR:
-    			Exception e = (Exception)msg.obj;
-    			lastCaughtException = e;
-    			log(e.getMessage()!=null?e.getMessage():"An error occurred !");
+    			Exception e1 = (Exception)msg.obj;
+    			lastCaughtException = e1;
+    			log(e1.getMessage()!=null?e1.getMessage():"An error occurred !");
     			break;
     		case RtspServer.MESSAGE_LOG:
     			log((String)msg.obj);
     			break;
+    		case HttpServer.MESSAGE_ERROR:
+    			Exception e2 = (Exception)msg.obj;
+    			lastCaughtException = e2;
+    			break;    			
     		case Session.MESSAGE_START:
     			streaming = true;
     			streamingState(1);

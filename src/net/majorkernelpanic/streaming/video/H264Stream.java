@@ -37,6 +37,8 @@ import android.util.Log;
  * This will stream H264 from the camera over RTP
  * Call setDestination() & setVideoSize() & setVideoFrameRate() & setVideoEncodingBitRate() and you're good to go
  * You can then call prepare() & start()
+ * Call stop() to stop the stream 
+ * You never need to call reset()
  */
 public class H264Stream extends VideoStream {
 
@@ -106,6 +108,7 @@ public class H264Stream extends VideoStream {
 			e.printStackTrace();
 		} finally {
 			stop();
+			setMode(MODE_STREAMING);
 		}
 		
 		// Disable the callback
@@ -119,9 +122,6 @@ public class H264Stream extends VideoStream {
 		// Delete dummy video
 		File file = new File(TESTFILE);
 		if (!file.delete()) Log.e(TAG,"Temp file could not be erased");
-		
-		// Back to streaming mode & prepare
-		setMode(MODE_STREAMING);
 		
 		// Restore flash state
 		flashState = savedFlashState;

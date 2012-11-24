@@ -68,7 +68,7 @@ public class CustomHttpServer extends HttpServer {
 		// Starts a sound on the phone
 		addRequestHandler("/server/sound.htm*", new SoundRequestHandler(context, handler));
 		// A script containing the list of the prerecorded sounds
-		addRequestHandler("/server/params.js", new SoundsListRequestHandler(handler));
+		addRequestHandler("/server/params.js", new SoundsListRequestHandler(handler,context));
 		// Used to fetch or rewrite some settings such as the framerate/bitrate...
 		addRequestHandler("/server/config.json*", new ConfigRequestHandler(context));
 		// Return a JSON containing information about the state of the application
@@ -210,10 +210,12 @@ public class CustomHttpServer extends HttpServer {
 	static class SoundsListRequestHandler implements HttpRequestHandler {
 
 		private Handler handler;
+		private Context context;
 		private Field[] raws = R.raw.class.getFields();
 		
-		public SoundsListRequestHandler(Handler handler) {
+		public SoundsListRequestHandler(Handler handler, Context context) {
 			this.handler = handler;
+			this.context = context;
 		}
 		
 		public void handle(HttpRequest request, HttpResponse response, HttpContext arg2) throws HttpException, IOException {

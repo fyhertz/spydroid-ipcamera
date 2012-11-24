@@ -59,6 +59,84 @@ public abstract class VideoStream extends MediaStream {
 		}
 	}
 	
+	/**
+	 * Sets a Surface to show a preview of recorded media (video). 
+	 * You can call this method at any time and changes will take effect next time you call prepare()
+	 */
+	public void setPreviewDisplay(Surface surface) {
+		this.surface = surface;
+	}
+	
+	/** Turn flash on or off if phone has one */
+	public void setFlashState(boolean state) {
+		flashState = state;
+	}
+	
+	/** 
+	 * Modifies the resolution of the stream. You can call this method at any time 
+	 * and changes will take effect next time you call prepare()
+	 * setVideoQuality() may be more convenient 
+	 * @param width Width of the stream
+	 * @param height height of the stream
+	 */
+	public void setVideoSize(int width, int height) {
+		if (quality.resX != width || quality.resY != height) {
+			quality.resX = width;
+			quality.resY = height;
+			qualityHasChanged = true;
+		}
+	}
+	
+	/** 
+	 * Modifies the framerate of the stream. You can call this method at any time 
+	 * and changes will take effect next time you call prepare()
+	 * setVideoQuality() may be more convenient
+	 * @param rate Framerate of the stream
+	 */	
+	public void setVideoFrameRate(int rate) {
+		if (quality.frameRate != rate) {
+			quality.frameRate = rate;
+			qualityHasChanged = true;
+		}
+	}
+	
+	/** 
+	 * Modifies the bitrate of the stream. You can call this method at any time 
+	 * and changes will take effect next time you call prepare()
+	 * setVideoQuality() may be more convenient
+	 * @param bitRate Bitrate of the stream in bit per second
+	 */	
+	public void setVideoEncodingBitRate(int bitRate) {
+		if (quality.bitRate != bitRate) {
+			quality.bitRate = bitRate;
+			qualityHasChanged = true;
+		}
+	}
+	
+	/** 
+	 * Modifies the quality of the stream. You can call this method at any time 
+	 * and changes will take effect next time you call prepare()
+	 * @param videoQuality Quality of the stream
+	 */
+	public void setVideoQuality(VideoQuality videoQuality) {
+		if (!quality.equals(videoQuality)) {
+			quality = videoQuality;
+			qualityHasChanged = true;
+		}
+	}
+	
+	/** 
+	 * Modifies the videoEncoder of the stream. You can call this method at any time 
+	 * and changes will take effect next time you call prepare()
+	 * @param videoEncoder Encoder of the stream
+	 */
+	public void setVideoEncoder(int videoEncoder) {
+		this.videoEncoder = videoEncoder;
+	}
+	
+	/**
+	 * Stops streaming
+	 */
 	public synchronized void stop() {
 		super.stop();
 		if (camera != null) {
@@ -77,8 +155,11 @@ public abstract class VideoStream extends MediaStream {
 		}
 	}
 
-	// Don't forget to deal with the RuntimeExceptions !
-	// Camera.open, Camera.setParameter, Camera.unlock may throw one
+	/**
+	 * Prepare the VideoStream, you can then call start()
+	 * The underlying Camera will be opened and configured whaen you call this method so don't forget to deal with the RuntimeExceptions !
+	 * Camera.open, Camera.setParameter, Camera.unlock may throw one !
+	 */
 	public void prepare() throws IllegalStateException, IOException, RuntimeException {
 		if (camera == null) {
 			camera = Camera.open(cameraId);
@@ -121,7 +202,7 @@ public abstract class VideoStream extends MediaStream {
 			if (mode==MODE_DEFAULT) {
 				super.setMaxDuration(1000);
 				super.setMaxFileSize(Integer.MAX_VALUE);
-			} else {
+			} else if (modeDefaultWasUsed) {
 				// On some phones a RuntimeException might be thrown :/
 				try {
 					super.setMaxDuration(0);
@@ -154,48 +235,6 @@ public abstract class VideoStream extends MediaStream {
 			throw e;
 		}
 
-	}
-	
-	public void setPreviewDisplay(Surface surface) {
-		this.surface = surface;
-	}
-	
-	/** Turn flash on or off if phone has one */
-	public void setFlashState(boolean state) {
-		flashState = state;
-	}
-	
-	public void setVideoSize(int width, int height) {
-		if (quality.resX != width || quality.resY != height) {
-			quality.resX = width;
-			quality.resY = height;
-			qualityHasChanged = true;
-		}
-	}
-	
-	public void setVideoFrameRate(int rate) {
-		if (quality.frameRate != rate) {
-			quality.frameRate = rate;
-			qualityHasChanged = true;
-		}
-	}
-	
-	public void setVideoEncodingBitRate(int bitRate) {
-		if (quality.bitRate != bitRate) {
-			quality.bitRate = bitRate;
-			qualityHasChanged = true;
-		}
-	}
-	
-	public void setVideoQuality(VideoQuality videoQuality) {
-		if (!quality.equals(videoQuality)) {
-			quality = videoQuality;
-			qualityHasChanged = true;
-		}
-	}
-	
-	public void setVideoEncoder(int videoEncoder) {
-		this.videoEncoder = videoEncoder;
 	}
 	
 	public abstract String generateSessionDescriptor() throws IllegalStateException, IOException;

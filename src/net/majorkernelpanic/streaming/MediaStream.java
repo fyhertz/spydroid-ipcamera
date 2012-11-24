@@ -38,18 +38,18 @@ public abstract class MediaStream extends MediaRecorder implements Stream {
 
 	protected static final String TAG = "MediaStream";
 	
+	// If you mode==MODE_DEFAULT the MediaStream will just act as a regular MediaRecorder
+	// By default: mode = MODE_STREAMING and MediaStream forwards data to the packetizer
+	public static final int MODE_STREAMING = 0;
+	public static final int MODE_DEFAULT = 1;
+	
 	private static int id = 0;
 	private int socketId;
 	private LocalServerSocket lss = null;
 	private LocalSocket receiver, sender = null;
 	protected AbstractPacketizer packetizer = null;
-	protected boolean streaming = false;
+	protected boolean streaming = false, modeDefaultWasUsed = false;
 	protected String sdpDescriptor;
-
-	// If you mode==MODE_DEFAULT the MediaStream will just act as a regular MediaRecorder
-	// By default: mode = MODE_STREAMING and MediaStream forwards data to the packetizer
-	public static final int MODE_STREAMING = 0;
-	public static final int MODE_DEFAULT = 1;
 	protected int mode = MODE_STREAMING;
 	
 	public MediaStream() {
@@ -81,6 +81,7 @@ public abstract class MediaStream extends MediaRecorder implements Stream {
 	public void setMode(int mode) throws IllegalStateException {
 		if (!streaming) {
 			this.mode = mode;
+			if (mode == MODE_DEFAULT) modeDefaultWasUsed = true;
 		}
 		else {
 			throw new IllegalStateException("You can't call setMode() while streaming !");
