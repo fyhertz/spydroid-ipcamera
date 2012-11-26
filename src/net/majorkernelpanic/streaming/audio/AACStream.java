@@ -49,7 +49,7 @@ public class AACStream extends MediaStream {
 		setOutputFormat(6);
 		setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
 		setAudioChannels(1);
-		setAudioSamplingRate(8000);
+		setAudioSamplingRate(16000);
 		
 		super.prepare();
 	}

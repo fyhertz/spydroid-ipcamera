@@ -110,7 +110,7 @@ public class AMRNBPacketizer extends AbstractPacketizer implements Runnable {
 			
 		} catch (IOException e) {
 			running = false;
-			Log.d(TAG,"IOException: "+e.getMessage()!=null?e.getMessage():"unknown error");
+			Log.d(TAG,"IOException: "+(e.getMessage()!=null?e.getMessage():"unknown error"));
 		}
 		
 		Log.d(TAG,"Packetizer stopped !");

@@ -61,4 +61,15 @@
 
     </PreferenceCategory>
         
+	<PreferenceCategory 
+	    android:title="More options">
+	    
+		<CheckBoxPreference
+	        android:key="notification_enabled"
+	        android:title="Enable notification"
+	        android:defaultValue="true"
+	        android:summary="Enable/Disable the notification" />
+                    
+	</PreferenceCategory>                    
+        
 </PreferenceScreen>

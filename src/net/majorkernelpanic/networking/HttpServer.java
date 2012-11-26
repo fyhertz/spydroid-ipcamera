@@ -59,7 +59,7 @@ import android.util.Log;
 /**
  * This is an HTTP interface for spydroid
  * For example: "http://xxx.xxx.xxx.xxx:8080/spydroid.sdp?h264"
- * You can also specify a stream id and start a maximum of 2 streams in parallel
+ * You can also specify a stream id and then start a maximum of 2 streams in parallel
  * For example: "http://xxx.xxx.xxx.xxx:8080/spydroid.sdp?id=0&h264"
  * would start a video stream from the phone's camera to some remote client
  * and return an appropriate sdp file

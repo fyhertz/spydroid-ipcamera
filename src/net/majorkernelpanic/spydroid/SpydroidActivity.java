@@ -78,7 +78,7 @@ public class SpydroidActivity extends Activity implements OnSharedPreferenceChan
     private Animation pulseAnimation;
 
     /** The HttpServer will use those variables to send reports about the state of the app to the http interface **/
-    public static boolean activityPaused = true;
+    public static boolean activityPaused = true, notificationEnabled = true;
     public static Exception lastCaughtException;
     
     public void onCreate(Bundle savedInstanceState) {
@@ -149,11 +149,13 @@ public class SpydroidActivity extends Activity implements OnSharedPreferenceChan
 	            Intent intent = new Intent(context,AboutActivity.class);
 	            startActivityForResult(intent, 0);
 			}
-		});        
+		});
+        
+        // Did the user disabled the notification ?
+        notificationEnabled = settings.getBoolean("notification_enabled", true);
         
     }
     
-    // Save preferences when modified in the OptionsActivity
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
     	if (key.equals("video_resX")) {
     		Session.defaultVideoQuality.resX = sharedPreferences.getInt("video_resX", 0);
@@ -177,16 +179,26 @@ public class SpydroidActivity extends Activity implements OnSharedPreferenceChan
     		if (sharedPreferences.getBoolean("enable_http", true)) {
     			if (httpServer == null) httpServer = new CustomHttpServer(8080, this.getApplicationContext(), handler);
     		} else {
-    			if (httpServer != null) httpServer = null;
+    			if (httpServer != null) {
+    				httpServer.stop();
+    				httpServer = null;
+    			}
     		}
     	}
     	else if (key.equals("enable_rtsp")) {
     		if (sharedPreferences.getBoolean("enable_rtsp", true)) {
     			if (rtspServer == null) rtspServer = new RtspServer(8086, handler);
     		} else {
-    			if (rtspServer != null) rtspServer = null;
+    			if (rtspServer != null) {
+    				rtspServer.stop();
+    				rtspServer = null;
+    			}
     		}
-    	}	
+    	}
+    	else if (key.equals("notification_enabled")) {
+    		notificationEnabled  = sharedPreferences.getBoolean("notification_enabled", true);
+    		removeNotification();
+    	}
     }
     
     public void onStart() {
@@ -195,18 +207,21 @@ public class SpydroidActivity extends Activity implements OnSharedPreferenceChan
     	// Lock screen
     	wl.acquire();
     	
-    	Intent notificationIntent = new Intent(this, SpydroidActivity.class);
-    	PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, PendingIntent.FLAG_CANCEL_CURRENT);
+    	
+    	if (notificationEnabled) {
+    		Intent notificationIntent = new Intent(this, SpydroidActivity.class);
+    		PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, PendingIntent.FLAG_CANCEL_CURRENT);
 
-    	NotificationCompat.Builder builder = new NotificationCompat.Builder(this);
-    	Notification notification = builder.setContentIntent(pendingIntent)
-    	        .setWhen(System.currentTimeMillis())
-    	        .setTicker(getText(R.string.notification_title))
-    	        .setSmallIcon(R.drawable.icon)
-    	        .setContentTitle(getText(R.string.notification_title))
-    	        .setContentText(getText(R.string.notification_content)).build();
-    	notification.flags |= Notification.FLAG_ONGOING_EVENT;
-    	((NotificationManager)getSystemService(Context.NOTIFICATION_SERVICE)).notify(0,notification);
+    		NotificationCompat.Builder builder = new NotificationCompat.Builder(this);
+    		Notification notification = builder.setContentIntent(pendingIntent)
+    				.setWhen(System.currentTimeMillis())
+    				.setTicker(getText(R.string.notification_title))
+    				.setSmallIcon(R.drawable.icon)
+    				.setContentTitle(getText(R.string.notification_title))
+    				.setContentText(getText(R.string.notification_content)).build();
+    		notification.flags |= Notification.FLAG_ONGOING_EVENT;
+    		((NotificationManager)getSystemService(Context.NOTIFICATION_SERVICE)).notify(0,notification);
+    	}
     	
     }
     	
@@ -233,16 +248,6 @@ public class SpydroidActivity extends Activity implements OnSharedPreferenceChan
     
     public void onDestroy() {
     	super.onDestroy();
-    	// Remove notification
-    	((NotificationManager)getSystemService(Context.NOTIFICATION_SERVICE)).cancel(0);
-    	if (httpServer != null) {
-    		httpServer.stop();
-    		httpServer = null;
-    	}
-    	if (rtspServer != null) {
-    		rtspServer.stop();
-    		rtspServer = null;
-    	}
     }
     
     public void onBackPressed() {
@@ -273,8 +278,10 @@ public class SpydroidActivity extends Activity implements OnSharedPreferenceChan
             startActivityForResult(intent, 0);
             return true;
         case R.id.quit:
-        	// Quits Spydroid i.e. stops the HTTP server
-        	if (httpServer != null) httpServer.stop();
+        	// Quits Spydroid i.e. stops the HTTP & RTSP servers
+        	stopServers();  
+        	// Remove notification
+        	if (notificationEnabled) removeNotification();          	
         	finish();	
             return true;
         default:
@@ -298,6 +305,18 @@ public class SpydroidActivity extends Activity implements OnSharedPreferenceChan
     		}
     	}
     }
+
+    private void stopServers() {
+    	if (httpServer != null) {
+    		httpServer.stop();
+    		httpServer = null;
+    	}
+    	if (rtspServer != null) {
+    		rtspServer.stop();
+    		rtspServer = null;
+    	}
+    }
+    
     
     // BroadcastReceiver that detects wifi state changements
     private final BroadcastReceiver wifiStateReceiver = new BroadcastReceiver() {
@@ -388,6 +407,18 @@ public class SpydroidActivity extends Activity implements OnSharedPreferenceChan
 			signInformation.setVisibility(View.INVISIBLE);
 			signWifi.setVisibility(View.VISIBLE);
 			signWifi.startAnimation(pulseAnimation);
+		}
+	}
+	
+	private void removeNotification() {
+		((NotificationManager)getSystemService(Context.NOTIFICATION_SERVICE)).cancel(0);
+		if (httpServer != null) {
+			httpServer.stop();
+			httpServer = null;
+		}
+		if (rtspServer != null) {
+			rtspServer.stop();
+			rtspServer = null;
 		}
 	}
     

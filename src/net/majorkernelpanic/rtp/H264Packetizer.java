@@ -22,7 +22,6 @@ package net.majorkernelpanic.rtp;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.LinkedList;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Semaphore;
 
@@ -120,28 +119,12 @@ public class H264Packetizer extends AbstractPacketizer {
 			
 			// This will skip the MPEG4 header if this step fails we can't stream anything :(
 			try {
-				int len = 0;
-				byte buffer[] = new byte[8];
+				byte buffer[] = new byte[4];
 				// Skip all atoms preceding mdat atom
 				while (true) {
-					is.read(buffer,0,8);
-					if (buffer[4] == 'm' && buffer[5] == 'd' && buffer[6] == 'a' && buffer[7] == 't') break;
-					len = (buffer[3]&0xFF) + (buffer[2]&0xFF)*256 + (buffer[1]&0xFF)*65536;
-					if (len<10 || len>50) {
-						Log.e(TAG,"Malformed header :/ len: "+len+" available: "+is.available());
-						break;
-					}
-					Log.d(TAG,"Atom skipped: "+printBuffer(buffer, 4, 8)+" size: "+len);
-					is.read(buffer, 0, len-8);
-				}
-
-				// Some phones do not set length correctly when stream is not seekable, still we need to skip the header
-				if (len<=0 || len>1000) {
-					while (true) {
-						while (is.read() != 'm');
-						is.read(buffer,0,3);
-						if (buffer[0] == 'd' && buffer[1] == 'a' && buffer[2] == 't') break;
-					}
+					while (is.read() != 'm');
+					is.read(buffer,0,3);
+					if (buffer[0] == 'd' && buffer[1] == 'a' && buffer[2] == 't') break;
 				}
 			} catch (IOException e) {
 				Log.e(TAG,"Couldn't skip mp4 header :/");
@@ -230,7 +213,7 @@ public class H264Packetizer extends AbstractPacketizer {
 				}
 			} catch (InterruptedException ignore) {
 			} catch (IOException e) {
-				Log.e(TAG,"IOException: "+e.getMessage()!=null?e.getMessage():"unknown error");
+				Log.e(TAG,"IOException: "+(e.getMessage()!=null?e.getMessage():"unknown error"));
 			} catch (NullPointerException ignore) {
 				// May happen if the thread is interrupted and chunks is empty...
 				// It's not a problem

@@ -2,8 +2,8 @@
 
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
       package="net.majorkernelpanic.spydroid"
-      android:versionCode="630"
-      android:versionName="6.3">
+      android:versionCode="632"
+      android:versionName="6.3.2">
       
     <uses-sdk android:minSdkVersion="10" />
     <uses-permission android:name="android.permission.CAMERA"></uses-permission>
@@ -15,7 +15,7 @@
     <uses-permission android:name="android.permission.RECORD_AUDIO"></uses-permission>
     <uses-permission android:name="android.permission.WAKE_LOCK"></uses-permission>
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE"></uses-permission>
-    <uses-permission android:name="android.permission.READ_LOGS"></uses-permission>
+    <!-- <uses-permission android:name="android.permission.READ_LOGS"></uses-permission> -->
 
     <application android:icon="@drawable/icon" android:label="@string/app_name" android:name="SpydroidApplication">
         <activity android:screenOrientation="portrait" 
