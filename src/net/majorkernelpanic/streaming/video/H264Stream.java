@@ -141,7 +141,7 @@ public class H264Stream extends VideoStream {
 	public String generateSessionDescriptor() throws IllegalStateException, IOException {
 		String profile,sps,pps;
 		
-		if (settings != null && false) {
+		if (settings != null) {
 			if (!settings.contains(quality.frameRate+","+quality.resX+","+quality.resY)) {
 				testH264();
 				profile = mp4Config.getProfileLevel();
