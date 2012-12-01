@@ -39,6 +39,7 @@ public class AMRNBStream extends MediaStream {
 		
 	}
 
+	@Override
 	public void prepare() throws IllegalStateException, IOException {
 		setAudioSource(MediaRecorder.AudioSource.CAMCORDER);
 		setOutputFormat(MediaRecorder.OutputFormat.RAW_AMR);

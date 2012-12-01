@@ -92,9 +92,9 @@ public class H264Packetizer extends AbstractPacketizer {
 		} catch (InterruptedException e) {}
 	}
 	
-	/*************************************************************************************/
-	/*** This thread waits for the camera to deliver data and queue work for the other ***/
-	/*************************************************************************************/
+	/********************************************************************************************/
+	/*** This thread waits for the camera to deliver data and queue work for the other thread ***/
+	/********************************************************************************************/
 	private static class Producer extends Thread implements Runnable {
 
 		public boolean running = true;
@@ -145,7 +145,10 @@ public class H264Packetizer extends AbstractPacketizer {
 					} catch (InterruptedException e) {
 						break;
 					}
-					sum = fifo.write(is,100000);
+					sum = 0;
+					while (sum < 5) {
+						sum += fifo.write(is,100000);
+					}
 					duration = SystemClock.elapsedRealtime() - oldtime;
 					
 					//Log.d(TAG,"New chunk -> sleep: "+sleep[0]+" duration: "+duration+" sum: "+sum+" chunks: "+chunks.size());
@@ -172,7 +175,7 @@ public class H264Packetizer extends AbstractPacketizer {
 		private final byte[] buffer;
 		private boolean splitNal;
 		private long newDelay, ts, delay = 10;
-		private int cursor, naluLength = 0;
+		private int cursor = 0, naluLength = 0;
 		private Chunk chunk = new Chunk(0,0), tmpChunk = null;
 		private final long[] sleep;
 		

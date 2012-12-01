@@ -25,6 +25,7 @@
     
     <!-- RESOLUTION -->
     <string-array name="videoResolutionArray">
+        <item>1280x720</item>
         <item>640x480</item>
         <item>320x240</item>
         <item>176x144</item>

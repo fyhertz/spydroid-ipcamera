@@ -70,15 +70,10 @@ public class H264Stream extends VideoStream {
 		flashState = false;
 		
 		// That means the H264Stream will behave as a regular MediaRecorder object
-		// it will not start the packetizer thread and can be used to save video
-		// in a file
+		// it will not start the packetizer thread and can be used to save video in a file
 		setMode(MODE_DEFAULT);
 		
 		setOutputFile(TESTFILE);
-		
-		// Start recording
-		prepare();
-		start();
 		
 		// We wait a little and stop recording
 		this.setOnInfoListener(new MediaRecorder.OnInfoListener() {
@@ -96,6 +91,10 @@ public class H264Stream extends VideoStream {
 				lock.release();
 			}
 		});
+		
+		// Start recording
+		prepare();
+		start();
 		
 		try {
 			if (lock.tryAcquire(6,TimeUnit.SECONDS)) {
