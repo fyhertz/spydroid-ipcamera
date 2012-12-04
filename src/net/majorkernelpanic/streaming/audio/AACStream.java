@@ -80,12 +80,10 @@ public class AACStream extends MediaStream {
 		
 	}
 	
-	@Override
 	public void setAudioSamplingRate(int samplingRate) {
 		requestedSamplingRate = samplingRate;
 	}
 	
-	@Override
 	public void prepare() throws IllegalStateException, IOException {
 		
 		setAudioSource(MediaRecorder.AudioSource.CAMCORDER);

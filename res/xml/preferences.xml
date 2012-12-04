@@ -66,7 +66,7 @@
 	    
 		<CheckBoxPreference
 	        android:key="notification_enabled"
-	        android:title="Enable notification"
+	        android:title="Notification"
 	        android:defaultValue="true"
 	        android:summary="Enable/Disable the notification" />
                     

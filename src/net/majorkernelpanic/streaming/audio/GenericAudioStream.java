@@ -70,6 +70,10 @@ public class GenericAudioStream implements Stream {
 				   "a=fmtp:"+codec.type+" "+codec.fmtp+";\r\n";
 	}
 
+	public void setTimeToLive(int ttl) {
+		// FIXME: is it possible to change the TTL here ?
+	}
+	
 	public void setDestination(InetAddress dest, int dport) {
 		this.destination = dest;
 		this.port = dport;
@@ -90,7 +94,5 @@ public class GenericAudioStream implements Stream {
 	public boolean isStreaming() {
 		return audioStream.isBusy();
 	}
-	
 
-	
 }

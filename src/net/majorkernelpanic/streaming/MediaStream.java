@@ -70,6 +70,12 @@ public abstract class MediaStream extends MediaRecorder implements Stream {
 		this.packetizer.setDestination(dest, dport);
 	}
 	
+	/** Set the Time To Live of the underlying RtpSocket 
+	 * @throws IOException **/
+	public void setTimeToLive(int ttl) throws IOException {
+		this.packetizer.setTimeToLive(ttl);
+	}
+	
 	public int getDestinationPort() {
 		return this.packetizer.getRtpSocket().getPort();
 	}

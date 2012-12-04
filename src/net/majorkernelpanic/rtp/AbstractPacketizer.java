@@ -43,25 +43,30 @@ abstract public class AbstractPacketizer {
 		buffer = socket.getBuffer();
 	}	
 	
-	public AbstractPacketizer(InputStream fis) {
+	public AbstractPacketizer(InputStream is) {
 		super();
-		this.is = fis;
+		this.is = is;
 	}
 	
 	public RtpSocket getRtpSocket() {
 		return socket;
 	}
 	
-	public void setInputStream(InputStream fis) {
-		this.is = fis;
+	public void setInputStream(InputStream is) {
+		this.is = is;
+	}
+	
+	public void setTimeToLive(int ttl) throws IOException {
+		socket.setTimeToLive(ttl);
 	}
 	
 	public void setDestination(InetAddress dest, int dport) {
 		socket.setDestination(dest, dport);
 	}
 	
-	public abstract void stop();
 	public abstract void start() throws IOException;
+	
+	public abstract void stop();
 	
     // Useful for debug
     protected static String printBuffer(byte[] buffer, int start,int end) {

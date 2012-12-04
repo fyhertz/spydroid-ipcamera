@@ -10,6 +10,7 @@ public interface Stream {
 	public void stop();
 	public void release();
 	
+	public void setTimeToLive(int ttl) throws IOException;
 	public void setDestination(InetAddress dest, int dport);
 	
 	public int getLocalPort();

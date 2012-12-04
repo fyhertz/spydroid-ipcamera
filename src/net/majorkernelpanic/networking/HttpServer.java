@@ -128,7 +128,6 @@ public class HttpServer extends BasicHttpServer{
 
 				params.remove("id");
 				uri = "http://c?" + URLEncodedUtils.format(params, "UTF-8");
-				Log.e(TAG,uri);
 				
 				// Stop all streams if a Session already exists
 				if (session[id] != null) {

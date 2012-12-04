@@ -31,7 +31,7 @@ import java.util.Random;
 
 public class RtpSocket {
 
-	private DatagramSocket usock;
+	private MulticastSocket usock;
 	private DatagramPacket upack;
 	
 	private byte[] buffer = new byte[MTU];
@@ -84,6 +84,10 @@ public class RtpSocket {
 	
 	public int getSSRC() {
 		return ssrc;
+	}
+	
+	public void setTimeToLive(int ttl) throws IOException {
+		usock.setTimeToLive(ttl);
 	}
 	
 	public void setDestination(InetAddress dest, int dport) {

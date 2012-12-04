@@ -54,25 +54,56 @@ public class UriParser {
 					else if (param.getValue().equals("front")) camera = CameraInfo.CAMERA_FACING_FRONT;
 				}
 				
-				// ROUTING SCHEME -> the client can choose between unicast or multicast
-				// If multicast is chosen, a multicast address can precised 
+				// MULTICAST -> the stream will be sent to a multicast group
+				// The default mutlicast address is 228.5.6.7, but the client can specify one 
 				else if (param.getName().equals("multicast")) {
 					session.setRoutingScheme(Session.MULTICAST);
 					if (param.getValue()!=null) {
 						try {
 							InetAddress addr = InetAddress.getByName(param.getValue());
 							if (!addr.isMulticastAddress()) {
-								throw new IllegalStateException("Invalid multicast address");
+								throw new IllegalStateException("Invalid multicast address !");
 							}
 							session.setDestination(addr);
 						} catch (UnknownHostException e) {
-							throw new IllegalStateException("Invalid multicast address");
+							throw new IllegalStateException("Invalid multicast address !");
 						}
 					}
 					else {
 						// Default multicast address
 						session.setDestination(InetAddress.getByName("228.5.6.7"));
 					}
+				}
+				
+				// UNICAST -> the client can use this so specify where he wants the stream to be sent
+				else if (param.getName().equals("unicast")) {
+					if (param.getValue()!=null) {
+						try {
+							InetAddress addr = InetAddress.getByName(param.getValue());
+							session.setDestination(addr);
+						} catch (UnknownHostException e) {
+							throw new IllegalStateException("Invalid destination address !");
+						}
+					}					
+				}
+				
+				// TTL -> the client can modify the time to live of packets
+				// By default ttl=64
+				else if (param.getName().equals("ttl")) {
+					if (param.getValue()!=null) {
+						try {
+							int ttl = Integer.parseInt(param.getValue());
+							if (ttl<0) throw new IllegalStateException("The TTL must be a positive integer !");
+							session.setTimeToLive(ttl);
+						} catch (Exception e) {
+							throw new IllegalStateException("The TTL must be a positive integer !");
+						}
+					}
+				}
+				
+				// No tracks will be added to the session
+				else if (param.getName().equals("stop")) {
+					return;
 				}
 				
 			}
@@ -93,16 +124,11 @@ public class UriParser {
 				}
 				
 				// AMRNB
-				else if (param.getName().equals("amrnb")) {
+				else if (param.getName().equals("amrnb") || param.getName().equals("amr")) {
 					session.addAudioTrack(Session.AUDIO_AMRNB);
 				}
 				
-				// AMR -> just for convenience: does the same as AMRNB
-				else if (param.getName().equals("amr")) {
-					session.addAudioTrack(Session.AUDIO_AMRNB);
-				}
-				
-				// AAC -> experimental
+				// AAC
 				else if (param.getName().equals("aac")) {
 					session.addAudioTrack(Session.AUDIO_AAC);
 				}
@@ -114,8 +140,14 @@ public class UriParser {
 				}
 				
 			}
+			
+			// The default behavior is to only add one video track
+			if (session.getTrackCount()==0) {
+				session.addVideoTrack();
+			}
+			
 		} 
-		// Uri has no parameters: the default behavior is to only add one h263 track
+		// Uri has no parameters: the default behavior is to only add one video track
 		else {
 			session.addVideoTrack();
 			//session.addAudioTrack();

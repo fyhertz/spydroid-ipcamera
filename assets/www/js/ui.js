@@ -141,7 +141,7 @@
 	// Params
 	cache = /[0-9]+/.exec($('#cache').val())[0];
 	
-	if (type==='video') $.get('/server/config.json?set&'+videoEncoder+'&'+audioEncoder);
+	$.get('/server/config.json?set&'+videoEncoder+'&'+audioEncoder);
 
 	return {
 	    uria:"rtsp://"+h+":"+8086+"?"+audioEncoder,
