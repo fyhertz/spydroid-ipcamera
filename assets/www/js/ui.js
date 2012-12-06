@@ -423,12 +423,13 @@
 	});
 
 	$.getJSON('/server/config.json?get',function (config) {
-	    $('#resolution,#framerate,#bitrate,#audioEncoder,#videoEncoder').children().removeAttr('selected').each(function (c) {
+	    $('#resolution,#framerate,#bitrate,#audioEncoder,#videoEncoder').children().each(function (c) {
 		if ($(this).val()===config.videoResolution || 
 		    $(this).val()===config.videoFramerate || 
 		    $(this).val()===config.videoBitrate || 
 		    $(this).val()===config.audioEncoder ||
 		    $(this).val()===config.videoEncoder ) {
+		    $(this).parent().children().removeAttr('selected');
 		    $(this).attr('selected','true');
 		}
 	    });	    
