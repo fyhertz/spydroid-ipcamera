@@ -1,7 +1,7 @@
 (function () {
 
     //var host = "192.168.0.105",
-    var host = /(.+):/.exec(window.location.host)[1],
+    var host = window.location.hostname,
 
     // Encapsulation of vlc plugin
     Stream = function (object,type,callbacks) {
@@ -396,6 +396,16 @@
 	    $.get('/server/sound.htm?name='+$(this).attr('id'));
 	});
 
+	$('#fullscreen').click(function () {
+	    videoPlugin[0].video.toggleFullscreen();
+	});
+
+	$(document).keyup(function(e) { 
+	    if (e.keyCode == 27) { 
+		videoPlugin[0].video.toggleFullscreen();
+	    }
+	});
+
 	$('#hide-tooltip').click(function () {
 	    $('body').width($('body').width() - $('#tooltip').width());
 	    $('#tooltip').hide();
@@ -436,7 +446,7 @@
 	// Verify that the screen is not turned off
 	testScreenState();
 
-	// Fetch the list of sounds on the phone
+	// Fetch the list of sounds available on the phone
 	loadSoundsList(); 
 
 	// Bind DOM events to the js API

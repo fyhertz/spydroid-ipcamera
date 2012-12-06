@@ -131,9 +131,11 @@ public class HttpServer extends BasicHttpServer{
 				
 				// Stop all streams if a Session already exists
 				if (session[id] != null) {
-					session[id].stopAll();
-					session[id].flush();
-					session[id] = null;
+					if (session[id].getRoutingScheme()=="unicast") {
+						session[id].stopAll();
+						session[id].flush();
+						session[id] = null;
+					}
 				}
 
 				// Create new Session

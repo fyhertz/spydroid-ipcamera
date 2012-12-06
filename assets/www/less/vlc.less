@@ -101,4 +101,18 @@
 	visibility: hidden;
     }
 
+    #fullscreen {
+	position: absolute;
+	z-index: 0;
+	bottom: -30px;
+	left: 20px;
+	.transition(color 0.3s);
+	padding: 5px 20px 4px 20px;
+	background: rgba(7, 63, 131, 0.2);
+    }
+    #fullscreen:hover {
+	cursor: pointer;
+	color: lighten(red,20%);
+    }
+    
 }

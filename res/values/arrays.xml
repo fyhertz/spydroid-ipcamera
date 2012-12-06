@@ -48,6 +48,8 @@
     
     <!-- BITRATE -->
     <string-array name="videoBitrateArray">
+        <item>5000 kbps</item>
+        <item>2000 kbps</item>
         <item>1000 kbps</item>
         <item>700 kbps</item>
         <item>500 kbps</item>

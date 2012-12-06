@@ -22,7 +22,6 @@ package net.majorkernelpanic.networking;
 
 import java.io.IOException;
 import java.net.InetAddress;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import net.majorkernelpanic.streaming.Stream;
 import net.majorkernelpanic.streaming.audio.AACStream;
@@ -68,10 +67,8 @@ public class Session {
 	private static int defaultCamera = CameraInfo.CAMERA_FACING_BACK;
 	
 	// Indicates if a session is already streaming audio or video
-	private static boolean cameraInUse = false;
-	private static Stream videoStream = null;
-	private static boolean micInUse = false;
-	private static Stream audioStream = null;
+	private static Session sessionUsingTheCamera = null;
+	private static Session sessionUsingTheMic = null;
 	
 	// The number of stream currently started on the phone
 	private static int startedStreamCount = 0;
@@ -121,6 +118,7 @@ public class Session {
 	
 	/** Set the Surface required by MediaRecorder to record video */
 	public static void setSurfaceHolder(SurfaceHolder sh) {
+		if (surfaceHolder == sh) return;
 		surfaceHolder = sh;
 		surfaceHolder.addCallback(new SurfaceHolder.Callback() {
 			public void surfaceChanged(SurfaceHolder holder, int format,
@@ -130,11 +128,8 @@ public class Session {
 			}
 			public void surfaceDestroyed(SurfaceHolder holder) {
 				Log.d(TAG,"Surface destroyed !!");
-				if (cameraInUse) {
-					cameraInUse = false;
-					videoStream.stop();
-					if ( audioStream==null || (audioStream != null && !audioStream.isStreaming()) )
-							handler.obtainMessage(Session.MESSAGE_STOP).sendToTarget();
+				if (sessionUsingTheCamera != null) {
+					sessionUsingTheCamera.stopAll();
 				}
 			}
 			
@@ -183,7 +178,14 @@ public class Session {
 	 */
 	public void addVideoTrack(int encoder, int camera, VideoQuality videoQuality, boolean flash) throws IllegalStateException, IOException {
 		synchronized (LOCK) {
-			if (cameraInUse) throw new IllegalStateException("Camera already in use by another client");
+			if (sessionUsingTheCamera != null) {
+				if (sessionUsingTheCamera.routingScheme==UNICAST) throw new IllegalStateException("Camera already in use by another client");
+				else {
+					streamList[0] = sessionUsingTheCamera.streamList[0];
+					sessionTrackCount++;
+					return;
+				}
+			}
 			Stream stream = null;
 			VideoQuality.merge(videoQuality,defaultVideoQuality);
 
@@ -206,8 +208,7 @@ public class Session {
 				stream.setTimeToLive(defaultTimeToLive);
 				stream.setDestination(destination, 5006);
 				streamList[0] = stream;
-				videoStream = stream;
-				cameraInUse = true;
+				sessionUsingTheCamera = this;
 				sessionTrackCount++;
 			}
 		}
@@ -226,7 +227,14 @@ public class Session {
 	 */
 	public void addAudioTrack(int encoder) throws IOException {
 		synchronized (LOCK) {
-			if (micInUse) throw new IllegalStateException("Microphone already in use by another client");
+			if (sessionUsingTheMic != null) {
+				if (sessionUsingTheMic.routingScheme==UNICAST) throw new IllegalStateException("Microphone already in use by another client");
+				else {
+					streamList[1] = sessionUsingTheMic.streamList[1];
+					sessionTrackCount++;
+					return;
+				}
+			}
 			Stream stream = null;
 
 			switch (encoder) {
@@ -249,8 +257,7 @@ public class Session {
 				stream.setTimeToLive(defaultTimeToLive);
 				stream.setDestination(destination, 5004);
 				streamList[1] = stream;
-				audioStream = stream;
-				micInUse = true;
+				sessionUsingTheMic = this;
 				sessionTrackCount++;
 			}
 		}
@@ -277,12 +284,8 @@ public class Session {
 			// Prevent two different sessions from using the same peripheral at the same time
 			for (int i=0;i<streamList.length;i++) {
 				if (streamList[i] != null) {
-					if (!streamList[i].isStreaming()) {
-						sessionDescriptor.append(streamList[i].generateSessionDescriptor());
-						sessionDescriptor.append("a=control:trackID="+i+"\r\n");
-					} else {
-						throw new IllegalStateException("Make sure all streams are stopped before calling getSessionDescriptor()");
-					}
+					sessionDescriptor.append(streamList[i].generateSessionDescriptor());
+					sessionDescriptor.append("a=control:trackID="+i+"\r\n");
 				}
 			}
 			return sessionDescriptor.toString();
@@ -309,12 +312,12 @@ public class Session {
 	
 	/** Indicates whether or not a camera is being used in a session **/
 	public static boolean isCameraInUse() {
-		return cameraInUse;
+		return sessionUsingTheCamera!=null;
 	}
 	
 	/** Indicates whether or not the microphone is being used in a session **/
 	public static boolean isMicrophoneInUse() {
-		return micInUse;
+		return sessionUsingTheMic!=null;
 	}
 	
 	public boolean trackExists(int id) {
@@ -375,8 +378,8 @@ public class Session {
 			for (int i=0;i<streamList.length;i++) {
 				if (streamList[i] != null) {
 					streamList[i].release();
-					if (i == 0) cameraInUse = false;
-					else micInUse = false;
+					if (i == 0) sessionUsingTheCamera = null;
+					else sessionUsingTheMic = null;
 				}
 			}
 		}

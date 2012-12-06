@@ -28,12 +28,10 @@ public class VideoQuality {
 	public VideoQuality() {}
 	
 	public VideoQuality(int resX, int resY, int frameRate, int bitRate) {
-		
 		this.frameRate = frameRate;
 		this.bitRate = bitRate;
 		this.resX = resX;
 		this.resY = resY;
-		merge(this,defaultVideoQualiy);
 	}
 	
 	public int frameRate = 0;
@@ -69,11 +67,11 @@ public class VideoQuality {
 		return quality;
 	}
 
-	public static void merge(VideoQuality videoQuality, VideoQuality defaultVideoQuality) {
-		if (videoQuality.resX==0) videoQuality.resX = defaultVideoQuality.resX;
-		if (videoQuality.resY==0) videoQuality.resY = defaultVideoQuality.resY;
-		if (videoQuality.frameRate==0) videoQuality.frameRate = defaultVideoQuality.frameRate;
-		if (videoQuality.bitRate==0) videoQuality.bitRate = defaultVideoQuality.bitRate;
+	public static void merge(VideoQuality videoQuality, VideoQuality withVideoQuality) {
+		if (videoQuality.resX==0) videoQuality.resX = withVideoQuality.resX;
+		if (videoQuality.resY==0) videoQuality.resY = withVideoQuality.resY;
+		if (videoQuality.frameRate==0) videoQuality.frameRate = withVideoQuality.frameRate;
+		if (videoQuality.bitRate==0) videoQuality.bitRate = withVideoQuality.bitRate;
 	}
 	
 }
