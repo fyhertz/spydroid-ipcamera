@@ -157,9 +157,7 @@ public abstract class MediaStream extends MediaRecorder implements Stream {
 		receiver = new LocalSocket();
 		receiver.connect( new LocalSocketAddress("net.majorkernelpanic.librtp-" + socketId ) );
 		receiver.setReceiveBufferSize(500000);
-		receiver.setSendBufferSize(500000);
 		sender = lss.accept();
-		sender.setReceiveBufferSize(500000);
 		sender.setSendBufferSize(500000); 
 	}
 	

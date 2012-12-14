@@ -32,6 +32,7 @@ public class H263Packetizer extends AbstractPacketizer implements Runnable {
 
 	public final static String TAG = "H263Packetizer";
 	private final static int MAXPACKETSIZE = 1400;
+	private Statistics stats = new Statistics();
 	
 	private Thread t;
 	
@@ -101,8 +102,9 @@ public class H263Packetizer extends AbstractPacketizer implements Runnable {
 				}
 				if (j>0) {
 					// We have found the end of the frame
-					//Log.d(TAG,"End of frame ! duration: "+duration);
-					ts+= duration; duration = 0;
+					stats.push(duration);
+					ts+= stats.average(); duration = 0;
+					//Log.d(TAG,"End of frame ! duration: "+stats.average());
 					// The last fragment of a frame has to be marked
 					socket.markNextPacket();
 					socket.send(j);
@@ -133,8 +135,7 @@ public class H263Packetizer extends AbstractPacketizer implements Runnable {
 		while (sum<length) {
 			len = is.read(buffer, offset+sum, length-sum);
 			if (len<0) {
-				Log.e(TAG,"End of stream");
-				return -1;
+				throw new IOException("End of stream");
 			}
 			else sum+=len;
 		}
@@ -151,6 +152,22 @@ public class H263Packetizer extends AbstractPacketizer implements Runnable {
 			is.read(buffer,rtphl,3);
 			if (buffer[rtphl] == 'd' && buffer[rtphl+1] == 'a' && buffer[rtphl+2] == 't') break;
 		}
+	}
+	
+	private static class Statistics {
+		
+		public final static int COUNT=50;
+		private float m = 0, q = 0;
+		
+		public void push(long duration) {
+			m = (m*q+duration)/(q+1);
+			if (q<COUNT) q++;
+		}
+
+		public long average() {
+			return (long)m;
+		}
+
 	}
 	
 }

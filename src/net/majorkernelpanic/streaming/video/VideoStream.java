@@ -31,6 +31,9 @@ import android.util.Log;
 import android.view.Surface;
 import android.view.SurfaceHolder;
 
+/** 
+ * Don't use this class directly
+ */
 public abstract class VideoStream extends MediaStream {
 
 	protected final static String TAG = "VideoStream";

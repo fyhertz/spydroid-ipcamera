@@ -75,7 +75,7 @@ public class AACStream extends MediaStream {
 	public AACStream() throws IOException {
 		super();
 		
-		AACADTSPacketizer packetizer = new AACADTSPacketizer(); 
+		AACADTSPacketizer packetizer = new AACADTSPacketizer();
 		this.packetizer = packetizer;
 		
 	}

@@ -64,7 +64,6 @@ public class RtpSocket {
 		
 		/* Byte 2,3        ->  Sequence Number                   */
 		/* Byte 4,5,6,7    ->  Timestamp                         */
-		
 		/* Byte 8,9,10,11  ->  Sync Source Identifier            */
 		setLong((ssrc=(new Random()).nextInt()),8,12);
 		
@@ -78,7 +77,7 @@ public class RtpSocket {
 	}
 	
 	public void setSSRC(int ssrc) {
-		this.ssrc= ssrc; 
+		this.ssrc = ssrc; 
 		setLong(ssrc,8,12);
 	}
 	

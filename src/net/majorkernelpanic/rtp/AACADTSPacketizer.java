@@ -88,7 +88,7 @@ public class AACADTSPacketizer extends AbstractPacketizer implements Runnable {
 							  (buffer[rtphl+5]&0xFF) >> 5 ;
 				frameLength -= (protection ? 7 : 9);
 				
-				Log.d(TAG,"frameLength: "+frameLength+" protection: "+protection);
+				//Log.d(TAG,"frameLength: "+frameLength+" protection: "+protection);
 				
 				// Read CRS if any
 				if (!protection) is.read(buffer,rtphl,2);
