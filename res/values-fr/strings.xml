@@ -21,5 +21,22 @@
     <string name="about2">N\'oublie pas de noter l\'appli ! C\'est super important, ta vie en dépend !</string>
     <string name="about3">Et si t\'es motivé tu peux même la liker sur facebook ? Allez vas-y, like l\'appli</string>
     <string name="about4">Amuse-toi bien !</string>
-    <string name="about5">Help me to translate Spydroid in other languages ! If you are willing to help me in this crazy quest, send me a mail :)</string>    
+    <string name="about5">Help me to translate Spydroid in other languages ! If you are willing to help me in this crazy quest, send me a mail :)</string>
+    <string name="settings0">La résolution actuelle est</string>
+    <string name="settings1">Le framerate actuel est</string>
+    <string name="settings2">Le bitrate actuel est</string>
+    <string name="settings3">Streaming du son</string>
+    <string name="settings4">Activer/Désactiver le streaming du son</string>
+    <string name="settings5">Encodage du son</string>
+    <string name="settings6">AAC nécessite ICS ou mieux</string>
+    <string name="settings7">Streaming de la vidéo</string>
+    <string name="settings8">Activer/Désactiver le streaming de la vidéo</string>
+    <string name="settings9">Encodage d ela vidéo</string>
+    <string name="settings10">Deux formats de compression sont disponibles: H.263 et H.264. Le H.263 a plus de chances de fonctionner.</string>
+    <string name="settings11">Résolution</string>
+    <string name="settings12">Framerate</string>
+    <string name="settings13">Bitrate</string>
+    <string name="settings14">Plus d\'options</string>
+    <string name="settings15">Notification</string>
+    <string name="settings16">Activer/Désactiver la notification</string>    
 </resources>

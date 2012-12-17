@@ -56,13 +56,13 @@ import android.os.Handler;
 import android.preference.PreferenceManager;
 import android.util.Log;
 
+/** 
+ * HTTP server of Spydroid
+ * Its document root is assets/www, it contains a little user-friendly website to control spydroid from a browser
+ * The default behavior of HttpServer is enhanced with 4 RequestHandlers, they are briefly described in this file
+ **/
 public class CustomHttpServer extends HttpServer {
 
-	/** 
-	 * HTTP server of Spydroid
-	 * Its document root is assets/www, it contains a little user-friendly website to control spydroid from a browser
-	 * The default behavior of HttpServer is enhanced with 4 RequestHandlers, they are briefly described in this file
-	 **/
 	public CustomHttpServer(int port, Context context, Handler handler) {
 		super(port, context, handler);
 		// Starts a sound on the phone
@@ -80,11 +80,8 @@ public class CustomHttpServer extends HttpServer {
 	 **/
 	static class StateRequestHandler implements HttpRequestHandler {
 		
-		private Context context;
 		
-		public StateRequestHandler(Context context) {
-			this.context = context;
-		}
+		public StateRequestHandler(Context context) {}
 		
 		@Override
 		public void handle(HttpRequest request, HttpResponse response,
@@ -98,9 +95,18 @@ public class CustomHttpServer extends HttpServer {
 					OutputStreamWriter writer = new OutputStreamWriter(outstream, "UTF-8");
 					writer.write("{");
 					if (SpydroidActivity.lastCaughtException!=null) {
+						
+						// Used to display the message on the user interface
 						String lastError = SpydroidActivity.lastCaughtException.getMessage();
+						
+						// Useful to display additional information to the user depending on the error
+						StackTraceElement[] stack = SpydroidActivity.lastCaughtException.getStackTrace();
+						StringBuilder builder = new StringBuilder(SpydroidActivity.lastCaughtException.getClass().getName()+" : "+lastError+"||");
+						for (int i=0;i<stack.length;i++) builder.append("at "+stack[i].getClassName()+"."+stack[i].getMethodName()+" ("+stack[i].getFileName()+":"+stack[i].getLineNumber()+")||");
+						
 						writer.write("\"lastError\":\""+(lastError!=null?lastError:"unknown error")+"\",");
-						writer.write("\"lastStackTrace\":\""+SpydroidActivity.lastCaughtException.getStackTrace().toString()+"\",");
+						writer.write("\"lastStackTrace\":\""+builder.toString()+"\",");
+						
 					}
 					writer.write("\"cameraInUse\":\""+Session.isCameraInUse()+"\",");
 					writer.write("\"microphoneInUse\":\""+Session.isMicrophoneInUse()+"\",");
@@ -125,8 +131,8 @@ public class CustomHttpServer extends HttpServer {
 	}	
 	
 	/** 
-	 * Send or set the configuration of spydroid  (stream encoder, resolution, framerate)
-	 * In other words, settings are persistent in the web interface 
+	 * Send or set the configuration of spydroid  (audio & video encoders, resolution, framerate)
+	 * In other words, if the user modifies some settings in the web interface, the modifications are saved on the phone
 	 **/
 	static class ConfigRequestHandler implements HttpRequestHandler {
 		
@@ -157,16 +163,16 @@ public class CustomHttpServer extends HttpServer {
 							NameValuePair param = it.next();
 							if (param.getName().equals("h263") || param.getName().equals("h264")) {
 								editor.putBoolean("stream_video", true);
-								Session.defaultVideoQuality = VideoQuality.parseQuality(param.getValue());
-								editor.putInt("video_resX", Session.defaultVideoQuality.resX);
-								editor.putInt("video_resY", Session.defaultVideoQuality.resY);
-								editor.putString("video_framerate", String.valueOf(Session.defaultVideoQuality.frameRate));
-								editor.putString("video_bitrate", String.valueOf(Session.defaultVideoQuality.bitRate/1000));
+								SpydroidActivity.defaultVideoQuality = VideoQuality.parseQuality(param.getValue());
+								editor.putInt("video_resX", SpydroidActivity.defaultVideoQuality.resX);
+								editor.putInt("video_resY", SpydroidActivity.defaultVideoQuality.resY);
+								editor.putString("video_framerate", String.valueOf(SpydroidActivity.defaultVideoQuality.framerate));
+								editor.putString("video_bitrate", String.valueOf(SpydroidActivity.defaultVideoQuality.bitrate/1000));
 								editor.putString("video_encoder", param.getName().equals("h263")?"2":"1");
 							}
 							if (param.getName().equals("amr") || param.getName().equals("aac")) {
 								editor.putBoolean("stream_audio", true);
-								Session.defaultVideoQuality = VideoQuality.parseQuality(param.getValue());
+								SpydroidActivity.defaultVideoQuality = VideoQuality.parseQuality(param.getValue());
 								editor.putString("audio_encoder", param.getName().equals("amr")?"3":"5");
 							}
 						}	
@@ -180,9 +186,9 @@ public class CustomHttpServer extends HttpServer {
 								"\"audioEncoder\":\"" + (Integer.parseInt(settings.getString("audio_encoder", "3"))==3?"AMR-NB":"AAC") + "\"," +
 								"\"streamVideo\":" + settings.getBoolean("stream_video", true) + "," +
 								"\"videoEncoder\":\"" + (Integer.parseInt(settings.getString("video_encoder", "2"))==2?"H.263":"H.264") + "\"," +
-								"\"videoResolution\":\"" + settings.getInt("video_resX", Session.defaultVideoQuality.resX) + "x" + settings.getInt("video_resY", Session.defaultVideoQuality.resY) + "\"," +
-								"\"videoFramerate\":\"" + settings.getString("video_framerate", String.valueOf(Session.defaultVideoQuality.frameRate)) + " fps\"," +
-								"\"videoBitrate\":\"" + settings.getString("video_bitrate", String.valueOf(Session.defaultVideoQuality.bitRate/1000)) + " kbps\"}";
+								"\"videoResolution\":\"" + settings.getInt("video_resX", SpydroidActivity.defaultVideoQuality.resX) + "x" + settings.getInt("video_resY", SpydroidActivity.defaultVideoQuality.resY) + "\"," +
+								"\"videoFramerate\":\"" + settings.getString("video_framerate", String.valueOf(SpydroidActivity.defaultVideoQuality.framerate)) + " fps\"," +
+								"\"videoBitrate\":\"" + settings.getString("video_bitrate", String.valueOf(SpydroidActivity.defaultVideoQuality.bitrate/1000)) + " kbps\"}";
 					}
 				} catch (Exception e) {
 					Log.e(TAG,"Error !");
@@ -209,12 +215,11 @@ public class CustomHttpServer extends HttpServer {
 	/** Send an array with all available sounds, and a boolean that indicates if the app is on the foreground **/
 	static class SoundsListRequestHandler implements HttpRequestHandler {
 
-		private Handler handler;
 		private Context context;
 		private Field[] raws = R.raw.class.getFields();
 		
 		public SoundsListRequestHandler(Handler handler, Context context) {
-			this.handler = handler;
+			//this.handler = handler;
 			this.context = context;
 		}
 		
@@ -249,13 +254,12 @@ public class CustomHttpServer extends HttpServer {
 	/**	Play a sound on the phone **/
 	static class SoundRequestHandler implements HttpRequestHandler {
 
-		private Handler handler;
 		private Context context;
 		private SoundPool soundPool = new SoundPool(4,AudioManager.STREAM_MUSIC,0);
 		private Field[] raws = R.raw.class.getFields();
 		
 		public SoundRequestHandler(Context context, Handler handler) {
-			this.handler = handler;
+			//this.handler = handler;
 			this.context = context;
 			
 			soundPool.setOnLoadCompleteListener(new OnLoadCompleteListener() {
@@ -271,7 +275,6 @@ public class CustomHttpServer extends HttpServer {
 			final String uri = URLDecoder.decode(request.getRequestLine().getUri());
 			final List<NameValuePair> params = URLEncodedUtils.parse(URI.create(uri),"UTF-8");
 			final String[] content = {"Error"};
-			int soundID;
 			
 			response.setStatusCode(HttpStatus.SC_NOT_FOUND);
 
@@ -283,7 +286,7 @@ public class CustomHttpServer extends HttpServer {
 	        			if (param.getName().equals("name")) {
 	        				for(int i=0; i < raws.length; i++) {
 	        					if (raws[i].getName().equals(param.getValue())) {
-	        						soundID = soundPool.load(context, raws[i].getInt(null), 0);
+	        						soundPool.load(context, raws[i].getInt(null), 0);
 	        						response.setStatusCode(HttpStatus.SC_OK);
 	        						content[0] = "OK";
 	        					}

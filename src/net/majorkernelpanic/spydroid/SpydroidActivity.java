@@ -45,6 +45,7 @@ import android.os.Message;
 import android.os.PowerManager;
 import android.preference.PreferenceManager;
 import android.support.v4.app.NotificationCompat;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -66,9 +67,9 @@ public class SpydroidActivity extends Activity implements OnSharedPreferenceChan
     
     static final public String TAG = "SpydroidActivity";
     
-    private CustomHttpServer httpServer = null;
+    static private CustomHttpServer httpServer = null;
+    static private RtspServer rtspServer = null;
     private PowerManager.WakeLock wl;
-    private RtspServer rtspServer = null;
     private SurfaceHolder holder;
     private SurfaceView camera;
     private TextView line1, line2, version, signWifi, signStreaming;
@@ -76,6 +77,15 @@ public class SpydroidActivity extends Activity implements OnSharedPreferenceChan
     private LinearLayout signInformation;
     private Context context;
     private Animation pulseAnimation;
+    
+    /** Default quality of video streams **/
+	public static VideoQuality defaultVideoQuality = new VideoQuality(640,480,15,500000);
+	
+	/** By default AMR is the audio encoder **/
+	public static int defaultAudioEncoder = Session.AUDIO_AMRNB;
+	
+	/** By default H.263 is the video encoder **/
+	public static int defaultVideoEncoder = Session.VIDEO_H263;
 
     /** The HttpServer will use those variables to send reports about the state of the app to the http interface **/
     public static boolean activityPaused = true, notificationEnabled = true;
@@ -100,7 +110,6 @@ public class SpydroidActivity extends Activity implements OnSharedPreferenceChan
         pulseAnimation = AnimationUtils.loadAnimation(this, R.anim.pulse);
         
         SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(this);
-        H264Stream.setPreferences(settings);
         
         settings.registerOnSharedPreferenceChangeListener(this);
        	
@@ -117,17 +126,29 @@ public class SpydroidActivity extends Activity implements OnSharedPreferenceChan
 			version.setText("v???");
 		}
         
+        // On android 3.* AAC is not supported so we set the default encoder to AMR-NB, on android 4.* AAC is the default encoder
+        defaultAudioEncoder = (Integer.parseInt(android.os.Build.VERSION.SDK)<14) ? Session.AUDIO_AMRNB : Session.AUDIO_AAC;
+        
         Session.setSurfaceHolder(holder);
         Session.setHandler(handler);
-        Session.setDefaultAudioEncoder(settings.getBoolean("stream_audio", false)?Integer.parseInt(settings.getString("audio_encoder", "3")):0);
+        Session.setDefaultAudioEncoder(settings.getBoolean("stream_audio", false)?Integer.parseInt(settings.getString("audio_encoder", String.valueOf(defaultAudioEncoder))):0);
         Session.setDefaultVideoEncoder(settings.getBoolean("stream_video", true)?Integer.parseInt(settings.getString("video_encoder", "2")):0);
-        Session.setDefaultVideoQuality(new VideoQuality(settings.getInt("video_resX", 0), 
-        		settings.getInt("video_resY", 0), 
-        		Integer.parseInt(settings.getString("video_framerate", "0")), 
-        		Integer.parseInt(settings.getString("video_bitrate", "0"))*1000));
+        H264Stream.setPreferences(settings);
         
-        rtspServer = new RtspServer(8086, handler);
-        httpServer = new CustomHttpServer(8080, this.getApplicationContext(), handler);
+        // Read video quality settings from the preferences 
+        defaultVideoQuality = VideoQuality.merge(
+        		new VideoQuality(
+        				settings.getInt("video_resX", 0),
+        				settings.getInt("video_resY", 0), 
+        				Integer.parseInt(settings.getString("video_framerate", "0")), 
+        				Integer.parseInt(settings.getString("video_bitrate", "0"))*1000
+        		),
+        		defaultVideoQuality);
+
+        Session.setDefaultVideoQuality(defaultVideoQuality);
+
+        if (rtspServer == null) rtspServer = new RtspServer(8086, handler);
+        if (httpServer == null) httpServer = new CustomHttpServer(8080, this.getApplicationContext(), handler);
 
         buttonSettings.setOnClickListener(new OnClickListener() {
 			public void onClick(View v) {
@@ -157,23 +178,29 @@ public class SpydroidActivity extends Activity implements OnSharedPreferenceChan
     }
     
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
-    	if (key.equals("video_resX")) {
-    		Session.defaultVideoQuality.resX = sharedPreferences.getInt("video_resX", 0);
-    	}
-    	else if (key.equals("video_resY"))  {
-    		Session.defaultVideoQuality.resY = sharedPreferences.getInt("video_resY", 0);
+    	if (key.equals("video_resX") || key.equals("video_resY")) {
+    		defaultVideoQuality.resX = sharedPreferences.getInt("video_resX", 0);
+    		defaultVideoQuality.resY = sharedPreferences.getInt("video_resY", 0);
     	}
     	else if (key.equals("video_framerate")) {
-    		Session.defaultVideoQuality.frameRate = Integer.parseInt(sharedPreferences.getString("video_framerate", "0"));
+    		defaultVideoQuality.framerate = Integer.parseInt(sharedPreferences.getString("video_framerate", "0"));
     	}
     	else if (key.equals("video_bitrate")) {
-    		Session.defaultVideoQuality.bitRate = Integer.parseInt(sharedPreferences.getString("video_bitrate", "0"))*1000;
+    		defaultVideoQuality.bitrate = Integer.parseInt(sharedPreferences.getString("video_bitrate", "0"))*1000;
     	}
-    	else if (key.equals("stream_audio") || key.equals("audio_encoder")) { 
-    		Session.setDefaultAudioEncoder(sharedPreferences.getBoolean("stream_audio", true)?Integer.parseInt(sharedPreferences.getString("audio_encoder", "3")):0);
+    	else if (key.equals("stream_audio")) {
+    		if (!sharedPreferences.getBoolean("stream_audio", true)) Session.setDefaultAudioEncoder(0);
     	}
-    	else if (key.equals("stream_video") || key.equals("video_encoder")) {
-    		Session.setDefaultVideoEncoder(sharedPreferences.getBoolean("stream_video", true)?Integer.parseInt(sharedPreferences.getString("video_encoder", "2")):0);
+    	else if (key.equals("audio_encoder")) { 
+    		defaultAudioEncoder = Integer.parseInt(sharedPreferences.getString("audio_encoder", "0"));
+    		Session.setDefaultAudioEncoder( defaultAudioEncoder );
+    	}
+    	else if (key.equals("stream_video")) {
+    		if (!sharedPreferences.getBoolean("stream_video", true)) Session.setDefaultVideoEncoder(0);
+    	}
+    	else if (key.equals("video_encoder")) {
+    		defaultVideoEncoder = Integer.parseInt(sharedPreferences.getString("video_encoder", "0"));
+    		Session.setDefaultVideoEncoder( defaultVideoEncoder );
     	}
     	else if (key.equals("enable_http")) {
     		if (sharedPreferences.getBoolean("enable_http", true)) {
@@ -342,7 +369,7 @@ public class SpydroidActivity extends Activity implements OnSharedPreferenceChan
     			log(e1.getMessage()!=null?e1.getMessage():"An error occurred !");
     			break;
     		case RtspServer.MESSAGE_LOG:
-    			log((String)msg.obj);
+    			//log((String)msg.obj);
     			break;
     		case HttpServer.MESSAGE_ERROR:
     			Exception e2 = (Exception)msg.obj;

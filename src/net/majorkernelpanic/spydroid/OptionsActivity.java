@@ -23,14 +23,14 @@ package net.majorkernelpanic.spydroid;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import net.majorkernelpanic.networking.Session;
-
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
 import android.os.Bundle;
+import android.preference.ListPreference;
 import android.preference.Preference;
 import android.preference.PreferenceActivity;
 import android.preference.PreferenceManager;
+import android.util.Log;
 
 public class OptionsActivity extends PreferenceActivity {
 
@@ -41,25 +41,29 @@ public class OptionsActivity extends PreferenceActivity {
         
         final SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(this);
         final Preference videoEnabled = findPreference("stream_video");
-        final Preference videoEncoder = findPreference("video_encoder");
-        final Preference videoResolution = findPreference("video_resolution");
-        final Preference videoBitrate = findPreference("video_bitrate");
-        final Preference videoFramerate = findPreference("video_framerate");
         final Preference audioEnabled = findPreference("stream_audio");
-        final Preference audioEncoder = findPreference("audio_encoder");
+        final ListPreference audioEncoder = (ListPreference) findPreference("audio_encoder");
+        final ListPreference videoEncoder = (ListPreference) findPreference("video_encoder");
+        final ListPreference videoResolution = (ListPreference) findPreference("video_resolution");
+        final ListPreference videoBitrate = (ListPreference) findPreference("video_bitrate");
+        final ListPreference videoFramerate = (ListPreference) findPreference("video_framerate");
         
         boolean videoState = settings.getBoolean("stream_video", true);
         videoEncoder.setEnabled(videoState);
 		videoResolution.setEnabled(videoState);
 		videoBitrate.setEnabled(videoState);
 		videoFramerate.setEnabled(videoState);        
-        audioEncoder.setEnabled(settings.getBoolean("stream_audio", true));
+		audioEncoder.setEnabled(settings.getBoolean("stream_audio", true));
         
-        videoResolution.setSummary("Current resolution is "+
-        		settings.getInt("video_resX", Session.defaultVideoQuality.resX)+"x"+
-        		settings.getInt("video_resY", Session.defaultVideoQuality.resY)+"px");
-        videoFramerate.setSummary("Current framerate is "+Integer.parseInt(settings.getString("video_framerate", "15"))+"fps");
-        videoBitrate.setSummary("Current bitrate is "+Integer.parseInt(settings.getString("video_bitrate", "500"))+"kbps");
+        videoEncoder.setValue(String.valueOf(SpydroidActivity.defaultVideoEncoder));
+        audioEncoder.setValue(String.valueOf(SpydroidActivity.defaultAudioEncoder));
+        videoFramerate.setValue(String.valueOf(SpydroidActivity.defaultVideoQuality.framerate));
+        videoBitrate.setValue(String.valueOf(SpydroidActivity.defaultVideoQuality.bitrate/1000));
+        videoResolution.setValue(SpydroidActivity.defaultVideoQuality.resX+"x"+SpydroidActivity.defaultVideoQuality.resY);
+        
+        videoResolution.setSummary(getString(R.string.settings0)+" "+videoResolution.getValue()+"px");
+        videoFramerate.setSummary(getString(R.string.settings1)+" "+videoFramerate.getValue()+"fps");
+        videoBitrate.setSummary(getString(R.string.settings2)+" "+videoBitrate.getValue()+"kbps");
         
         videoResolution.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
         	public boolean onPreferenceChange(Preference preference, Object newValue) {
@@ -70,21 +74,21 @@ public class OptionsActivity extends PreferenceActivity {
         		editor.putInt("video_resX", Integer.parseInt(matcher.group(1)));
         		editor.putInt("video_resY", Integer.parseInt(matcher.group(2)));
         		editor.commit();
-        		videoResolution.setSummary("Current resolution is "+(String)newValue+"px");
+        		videoResolution.setSummary(getString(R.string.settings0)+" "+(String)newValue+"px");
         		return true;
 			}
         });
         
         videoFramerate.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
         	public boolean onPreferenceChange(Preference preference, Object newValue) {
-        		videoFramerate.setSummary("Current framerate is "+(String)newValue+"fps");
+        		videoFramerate.setSummary(getString(R.string.settings1)+" "+(String)newValue+"fps");
         		return true;
 			}
         });
 
         videoBitrate.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
         	public boolean onPreferenceChange(Preference preference, Object newValue) {
-        		videoBitrate.setSummary("Current bitrate is "+(String)newValue+"kbps");
+        		videoBitrate.setSummary(getString(R.string.settings2)+" "+(String)newValue+"kbps");
         		return true;
 			}
         });

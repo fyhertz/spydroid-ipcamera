@@ -130,7 +130,7 @@ public class H264Stream extends VideoStream {
 		// Save test result
 		if (settings != null) {
 			Editor editor = settings.edit();
-			editor.putString(quality.frameRate+","+quality.resX+","+quality.resY, mp4Config.getProfileLevel()+","+mp4Config.getB64SPS()+","+mp4Config.getB64PPS());
+			editor.putString(quality.framerate+","+quality.resX+","+quality.resY, mp4Config.getProfileLevel()+","+mp4Config.getB64SPS()+","+mp4Config.getB64PPS());
 			editor.commit();
 		}
 		return mp4Config;
@@ -141,13 +141,13 @@ public class H264Stream extends VideoStream {
 		String profile,sps,pps;
 		
 		if (settings != null) {
-			if (!settings.contains(quality.frameRate+","+quality.resX+","+quality.resY)) {
+			if (!settings.contains(quality.framerate+","+quality.resX+","+quality.resY)) {
 				testH264();
 				profile = mp4Config.getProfileLevel();
 				pps = mp4Config.getB64PPS();
 				sps = mp4Config.getB64SPS();
 			} else {
-				String[] s = settings.getString(quality.frameRate+","+quality.resX+","+quality.resY, "").split(",");
+				String[] s = settings.getString(quality.framerate+","+quality.resX+","+quality.resY, "").split(",");
 				profile = s[0];
 				sps = s[1];
 				pps = s[2];

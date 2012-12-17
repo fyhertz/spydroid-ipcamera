@@ -105,15 +105,13 @@ public class BasicHttpServer {
 	public static final String TAG = "HttpServer";
 	
 	private final int port;
-	private final AssetManager assetManager;
 	private RequestListenerThread requestListenerThread;
     private HttpRequestHandlerRegistry registry = new HttpRequestHandlerRegistry();
-	private boolean firstStart = true;
 	private boolean running = false;
     
     public BasicHttpServer(final int port, final AssetManager assetManager) {
         this.port = port;
-        this.assetManager = assetManager;
+        addRequestHandler("*", new HttpFileHandler(assetManager));
     }
 
     /** 
@@ -128,11 +126,7 @@ public class BasicHttpServer {
     
     public void start() throws IOException {
     	if (running) return;
-    	if (firstStart) {
-    		registry.register("*", new HttpFileHandler(assetManager));
-    		firstStart = false;
-    	}
-    	requestListenerThread = new RequestListenerThread(port, assetManager, registry);
+    	requestListenerThread = new RequestListenerThread(port, registry);
     	requestListenerThread.start();
     	running = true;
     }
@@ -141,6 +135,7 @@ public class BasicHttpServer {
     	if (!running) return;
         try {
         	requestListenerThread.serversocket.close();
+        	requestListenerThread = null;
 		} catch (Exception e) {
 			Log.e(TAG,"Error when close was called on serversocket: "+e.getMessage());
 		}
@@ -153,7 +148,7 @@ public class BasicHttpServer {
         private final HttpParams params; 
         private final HttpService httpService;
         
-        public RequestListenerThread(int port, final AssetManager assetManager, HttpRequestHandlerRegistry registry) throws IOException {
+        public RequestListenerThread(int port, HttpRequestHandlerRegistry registry) throws IOException {
             this.serversocket = new ServerSocket(port);
             this.params = new BasicHttpParams();
             this.params

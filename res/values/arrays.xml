@@ -61,6 +61,8 @@
     </string-array>
 
     <string-array name="videoBitrateValues">
+        <item>5000</item>
+        <item>2000</item>
         <item>1000</item>
         <item>700</item>
         <item>500</item>

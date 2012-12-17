@@ -196,12 +196,12 @@
 	$('#tooltip #'+title).show();
     },
 
-    videoStream, videoPlugin, audioStream, oldVideoState = 'idle',oldAudioState = 'idle', lastError,
+    videoStream, videoPlugin, audioStream, oldVideoState = 'idle',oldAudioState = 'idle', lastError = 0,
 
     updateStatus = function () {
 	var status = $('#status'), button = $('#connect>div>h1'), cover = $('#vlc-container #upper-layer'), error;
 
-	if (videoStream.getState()===oldVideoState && audioStream.getState()===oldAudioState) return;
+	if (videoStream.getState()===oldVideoState && audioStream.getState()===oldAudioState && lastError===0) return;
 
 	// STATUS
 	if (videoStream.getState()==='starting' || videoStream.getState()==='restarting' || 
@@ -221,10 +221,14 @@
 	} else button.text(__('Disconnect ?!'));
 
 	// WINDOW
-	if (videoStream.getState()==='error' || audioStream.getState()==='error') {
+	if (lastError!==0) {
 	    videoPlugin.css('visibility','hidden'); 
-	    error = __(lastError!==undefined?lastError:'Connection failed !');
-	    cover.html('<div id="wrapper"><h1>An error occurred :(</h1><p>'+error+'</p></div>');
+	    if (lastError===1) error =  __('Retrieving error message...');
+	    else if (lastError===2) error =  __('Connection timed out !');
+	    else if (lastError===0) error = "";
+	    else error = lastError;
+	    lastError = 0;
+	    cover.html('<div id="wrapper"><h1>'+__('An error occurred')+' :(</h1><p>'+error+'</p></div>');
 	} else if (videoStream.getState()==='restarting' || audioStream.getState()==='restarting') {
 	    videoPlugin.css('visibility','hidden'); 
 	    cover.css('background','black').html('<div id="mask"></div><div id="wrapper"><h1>'+__('UPDATING SETTINGS')+'</h1></div>').show();
@@ -243,21 +247,32 @@
 	    }
 	}
 
-
 	oldVideoState = videoStream.getState();
 	oldAudioState = audioStream.getState();
 
     },
 
+    // Called when an error occurs in spydroid
     onError = function (type) {
-	lastError=undefined;
-	$.getJSON('server/state.json?clear',function (json) {
-	    lastError = json.lastError;
-	    if (json.activityPaused==='0' && type==='video') {
-		screenState=0;
-		testScreenState();
-	    }
-	});
+	lastError = 1;
+	$.ajax({url: 'server/state.json?clear',
+		success: function (json) {
+		    lastError = json.lastError;
+		    if (json.lastStackTrace.match("RuntimeException.+MediaStream.start")) {
+			// If a start failed happened we display additional information
+			lastError += "<br /><br />"+__("This generally happens when you are trying to use settings that are not supported by your phone.");
+			$("#quality").click();
+		    }
+		    if (json.activityPaused==='0' && type==='video') {
+			screenState=0;
+			testScreenState();
+		    }
+		},
+		error: function () {
+		    lastError = 2;
+		},
+		timeout: 1500
+	       });
 	if (videoStream.getState()!=='error') videoStream.stop();
 	if (audioStream.getState()!=='error') audioStream.stop();
     },

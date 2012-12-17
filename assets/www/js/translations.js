@@ -35,7 +35,16 @@
 	    31:"Streaming video but not audio",
 	    32:"Streaming audio but not video",
 	    33:"Streaming audio and video",
-	    34:"Trying to connect..."
+	    34:"Trying to connect...",
+	    35:"Stream sound",
+	    36:"Stream video",
+	    37:"Fullscreen",
+	    38:"Encoder",
+	    39:"Resolution",
+	    40:"Cache size",
+	    41:"This generally happens when you are trying to use settings that are not supported by your phone.",
+	    42:"Retrieving error message...",
+	    43:"An error occurred"
 	},
 
 	fr: {
@@ -72,7 +81,16 @@
 	    31:"Streaming de la vidéo",
 	    32:"Streaming de l'audio",
 	    33:"Streaming de l'audio et de la vidéo",
-	    34:"Connexion en cours..."
+	    34:"Connexion en cours...",
+	    35:"Streaming du son",
+	    36:"Streaming de la vidéo",
+	    37:"Plein écran",
+	    38:"Encodeur",
+	    39:"Résolution",
+	    40:"Taille cache",
+	    41:"En général, cette erreur se produit quand les paramètres sélectionnés ne sont pas compatibles avec le smartphone.",
+	    42:"Attente du message d'erreur...",
+	    43:"Une erreur s'est produite"
 	},
 
 	de : {
@@ -107,7 +125,7 @@
     };
 
     var lang = window.navigator.userLanguage || window.navigator.language;
-    //var lang = "de";
+    //var lang = "fr";
 
     var __ = function (text) {
 	var x,y=0,z;

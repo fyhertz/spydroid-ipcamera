@@ -62,8 +62,8 @@ public class Session {
 	public final static int MULTICAST = 0x02;
 	
 	// Default configuration
-	public static VideoQuality defaultVideoQuality = VideoQuality.defaultVideoQualiy.clone();
-	private static int defaultVideoEncoder = VIDEO_H264, defaultAudioEncoder = AUDIO_AMRNB;
+	private static VideoQuality defaultVideoQuality = VideoQuality.defaultVideoQualiy.clone();
+	private static int defaultVideoEncoder = VIDEO_H263, defaultAudioEncoder = AUDIO_AMRNB;
 	private static int defaultCamera = CameraInfo.CAMERA_FACING_BACK;
 	
 	// Indicates if a session is already streaming audio or video
@@ -201,7 +201,7 @@ public class Session {
 			}
 
 			if (stream != null) {
-				Log.d(TAG,"Quality is: "+videoQuality.resX+"x"+videoQuality.resY+"px "+videoQuality.frameRate+"fps, "+videoQuality.bitRate+"bps");
+				Log.d(TAG,"Quality is: "+videoQuality.resX+"x"+videoQuality.resY+"px "+videoQuality.framerate+"fps, "+videoQuality.bitrate+"bps");
 				((VideoStream) stream).setVideoQuality(videoQuality);
 				((VideoStream) stream).setPreviewDisplay(surfaceHolder.getSurface());
 				((VideoStream) stream).setFlashState(flash);

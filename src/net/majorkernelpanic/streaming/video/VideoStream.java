@@ -96,9 +96,9 @@ public abstract class VideoStream extends MediaStream {
 	 * setVideoQuality() may be more convenient
 	 * @param rate Framerate of the stream
 	 */	
-	public void setVideoFrameRate(int rate) {
-		if (quality.frameRate != rate) {
-			quality.frameRate = rate;
+	public void setVideoFramerate(int rate) {
+		if (quality.framerate != rate) {
+			quality.framerate = rate;
 			qualityHasChanged = true;
 		}
 	}
@@ -107,11 +107,11 @@ public abstract class VideoStream extends MediaStream {
 	 * Modifies the bitrate of the stream. You can call this method at any time 
 	 * and changes will take effect next time you call prepare()
 	 * setVideoQuality() may be more convenient
-	 * @param bitRate Bitrate of the stream in bit per second
+	 * @param bitrate Bitrate of the stream in bit per second
 	 */	
-	public void setVideoEncodingBitRate(int bitRate) {
-		if (quality.bitRate != bitRate) {
-			quality.bitRate = bitRate;
+	public void setVideoEncodingBitrate(int bitrate) {
+		if (quality.bitrate != bitrate) {
+			quality.bitrate = bitrate;
 			qualityHasChanged = true;
 		}
 	}
@@ -217,8 +217,8 @@ public abstract class VideoStream extends MediaStream {
 			super.setVideoEncoder(videoEncoder);
 			super.setPreviewDisplay(surface);
 			super.setVideoSize(quality.resX,quality.resY);
-			super.setVideoFrameRate(quality.frameRate);
-			super.setVideoEncodingBitRate(quality.bitRate);
+			super.setVideoFrameRate(quality.framerate);
+			super.setVideoEncodingBitRate(quality.bitrate);
 
 			super.prepare();
 

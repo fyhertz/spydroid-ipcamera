@@ -3,72 +3,67 @@
         xmlns:android="http://schemas.android.com/apk/res/android">
 
     <PreferenceCategory
-            android:title="Sound streaming">
+            android:title="@string/settings3">
 
         <CheckBoxPreference
                 android:key="stream_audio"
-                android:title="Sound streaming"
+                android:title="@string/settings3"
                 android:defaultValue="false"
-                android:summary="Enable/Disable audio streaming" />
+                android:summary="@string/settings4" />
 
         <ListPreference
-            android:title="Audio encoder"
+            android:title="@string/settings5"
             android:key="audio_encoder"
-            android:defaultValue="3"
-            android:summary="Note that AAC streaming is experimental and requieres ICS"
+            android:summary="@string/settings6"
             android:entries="@array/audioEncoderArray"
             android:entryValues="@array/audioEncoderValues" />
         
     </PreferenceCategory>
     
         <PreferenceCategory
-            android:title="Video streaming">
+            android:title="@string/settings7">
 
         <CheckBoxPreference
             android:key="stream_video"
-            android:title="Video streaming"
+            android:title="@string/settings7"
             android:defaultValue="true"
-            android:summary="Enable/Disable video streaming" />
+            android:summary="@string/settings8" />
             
         <ListPreference
-            android:title="Video encoder"
+            android:title="@string/settings9"
             android:key="video_encoder"
-            android:defaultValue="1"
-            android:summary="Two video compression algorithms are available: H.263 and H.264"
+            android:summary="@string/settings10"
             android:entries="@array/videoEncoderArray"
             android:entryValues="@array/videoEncoderValues" />
         
         <ListPreference
-            android:title="Resolution"
+            android:title="@string/settings11"
             android:key="video_resolution"
-            android:defaultValue="640x480"
             android:entries="@array/videoResolutionArray"
             android:entryValues="@array/videoResolutionArray" />
                 
         <ListPreference
-            android:title="Framerate"
+            android:title="@string/settings12"
             android:key="video_framerate"
-            android:defaultValue="15"
             android:entries="@array/videoFramerateArray"
             android:entryValues="@array/videoFramerateValues" />
         
         <ListPreference
-            android:title="Bitrate"
+            android:title="@string/settings13"
             android:key="video_bitrate"
-            android:defaultValue="500"
             android:entries="@array/videoBitrateArray"
             android:entryValues="@array/videoBitrateValues" />
 
     </PreferenceCategory>
         
 	<PreferenceCategory 
-	    android:title="More options">
+	    android:title="@string/settings14">
 	    
 		<CheckBoxPreference
 	        android:key="notification_enabled"
-	        android:title="Notification"
+	        android:title="@string/settings15"
 	        android:defaultValue="true"
-	        android:summary="Enable/Disable the notification" />
+	        android:summary="@string/settings16" />
                     
 	</PreferenceCategory>                    
         
