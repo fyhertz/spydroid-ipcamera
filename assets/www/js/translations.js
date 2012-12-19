@@ -93,12 +93,57 @@
 	    43:"Une erreur s'est produite"
 	},
 
+	ru: {
+	    1:"Спасибо",
+	    2:"Вернуться",
+	    3:"Изменить настройки качества",
+	    4:"Переключатель вспышки",
+	    5:"Нажмите здесь, чтобы включить или выключить вспышку",
+	    6:"Проиграть звук на телефоне",
+	    7:"Подключиться !!",
+	    8:"Отключиться ?!",
+	    9:"СОСТОЯНИЕ",
+	    10:"НЕТ ПОДКЛЮЧЕНИЯ",
+	    11:"ОШИБКА :(",
+	    12:"ПОДКЛЮЧЕНИЕ",
+	    13:"ОБНОВЛЕНИЕ НАСТРОЕК",
+	    14:"ПОДКЛЮЧЕНО",
+	    15:"Показать поясняющие советы",
+	    16:"Спрятать эти советы",
+	    17:"Эти кнопки будут проигрывать звуки на вашем телефоне...",
+	    18:"Используйте их, чтобы удивить вашу жертву.",
+	    19:"Или вы можете удивить свою жертву!",
+	    20:"Это переключатель режима подсветки на передней части вашего телефона, так что даже в самой кромешной тьме, вы не будете слепы ...",
+	    21:"Если поток прерывается, попробуйте уменьшить битрейт или увеличив размер кэша.",
+	    22:"Если топоковое видео не работает совсем, попробуйте сжатие Н.263",
+	    23:"Алгоритм сжатия H.264, является более эффективным, но может не работать на вашем телефоне ...",
+	    24:"Вначале Вам необходимо установить VLC !",
+	    25:"При установке убедитесь в наличии плагина для firefox !",
+	    26:"Закрыть",
+	    27:"Вам надо отойти от вашего смартфона.",
+	    28:"Фронтальная камера",
+	    29:"Камера с обратной стороны",
+	    30:"Переключиться на другую камеру",
+	    31:"Передача видео без звука",
+	    32:"Передача звука без видео",
+	    33:"Передача звука и видео",
+	    34:"Пытаемся подключится",
+	    35:"Аудио поток",
+	    36:"Видео поток",
+	    37:"На весь экран",
+	    38:"Кодек",
+	    39:"Разрешение",
+	    40:"Размер кеша",
+	    41:"Как правило, это происходит, когда вы пытаетесь использовать настройки, не поддерживаемые вашим телефоном.",
+	    42:"Получение сообщения об ошибке ..."
+	},
+
 	de : {
 	    1:"Apropos",
 	    2:"Zurück",
 	    3:"Qualität des Streams verändern",
 	    4:"Fotolicht ein/aus",
-	    5:"Klick die Glühbirne an, um das Fotolicht einzuschalten oder abzufallen",
+	    5:"Klick die Glühbirne an, um das Fotolicht einzuschalten oder azufallen",
 	    6:"Vereinbarten Ton spielen",
 	    7:"Verbindung !!",
 	    8:"Verbinden ?!",
@@ -120,12 +165,28 @@
 	    24:"Du musst zuerst VLC installieren !!",
 	    25:"Während der Installation, prüfe dass das Firefox plugin abgecheckt ist!",
 	    26:"Zumachen",
-	    27:"Du musst den Bildschirm deines Smartphones eingeschaltet lassen !"    
+	    27:"Du musst den Bildschirm deines Smartphones eingeschaltet lassen !",
+	    28:"Frontkamera",
+	    29:"Rückkamera",
+	    30:"Kamera auswählen",
+	    31:"Videostreaming",
+	    32:"Audiostreaming",
+	    33:"Video- und Audiostreaming",
+	    34:"Ausstehende Verbindung...",
+	    35:"Soundstreaming",
+	    36:"Videostreaming",
+	    37:"Ganzer Bildschirm",
+	    38:"Encoder",
+	    39:"Auflösung",
+	    40:"Cachegröße",
+	    41:"Dieser Fehler gescheht überhaupt, wenn die gewählten Einstellungen mit dem Smartphone nicht kompatibel sind.",
+	    42:"Es wird auf die Fehlermeldung gewartet...",
+	    43:"Ein Fehler ist geschehen..."    
 	}
     };
 
     var lang = window.navigator.userLanguage || window.navigator.language;
-    //var lang = "fr";
+    //var lang = "ru";
 
     var __ = function (text) {
 	var x,y=0,z;
@@ -147,7 +208,7 @@
      $.fn.extend({
 	 translate: function () {
 	     return this.each(function () {
-	     	 $(this).text(__($(this).text()));
+	     	 $(this).html(__($(this).html()));
 	     });
 	 }
      });

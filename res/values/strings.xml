@@ -28,7 +28,7 @@
     <string name="settings3">Sound streaming</string>
     <string name="settings4">Enable/Disable audio streaming</string>
     <string name="settings5">Audio encoder</string>
-    <string name="settings6">AAC requieres at least ICS</string>
+    <string name="settings6">AAC requires at least ICS</string>
     <string name="settings7">Video streaming</string>
     <string name="settings8">Enable/Disable video streaming</string>
     <string name="settings9">Video encoder</string>

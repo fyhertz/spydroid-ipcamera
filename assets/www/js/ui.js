@@ -3,7 +3,7 @@
     //var host = "192.168.0.105",
     var host = window.location.hostname,
 
-    // Encapsulation of vlc plugin
+    // Encapsulation of the vlc plugin
     Stream = function (object,type,callbacks) {
 	var restarting = false, starting = false, error = false, restartTimer, startTimer,
 
@@ -46,7 +46,7 @@
 		    object.playlist.stop();
 		    object.playlist.clear();
 		    object.playlist.items.clear();
-		    // Wait 2 secs restarting the stream
+		    // We wait 2 secs and restart the stream
 		    restarting = true;
 		    restartTimer = setInterval(function () {
 			inUse(function (b) {
@@ -80,6 +80,7 @@
 	    },
 
 	    stop: function () {
+		error = false;
 		if (restarting) {
 		    clearInterval(restartTimer);
 		    restarting = false;
@@ -88,9 +89,11 @@
 		    clearInterval(startTimer);
 		    starting = false;
 		}
-		object.playlist.stop();
-		object.playlist.clear();
-		object.playlist.items.clear(); 
+		if (object.playlist.isPlaying) {
+		    object.playlist.stop();
+		    object.playlist.clear();
+		    object.playlist.items.clear(); 
+		}
 	    },
 
 	    getState: function() {
@@ -163,7 +166,7 @@
 	}
 
 	// Test if the mozilla plugin is installed
-	if (typeof $('#vlca')[0].playlist == "undefined") {
+	if (typeof $('#vlca')[0].playlist == "undefined" || true) {
 	    // Plugin not detected, alert user !
 	    $('#glass').fadeIn(1000);
 	    $('#error-noplugin').fadeIn(1000);
@@ -180,7 +183,7 @@
 	    category = e.match(/([a-z0-9]+)_/)[1];
 	    name = e.match(/[a-z0-9]+_([a-z0-9_]+)/)[1];
 	    if ($('.category.'+category).length==0) list.append('<div class="category '+category+'"><span class="category-name">'+category+'</span><div class="category-separator"></div></div>');
-	    $('.category.'+category).append('<div class="sound" id="'+e+'">'+name.replace(/_/g,' ')+'</div>');
+	    $('.category.'+category).append('<div class="sound" id="'+e+'"><a>'+name.replace(/_/g,' ')+'</a></div>');
 	});
     },
 
@@ -258,11 +261,13 @@
 	$.ajax({url: 'server/state.json?clear',
 		success: function (json) {
 		    lastError = json.lastError;
-		    if (json.lastStackTrace.match("RuntimeException.+MediaStream.start")) {
-			// If a start failed happened we display additional information
-			lastError += "<br /><br />"+__("This generally happens when you are trying to use settings that are not supported by your phone.");
-			$("#quality").click();
-		    }
+		    try {
+			if (json.lastStackTrace.match("RuntimeException.+MediaStream.start")) {
+			    // If a start failed happened we display additional information
+			    lastError += "<br /><br />"+__("This generally happens when you are trying to use settings that are not supported by your phone.");
+			    $("#quality").click();
+			}
+		    } catch (ignore) {}
 		    if (json.activityPaused==='0' && type==='video') {
 			screenState=0;
 			testScreenState();
@@ -338,7 +343,7 @@
 		if (!$('#videoEnabled').attr('checked') && !$('#audioEnabled').attr('checked')) return;
 		videoPlugin.css('visibility','hidden'); 
 		cover.css('background','black').html('<div id="mask"></div><div id="wrapper"><h1>'+__('CONNECTION')+'</h1></div>').show();
-		if ($('#videoEnabled').attr('checked')) videoStream.start();
+		if ($('#videoEnabled').attr('checked')) videoStream.start(); else videoStream.stop();
 		if ($('#audioEnabled').attr('checked')) audioStream.start();
 		updateStatus();
 	    }
@@ -457,7 +462,7 @@
     $(document).ready(function () {
 
 	// Translate the interface in the appropriate language
-	$('h1,h2,span,p').translate();
+	$('h1,h2,h3,span,p,a,em').translate();
 
 	// Verify that the screen is not turned off
 	testScreenState();

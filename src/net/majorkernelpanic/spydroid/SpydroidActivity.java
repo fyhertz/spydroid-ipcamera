@@ -67,16 +67,11 @@ public class SpydroidActivity extends Activity implements OnSharedPreferenceChan
     
     static final public String TAG = "SpydroidActivity";
     
-    static private CustomHttpServer httpServer = null;
-    static private RtspServer rtspServer = null;
-    private PowerManager.WakeLock wl;
-    private SurfaceHolder holder;
-    private SurfaceView camera;
-    private TextView line1, line2, version, signWifi, signStreaming;
-    private ImageView buttonSettings, buttonClient, buttonAbout;
-    private LinearLayout signInformation;
-    private Context context;
-    private Animation pulseAnimation;
+    /** Default listening port for the RTSP server **/
+    private final int defaultRtspPort = 8086;
+    
+    /** Default listening port for the HTTP server **/
+    private final int defaultHttpPort = 8080;
     
     /** Default quality of video streams **/
 	public static VideoQuality defaultVideoQuality = new VideoQuality(640,480,15,500000);
@@ -90,6 +85,17 @@ public class SpydroidActivity extends Activity implements OnSharedPreferenceChan
     /** The HttpServer will use those variables to send reports about the state of the app to the http interface **/
     public static boolean activityPaused = true, notificationEnabled = true;
     public static Exception lastCaughtException;
+
+    static private CustomHttpServer httpServer = null;
+    static private RtspServer rtspServer = null;
+    private PowerManager.WakeLock wl;
+    private SurfaceHolder holder;
+    private SurfaceView camera;
+    private TextView line1, line2, version, signWifi, signStreaming;
+    private ImageView buttonSettings, buttonClient, buttonAbout;
+    private LinearLayout signInformation;
+    private Context context;
+    private Animation pulseAnimation;
     
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -147,8 +153,8 @@ public class SpydroidActivity extends Activity implements OnSharedPreferenceChan
 
         Session.setDefaultVideoQuality(defaultVideoQuality);
 
-        if (rtspServer == null) rtspServer = new RtspServer(8086, handler);
-        if (httpServer == null) httpServer = new CustomHttpServer(8080, this.getApplicationContext(), handler);
+        if (rtspServer == null) rtspServer = new RtspServer(defaultRtspPort, handler);
+        if (httpServer == null) httpServer = new CustomHttpServer(defaultHttpPort, this.getApplicationContext(), handler);
 
         buttonSettings.setOnClickListener(new OnClickListener() {
 			public void onClick(View v) {
@@ -204,7 +210,7 @@ public class SpydroidActivity extends Activity implements OnSharedPreferenceChan
     	}
     	else if (key.equals("enable_http")) {
     		if (sharedPreferences.getBoolean("enable_http", true)) {
-    			if (httpServer == null) httpServer = new CustomHttpServer(8080, this.getApplicationContext(), handler);
+    			if (httpServer == null) httpServer = new CustomHttpServer(defaultHttpPort, this.getApplicationContext(), handler);
     		} else {
     			if (httpServer != null) {
     				httpServer.stop();
@@ -214,7 +220,7 @@ public class SpydroidActivity extends Activity implements OnSharedPreferenceChan
     	}
     	else if (key.equals("enable_rtsp")) {
     		if (sharedPreferences.getBoolean("enable_rtsp", true)) {
-    			if (rtspServer == null) rtspServer = new RtspServer(8086, handler);
+    			if (rtspServer == null) rtspServer = new RtspServer(defaultRtspPort, handler);
     		} else {
     			if (rtspServer != null) {
     				rtspServer.stop();
@@ -396,14 +402,14 @@ public class SpydroidActivity extends Activity implements OnSharedPreferenceChan
 	    	String ip = String.format("%d.%d.%d.%d", i & 0xff, i >> 8 & 0xff,i >> 16 & 0xff,i >> 24 & 0xff);
 	    	line1.setText("HTTP://");
 	    	line1.append(ip);
-	    	line1.append(":8080");
+	    	line1.append(":"+defaultHttpPort);
 	    	line2.setText("RTSP://");
 	    	line2.append(ip);
-	    	line2.append(":8086");
+	    	line2.append(":"+defaultRtspPort);
 	    	streamingState(0);
     	} else {
-    		line1.setText("HTTP://xxx.xxx.xxx.xxx:8080");
-    		line2.setText("RTSP://xxx.xxx.xxx.xxx:8086");
+    		line1.setText("HTTP://xxx.xxx.xxx.xxx:"+defaultHttpPort);
+    		line2.setText("RTSP://xxx.xxx.xxx.xxx:"+defaultRtspPort);
     		streamingState(2);
     	}
     }

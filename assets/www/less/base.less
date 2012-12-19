@@ -2,7 +2,6 @@
 @baseFontSize: 13px;
 @baseLetterSpacing: 1px;
 @baseFontFamily: "Bangers", "Helvetica Neue", Helvetica, Arial, sans-serif;
-@baseLineHeight: 19px;
 @textColor: #EEE;
 
 html {
@@ -32,31 +31,90 @@ body {
 
     margin: auto;
     width: 1180px - 235px;
-    font-family: @baseFontFamily;
-    font-size: @baseFontSize;
-    letter-spacing: @baseLetterSpacing;
     color: @textColor;
-    line-height: @baseLineHeight;
     text-shadow: 0px 0px 3px black,0px 0px 3px black;
 
 }
 
-a {
-    color: white;
+
+body {
+
+    font-family: @baseFontFamily;
+    font-size: @baseFontSize;
+    letter-spacing: @baseLetterSpacing;
+
+    h1,h2,h3,h4 {
+	font-weight: normal;
+	display: block;
+	padding: 0;
+	margin: 0;
+    }
+    h1 {
+	line-height: 50px;
+	text-align: center;
+	font-size: 1.3em;
+    }
+    h2 {
+	font-size: 1.8em;
+	line-height: 1.5em;
+	text-align: center;
+    }
+    h3 {
+	font-size: 1.2em;
+	text-align: center;
+    }
+    em {
+    	font-family: "Sunshiney", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    	font-size: 18px;
+    }
+}
+
+body:lang(ru) {
+
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 13px;
+
+    h1 {
+	line-height: 50px;
+	text-align: center;
+	font-size: 1.1em;
+	font-weight: bold;
+    }
+    h2 {
+	font-size: 1.8em;
+	line-height: 1.5em;
+	text-align: center;
+    }
+    h3 {
+	font-size: 1.2em;
+	text-align: center;
+    }
+    em {
+	font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+	font-size: 1.1em;
+    }
 }
 
 h1,h2,h3,h4 {
+    font-weight: normal;
     display: block;
     padding: 0;
     margin: 0;
 }
 
-h1 {
-    color: white;
-    line-height: 50px;
-    text-align: center;
-    font-size: 17px;
+em {
+    font-style: normal;
 }
+
+a {
+    color: white;
+    .transition(color 0.4s);
+}
+a:hover {
+    color: lighten(red,20%);
+}
+
+
 
 select {
     display: inline-block;
@@ -89,13 +147,6 @@ header {
     height: 30px;
     line-height: 30px;
     text-align: center;
-    a {
-	color: white;
-    }
-    p {
-	margin: 0;
-	padding: 0;
-    }
 }
 
 
@@ -119,7 +170,7 @@ header {
     span {
 	text-decoration: underline;
 	cursor: pointer;
-	font-size: 11px;
+	font-size: 0.9em;
     }
 }
 
@@ -151,6 +202,7 @@ section {
 
     #soundslist {
 	padding-top: 1px;
+	text-transform: capitalize;
 	.category {
 	    margin: auto;
 	    width: 190px;
@@ -167,15 +219,10 @@ section {
 	    clear: both;
 	}
 	.sound {
-	    .transition(color 0.3s);
 	    width: 50%;
 	    float: left;
-	    font-size: 13px;
 	    margin-top: 5px;
 	    text-align: center;
-	}
-	.sound:hover {
-	    color: lighten(red,20%);
 	}
     }
 
@@ -191,7 +238,7 @@ section {
 	}
 	span {
 	    .transition(opacity 0.3s, color 0.3s);
-	    font-size: 18px;
+	    font-size: 1.3em;
 	    padding: 15px 10px 15px 0px;
 	    display: block;
 	    margin-left:40px;
@@ -244,32 +291,14 @@ section {
 
     .box-shadow(3px 3px 15px rgba(0,0,0,.75));
     .border-radius(10px);
-    width: 600px;
-    height: 480px;
     z-index: 1000;
-    h1 {
-	letter-spacing: 5px;
-	margin-top: 30px;
-	font-size: 20px;
-	padding: 0px 30px 0px 30px;
-    }
+    text-align: center;
+    padding-top: 50px;
 
-    h2,h3 {
-	font-size: 14px;
-	letter-spacing: 3px;
-	clear: both;
-	text-align: center;
-    }
-
-    a {.transition(color 0.4s);}
-    a:hover {color: lighten(red,20%);}
-
-    p {
-	font-size: 16px;
+    #content {
 	margin: 130px 10px 10px 30px;
 	float: left;
 	width: 200px;
-	text-align: center;
     }
 
     #close {
@@ -287,10 +316,15 @@ section {
 
 #error-screenoff {
     width: 600px;
-    height: 200px;
+    height: 120px;
 }
 
 #error-noplugin {
+    width: 600px;
+    height: 420px;
+    h3 {
+	margin-top: 15px;
+    }
     img {
     	float: right;
 	margin: 60px 15px 10px 10px;
@@ -322,7 +356,6 @@ footer {
 	height: 40px;
 	margin: -10px auto;
 	text-align: center;
-	font-size: 13px;
 	line-height: 49px;
     }
 
@@ -372,4 +405,42 @@ footer {
 	    display: inline;
 	}
     }
+}
+
+#tooltip {
+
+    display: none;
+    background: rgba(255,255,255,0.1);
+    margin: 10px 0 0 20px;
+    width: 235px;
+    float: left;
+    height: 450px;
+    // .border-radius(10px);
+
+    >div {
+	display: none;
+    }
+
+    #sounds {
+	display: block;
+    }
+
+    #title {
+	text-align: center;
+	margin: 20px;
+    }
+
+    #content {
+	padding: 0 20px 20px 20px;
+	text-align: justify;
+    }
+
+    #hide-tooltip {
+	display: block;
+	text-align: center;
+	margin-bottom: 15px;
+	text-decoration: underline;
+	cursor: pointer;
+    }
+
 }
