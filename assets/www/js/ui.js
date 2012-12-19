@@ -166,7 +166,7 @@
 	}
 
 	// Test if the mozilla plugin is installed
-	if (typeof $('#vlca')[0].playlist == "undefined" || true) {
+	if (typeof $('#vlca')[0].playlist == "undefined") {
 	    // Plugin not detected, alert user !
 	    $('#glass').fadeIn(1000);
 	    $('#error-noplugin').fadeIn(1000);
