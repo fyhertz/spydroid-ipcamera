@@ -137,7 +137,7 @@ public class SpydroidActivity extends Activity implements OnSharedPreferenceChan
         
         Session.setSurfaceHolder(holder);
         Session.setHandler(handler);
-        Session.setDefaultAudioEncoder(settings.getBoolean("stream_audio", false)?Integer.parseInt(settings.getString("audio_encoder", String.valueOf(defaultAudioEncoder))):0);
+        Session.setDefaultAudioEncoder(Integer.parseInt(settings.getString("audio_encoder", String.valueOf(defaultAudioEncoder))));
         Session.setDefaultVideoEncoder(settings.getBoolean("stream_video", true)?Integer.parseInt(settings.getString("video_encoder", "2")):0);
         H264Stream.setPreferences(settings);
         
@@ -280,6 +280,7 @@ public class SpydroidActivity extends Activity implements OnSharedPreferenceChan
     }
     
     public void onDestroy() {
+    	Log.d(TAG,"SpydroidActivity destroyed");
     	super.onDestroy();
     }
     
@@ -445,14 +446,6 @@ public class SpydroidActivity extends Activity implements OnSharedPreferenceChan
 	
 	private void removeNotification() {
 		((NotificationManager)getSystemService(Context.NOTIFICATION_SERVICE)).cancel(0);
-		if (httpServer != null) {
-			httpServer.stop();
-			httpServer = null;
-		}
-		if (rtspServer != null) {
-			rtspServer.stop();
-			rtspServer = null;
-		}
 	}
     
 }

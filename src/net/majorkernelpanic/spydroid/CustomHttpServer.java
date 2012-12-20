@@ -183,12 +183,12 @@ public class CustomHttpServer extends HttpServer {
 					// Send the current streaming configuration to the client
 					else if (params.get(0).getName().equals("get")) {
 						result = "{\"streamAudio\":" + settings.getBoolean("stream_audio", false) + "," +
-								"\"audioEncoder\":\"" + (Integer.parseInt(settings.getString("audio_encoder", "3"))==3?"AMR-NB":"AAC") + "\"," +
+								"\"audioEncoder\":\"" + (SpydroidActivity.defaultAudioEncoder==Session.AUDIO_AMRNB?"AMR-NB":"AAC") + "\"," +
 								"\"streamVideo\":" + settings.getBoolean("stream_video", true) + "," +
-								"\"videoEncoder\":\"" + (Integer.parseInt(settings.getString("video_encoder", "2"))==2?"H.263":"H.264") + "\"," +
-								"\"videoResolution\":\"" + settings.getInt("video_resX", SpydroidActivity.defaultVideoQuality.resX) + "x" + settings.getInt("video_resY", SpydroidActivity.defaultVideoQuality.resY) + "\"," +
-								"\"videoFramerate\":\"" + settings.getString("video_framerate", String.valueOf(SpydroidActivity.defaultVideoQuality.framerate)) + " fps\"," +
-								"\"videoBitrate\":\"" + settings.getString("video_bitrate", String.valueOf(SpydroidActivity.defaultVideoQuality.bitrate/1000)) + " kbps\"}";
+								"\"videoEncoder\":\"" + (SpydroidActivity.defaultVideoEncoder==Session.VIDEO_H263?"H.263":"H.264") + "\"," +
+								"\"videoResolution\":\"" + SpydroidActivity.defaultVideoQuality.resX + "x" + SpydroidActivity.defaultVideoQuality.resY + "\"," +
+								"\"videoFramerate\":\"" + SpydroidActivity.defaultVideoQuality.framerate + " fps\"," +
+								"\"videoBitrate\":\"" + SpydroidActivity.defaultVideoQuality.bitrate/1000 + " kbps\"}";
 					}
 				} catch (Exception e) {
 					Log.e(TAG,"Error !");
