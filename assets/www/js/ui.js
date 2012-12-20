@@ -228,7 +228,7 @@
 	    videoPlugin.css('visibility','hidden'); 
 	    if (lastError===1) error =  __('Retrieving error message...');
 	    else if (lastError===2) error =  __('Connection timed out !');
-	    else if (lastError===0) error = "";
+	    else if (lastError===0 || lastError===undefined) error = "";
 	    else error = lastError;
 	    lastError = 0;
 	    cover.html('<div id="wrapper"><h1>'+__('An error occurred')+' :(</h1><p>'+error+'</p></div>');
