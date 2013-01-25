@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="options">Options</string>
+    <string name="quit">Quitter</string>
+    <string name="client">Client</string>
+    <string name="app_name">Spydroid</string>
+    <string name="description">Accède à distance à la camera et au micro de ton smartphone avec Spydroid</string>
+    <string name="line1">Dans chrome ou firefox recopie</string>
+    <string name="line2">Ou dans VLC ouvre</string>
+    <string name="about_activity_title">À propos</string>
+    <string name="client_activity_title">Client</string>
+    <string name="options_activity_title">Réglages</string>
+    <string name="warning">Active d\'abord le Wifi !</string>
+    <string name="streaming">Streaming !</string>
+    <string name="notification_title">Spydroid</string>
+    <string name="notification_content">Attention ! Spydroid est lancé ;)</string>
+    <string name="client0">Ici tu peux afficher le stream d\'un autre smartphone sur lequel spydroid est lancé. Les deux smartphones doivent être sur un même réseau wifi !</string>
+    <string name="client1">Connecter</string>
+    <string name="about0">Spydroid est une application amusante et open-source !</string>
+    <string name="about1">Si tu ne comprends pas comment t\'en servir visite la page de l\'appli. Elle contient par exemple des informations utiles sur comment récupérer le stream dans VLC</string>
+    <string name="about2">N\'oublie pas de noter l\'appli ! C\'est super important, ta vie en dépend !</string>
+    <string name="about3">Et si t\'es motivé tu peux même la liker sur facebook ? Allez vas-y, like l\'appli</string>
+    <string name="about4">Amuse-toi bien !</string>
+    <string name="about5">Help me to translate Spydroid in other languages ! If you are willing to help me in this crazy quest, send me a mail :)</string>
+    <string name="settings0">La résolution actuelle est</string>
+    <string name="settings1">Le framerate actuel est</string>
+    <string name="settings2">Le bitrate actuel est</string>
+    <string name="settings3">Streaming du son</string>
+    <string name="settings4">Activer/Désactiver le streaming du son</string>
+    <string name="settings5">Encodage du son</string>
+    <string name="settings6">AAC nécessite ICS ou mieux</string>
+    <string name="settings7">Streaming de la vidéo</string>
+    <string name="settings8">Activer/Désactiver le streaming de la vidéo</string>
+    <string name="settings9">Encodage d ela vidéo</string>
+    <string name="settings10">Deux formats de compression sont disponibles: H.263 et H.264. Le H.263 a plus de chances de fonctionner.</string>
+    <string name="settings11">Résolution</string>
+    <string name="settings12">Framerate</string>
+    <string name="settings13">Bitrate</string>
+    <string name="settings14">Plus d\'options</string>
+    <string name="settings15">Notification</string>
+    <string name="settings16">Activer/Désactiver la notification</string>    
+</resources>

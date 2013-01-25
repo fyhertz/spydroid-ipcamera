@@ -1,0 +1,211 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+   <SurfaceView
+        android:id="@+id/smallcameraview"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="center" />
+   
+	<RelativeLayout
+	    android:background="@drawable/background" 
+		android:layout_width="match_parent"
+		android:layout_height="match_parent">
+   
+	    
+		<LinearLayout
+		    android:layout_width="match_parent"
+		    android:layout_height="wrap_content"
+		    android:gravity="center"
+		    android:layout_gravity="center"
+		    android:layout_above="@+id/adcontainer"
+		    android:layout_alignParentTop="true"
+		    android:orientation="vertical" >
+		     
+		    <!-- Logo and version -->
+			 <LinearLayout
+			     android:orientation="horizontal"
+			     android:gravity="center" 
+			     android:layout_width="match_parent"
+			     android:layout_height="wrap_content">
+			 
+			   <RelativeLayout
+			       android:layout_width="match_parent"
+			       android:layout_height="wrap_content"
+			       android:background="#001629"
+			       android:gravity="center"
+			       android:paddingBottom="10dp"
+			       android:paddingTop="10dp" >
+			
+			       <ImageView
+			           android:id="@+id/imageView1"
+			           android:layout_width="80dp"
+			           android:layout_height="80dp"
+			           android:src="@drawable/icon" />
+			
+			       <TextView
+			           android:textColor="@android:color/white"
+			           android:id="@+id/textView1"
+			           android:layout_width="wrap_content"
+			           android:layout_height="wrap_content"
+			           android:layout_alignTop="@+id/imageView1"
+			           android:layout_marginLeft="18dp"
+			           android:layout_marginTop="20dp"
+			           android:layout_toRightOf="@+id/imageView1"
+			           android:text="Spydroid"
+			           android:textSize="19dp" />
+			
+			       <TextView
+			           android:id="@+id/version"
+			           android:layout_width="wrap_content"
+			           android:layout_height="wrap_content"
+			           android:layout_alignLeft="@+id/textView1"
+			           android:layout_below="@+id/textView1"
+			           android:text="v8.0"
+			           android:textSize="18dp" />
+			   </RelativeLayout>
+			  
+			  </LinearLayout>
+		  
+		     <TextView
+		          android:layout_width="match_parent"
+		          android:layout_height="wrap_content"
+		          android:layout_margin="20dp"
+		          android:text="@string/description"
+		          android:gravity="center"
+		          android:textSize="17dp" />        
+		     
+		     <FrameLayout 
+		         android:layout_width="match_parent"
+		         android:layout_height="wrap_content" >
+				 <TextView
+				      android:visibility="gone"
+				      android:id="@+id/streaming"
+				      android:layout_gravity="center"
+				      android:gravity="center"
+				      android:textColor="#11FF11"
+		              android:layout_height="wrap_content"
+		              android:layout_width="200dp"
+		              android:text="STREAMING !"
+		              android:textSize="20dp" />
+		         <TextView
+				      android:id="@+id/advice"
+				      android:visibility="gone"
+				      android:layout_gravity="center"
+				      android:gravity="center"
+				      android:textColor="#DD1111"
+		              android:layout_height="wrap_content"
+		              android:layout_width="200dp"
+		              android:text="@string/warning"
+		              android:textSize="20dp" />
+			     <LinearLayout
+			         android:id="@+id/information"
+			         android:layout_width="match_parent"
+			         android:layout_height="wrap_content"
+			         android:layout_gravity="top"
+			         android:gravity="center"
+			         android:orientation="vertical" >
+			       
+			          <TextView
+			              android:layout_width="wrap_content"
+			              android:layout_height="wrap_content"
+			              android:text="@string/line1"
+			              android:textSize="15dp" />
+			
+			          <TextView
+			              android:layout_width="wrap_content"
+			              android:layout_height="wrap_content"
+			              android:layout_marginBottom="10dp"
+			              android:id="@+id/line1"
+			              android:textColor="@android:color/white"
+			              android:textSize="15dp" />
+			
+			          <TextView
+			              android:layout_width="wrap_content"
+			              android:layout_height="wrap_content"
+			              android:text="@string/line2"
+			              android:textSize="15dp" />
+			
+			          <TextView
+			              android:layout_width="wrap_content"
+			              android:layout_height="wrap_content"
+			              android:id="@+id/line2"
+			              android:textColor="@android:color/white"
+			              android:textSize="15dp" />
+			          
+					</LinearLayout>
+				</FrameLayout>
+		      
+		     <RelativeLayout
+		         android:paddingTop="20dp"
+		         android:layout_width="wrap_content"
+		         android:layout_height="wrap_content"
+		         android:layout_gravity="center"
+		         android:gravity="center" >
+
+		         <!-- Settings -->
+		         <ImageView
+		             android:layout_alignParentLeft="true"
+		             android:id="@+id/button_settings"
+		             android:padding="7dp"
+		             android:layout_width="55dp"
+		             android:layout_height="55dp"
+		             android:src="@drawable/settings" />
+		         
+		         <!-- Client -->
+		         <!-- Feature disabled, do not work well enough :( because of MediaPlayer that really really sucks -->
+		         <!-- <ImageView
+		             android:padding="7dp"
+		             android:id="@+id/button_client"
+		             android:layout_width="55dp"
+		             android:layout_height="55dp"
+		             android:layout_toRightOf="@id/button_settings"
+		             android:src="@drawable/monitor" />  -->
+
+		         <!-- About -->
+				<ImageView
+		             android:id="@+id/button_about"
+		             android:padding="7dp"
+		             android:layout_width="55dp"
+		             android:layout_height="55dp"
+		             android:layout_toRightOf="@id/button_settings"
+		             android:src="@drawable/about" />
+		         
+		     </RelativeLayout>
+		     
+		  </LinearLayout>
+		 
+		  <ImageView
+		    android:id="@+id/logo"
+		    android:src="@drawable/icon"
+		    android:layout_width="wrap_content"
+		    android:layout_height="wrap_content"
+		    android:visibility="invisible" />
+
+		  <LinearLayout
+		      xmlns:ads="http://schemas.android.com/apk/lib/com.google.ads"
+		      xmlns:android="http://schemas.android.com/apk/res/android"
+		      android:id="@+id/adcontainer"
+		      android:layout_width="match_parent"
+		      android:layout_height="wrap_content"
+		      android:layout_alignParentBottom="true"
+		      android:layout_alignParentLeft="true"
+		      android:orientation="vertical" >
+
+		      <!-- <com.google.ads.AdView
+		          android:id="@+id/adView"
+		          android:layout_width="match_parent"
+		          android:layout_height="wrap_content"
+		          ads:adSize="BANNER"
+		          ads:adUnitId="a1503ac1fd4e2ac"
+		          ads:loadAdOnCreate="true"
+		          ads:testDevices="TEST_EMULATOR, 0019d431063b5e, BX9033M47E" >
+		      </com.google.ads.AdView> -->
+
+		  </LinearLayout>
+    
+    </RelativeLayout>
+    
+</FrameLayout>

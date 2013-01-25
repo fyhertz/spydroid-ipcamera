@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+
+    <meta charset="UTF-8">
+
+    <title>Spydroid</title>
+    
+    <link rel="stylesheet" type="text/css" href="less/styles.css"> 
+    <script src="js/jquery-1.7.1.min.js" type="text/javascript"></script>
+    <script src="js/translations.js" type="text/javascript"></script>
+    <script src="js/ui.js" type="text/javascript"></script>
+    <script type="text/javascript" src="https://apis.google.com/js/plusone.js"></script>
+
+    <!--[if lt IE 9 ]>    
+	<script src="js/ie.js" type="text/javascript"></script>
+    <![endif]-->
+
+
+  </head>
+
+  <body>
+
+    <div id="fb-root"></div>
+    <script>
+      (function(d, s, id) {
+      var js, fjs = d.getElementsByTagName(s)[0];
+      if (d.getElementById(id)) return;
+      js = d.createElement(s); js.id = id;
+      js.src = "//connect.facebook.net/fr_FR/all.js#xfbml=1";
+      fjs.parentNode.insertBefore(js, fjs);
+      }(document, 'script', 'facebook-jssdk'));
+    </script>
+
+    <div id="background"></div>
+
+    <header>
+      <img src="images/spydroid.png" alt="Spydroid"></img>
+      <a href="http://www.youtube.com/watch?v=IKmQW7JTb6s" target="_blank">
+	<img src="images/quote.png" alt="A famous quote !"></img>
+      </a>
+    </header>
+
+    <div id="about"><a href="credits.htm">About</a></div>
+
+    <div id="social-networks">
+      <div style="float:left;padding-right:10px;" class="fb-like" data-href="http://www.facebook.com/spydroidipcamera" data-send="false" data-layout="button_count" data-show-faces="false"></div>
+      <div style="float:left;" class="g-plusone" data-size="medium" data-href="https://play.google.com/store/apps/details?id=net.majorkernelpanic.spydroid"></div>
+    </div>
+    
+    <section>
+      
+      <div id="vlc-container">
+	<div id="upper-layer"></div>
+	<embed type="application/x-vlc-plugin" pluginspage="http://www.videolan.org" version="VideoLAN.VLCPlugin.2"
+	       toolbar="false"
+	       width="1px"
+	       height="1px"
+	       style="position:absolute;top:0;left:0;visibility:hidden;"
+	       id="vlca">
+	</embed>
+	<embed type="application/x-vlc-plugin" pluginspage="http://www.videolan.org" version="VideoLAN.VLCPlugin.2"
+	       toolbar="false"
+	       width="640px"
+	       height="480px"
+	       style="visibility:hidden;display:none;"
+	       id="vlcv">
+	</embed>
+	<object id="xvlca" width="1px" height="1px" classid="clsid:9BE31822-FDAD-461B-AD51-BE1D1C159921" style="position:absolute;top:0;left:0;visibility:hidden;">
+	  <param name="toolbar" value="false" />
+	</object>
+	<object id="xvlcv" width="640px" height="480px" classid="clsid:9BE31822-FDAD-461B-AD51-BE1D1C159921">
+	  <param name="toolbar" value="false" />
+	</object>
+	<div id="fullscreen"><a>Fullscreen</a></div>
+      </div>
+
+      <div id="right-bar">
+
+	<!-- Accordion -->
+	<div class="accordion">
+	  
+	  <!-- Section 1 -->
+	  <div class="section" id="quality">
+	    <div class="title"><h1>Change quality settings</h1></div>
+	    <div class="section-content">
+
+	      <!-- AUDIO CONFIG  -->
+	      <div class="block audio">
+		<div class="checkbox-group">
+		  <label><input type="checkbox" checked="true" id="audioEnabled"></input><span>Stream sound</span></label>
+ 		</div>
+		<div class="select-group">
+		  <label><span>Encoder</span> : </label>
+		  <select id="audioEncoder">
+		    <option>AMR-NB</option>
+		    <option>AAC</option>
+		  </select>
+		</div>
+	      </div>
+
+	      <!-- VIDEO CONFIG  -->
+	      <div class="block video">
+		<div class="checkbox-group">
+		  <label><input type="checkbox" checked="true" id="videoEnabled"></input><span>Stream video</span></label>
+		</div>
+		<div class="select-group">
+		  <label><span>Encoder</span> : </label>
+		  <select id="videoEncoder">
+		    <option selected>H.263</option>
+		    <option>H.264</option>
+		  </select>
+		</div>
+		<div class="select-group">
+		  <label><span>Resolution</span> : </label>
+		  <select id="resolution">
+		    <option>1280x720</option>
+		    <option selected>640x480</option>
+		    <option>320x240</option>
+		    <option>176x144</option>
+		  </select>
+		</div>
+		<div class="select-group">
+		  <label>Framerate : </label>
+		  <select id="framerate">
+		    <option selected>20 fps</option>
+		    <option>15 fps</option>
+		    <option>10 fps</option>
+		    <option>8 fps</option>
+		  </select>
+		</div>
+		<div class="select-group">
+		  <label>Bitrate : </label>
+		  <select id="bitrate">
+		    <option>5000 kbps</option>
+		    <option>2000 kbps</option>
+		    <option selected>1000 kbps</option>
+		    <option>700 kbps</option>
+		    <option>500 kbps</option>
+		    <option>400 kbps</option>
+		    <option>300 kbps</option>
+		    <option>200 kbps</option>
+		    <option>100 kbps</option>
+		    <option>50 kbps</option>
+		  </select>
+		</div>
+	      </div>
+
+	      <!-- CACHE SIZE -->
+	      <div class="block cache">
+		<div class="select-group">
+		  <label><span>Cache size</span> : </label>
+		  <select id="cache">
+		    <option>3000 ms</option>
+		    <option>2000 ms</option>
+		    <option selected>1000 ms</option>
+		    <option>500 ms</option>
+		    <option>400 ms</option>
+		    <option>200 ms</option>
+		    <option>100 ms</option>
+		  </select>
+		</div>
+	      </div>
+
+	    </div>
+	  </div> <!-- Section 1 -->
+
+	  <!-- Section 2 -->
+	  <div class="section" id="flash">
+	    <div class="title"><h1>Toggle flash</h1></div>
+	    <div class="section-content">
+	      <img id="torch-button" src="images/lamp.png" alt="Lamp" width="128px" height="128px"></img>
+	      <span id="torch-desc">Click on the torch to enable or disable the flash</span>
+	      <input type="hidden" id="flashEnabled" value="0"></input>
+	    </div>
+	  </div> <!-- Section 2 -->
+
+	  <!-- Section 3 -->
+	  <div class="section" id="cameras">
+	    <div class="title"><h1>Switch between cameras</h1></div>
+	    <div class="section-content">
+	      <span data-id="back">Back facing camera</span>
+	      <span data-id="front" class="camera-not-selected">Front facing camera</span>
+	      <img src="images/camera.png" alt="Lamp" width="90px" height="90px"></img>
+	      <input type="hidden" id="cameraId" value="0"></input>
+	    </div>
+	  </div> <!-- Section 3 -->
+
+	  <!-- Section 4 -->
+	  <div class="section selected" id="sounds">
+	    <div class="title"><h1>Play a prerecorded sound</h1></div>
+	    <div id="soundslist" class="section-content"></div>
+	  </div> <!-- Section 4 -->
+
+	</div> <!-- Accordion -->
+
+	<div id="need-help"><span>Show some tips</span></div>
+
+      </div>
+
+      <div id="tooltip">
+	<div id="quality">
+	  <div id="title"><h1>Change quality settings</h1></div>
+	  <div id="content">
+	    <em>The H.264 compression algorithm is more efficient but may not work on your phone...</em>
+	    <em>Try it instead of H.263 if video streaming is not working at all !</em>
+	    <em>If the stream is choppy, try reducing the bitrate or increasing the cache size.</em>
+	  </div>
+	</div>
+	<div id="flash">
+	  <div id="title"><h1>Toggle flash</h1></div>
+	  <div id="content">
+	    <em>This will simply toggle the led in front of you're phone, so that even in the deepest darkness, you will not be blind...</em>
+	    <em>Or you could use this to surprise your victim !</em>
+	  </div>
+	</div>
+	<div id="cameras">
+	  <div id="title"><h1>Switch between cameras</h1></div>
+	  <div id="content">
+	    <em>Useful if your phone has two cameras</em>
+	  </div>
+	</div>
+	<div id="sounds">
+	  <div id="title"><h1>Play a prerecorded sound</h1></div>
+	  <div id="content">
+	    <em>Those buttons will trigger sounds on your phone...</em>
+	    <em>Use them to surprise your victim.</em>
+	  </div>
+	</div>
+	<span id="hide-tooltip"><a>Hide those tips</a></span>
+      </div>
+
+    </section>
+
+    <div class="popup" id="error-screenoff">
+      <h2>You must leave the screen of your smartphone on !</h2>
+      <a href="#" id="close">Close</a>
+    </div>
+
+    <div class="popup" id="error-noplugin">
+      <h2>You need to install VLC first !</h2>
+      <h3>Get VLC: <a href="http://www.videolan.org/vlc/#download" target="_blank">Linux</a> <a href="http://www.videolan.org/vlc/download-windows.html" target="_blank">Windows</a> <a href="http://www.videolan.org/vlc/download-macosx.html" target="_blank">MacOSX</a></h3>
+      <div id="content"><h3>During the installation make sure to check the firefox plugin !</h3></div>
+      <img src="images/install.jpg" width="316px" height="243px" alt="Install VLC and the mozilla plugin" />
+      <a href="#" id="close">Close</a>
+    </div>
+    <div id="glass"></div>
+
+    <footer>
+      <div id="connect"><div><h1>Connect !!</h1></div></div>
+      <div id="status-container"><span>STATUS</span> : <span id="status">NOT CONNECTED</span></div>
+    </footer>
+    
+  </body>
+
+</html>

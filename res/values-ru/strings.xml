@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="options">Настройки</string>
+    <string name="quit">Выход</string>
+    <string name="client">Клиент</string>
+    <string name="app_name">Spydroid</string>
+    <string name="description">Передача потокового видео и звука с вашего смартфона через Spydroid</string>
+    <string name="line1">Откройте в chrome или firefox</string>
+    <string name="line2">или в VLC</string>
+    <string name="about_activity_title">О программе</string>
+    <string name="client_activity_title">Клиент</string>
+    <string name="options_activity_title">Настройки</string>
+    <string name="warning">Включите wifi и подключитесь к сети !</string>
+    <string name="streaming">Трансляция !</string>
+    <string name="notification_title">Spydroid</string>
+    <string name="notification_content">Берегись ! Spydroid работает ;)</string>
+    <string name="client0">Здесь вы можете проигрывать потоки с другого смартфона c работающим Spydroid. Оба смартфонов должны быть подключены к одной и той же беспроводной сети !</string>
+    <string name="client1">Подключиться</string>
+    <string name="about0">Spydroid это веселое приложение с открытым исходным кодом!</string>
+    <string name="about1">Если вам не понятно, как пользоваться данным приложением, вам поможет официальная страница проекта, она находится здесь. К примеру, на ней содержиться ценная информация, как проиграть поток прямо из VLC</string>
+    <string name="about2">Не забудьте оценить приложение, это очень важно, ваша жизнь зависит от этого!</string>
+    <string name="about3">Вы можете также лайкнуть его на facebook`е, почему нет? Давай кликни! Это будет нашим маленьким секретом</string>
+    <string name="about4">Веселитесь!</string>
+    <string name="about5">Участвуйте в переводе Spydroid на другие языки ! Если вы готовы помочь мне в моём безумном стремлении, пишите мне на почту :)</string>
+    <string name="settings0">Используемое сейчас разрешение</string>
+    <string name="settings1">Используемая сейчас частота кадров</string>
+    <string name="settings2">Используемая сейчас скорость передачи</string>
+    <string name="settings3">Передавать звук</string>
+    <string name="settings4">Включить/Выключить передачу звука</string>
+    <string name="settings5">Аудио Кодек</string>
+    <string name="settings6">AAC требует по крайней мере ICS</string>
+    <string name="settings7">Передавать видео</string>
+    <string name="settings8">Включить/Выключить передачу видео</string>
+    <string name="settings9">Видео кодек</string>
+    <string name="settings10">Доступны два видео кодека: H.263 и H.264</string>
+    <string name="settings11">Разрешение</string>
+    <string name="settings12">Частота кадров</string>
+    <string name="settings13">Скорость передачи</string>
+    <string name="settings14">Дополнительные опции</string>
+    <string name="settings15">Уведомления</string>
+    <string name="settings16">Включить/Выключить уведомления</string>
+</resources>

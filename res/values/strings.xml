@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="options">Options</string>
+    <string name="quit">Quit</string>
+    <string name="client">Client</string>
+    <string name="app_name">Spydroid</string>
+    <string name="description">Capture live video and audio streaming from your smartphone with Spydroid</string>
+    <string name="line1">In chrome or firefox type</string>
+    <string name="line2">Or in VLC open</string>
+    <string name="about_activity_title">About</string>
+    <string name="client_activity_title">Client</string>
+    <string name="options_activity_title">Settings</string>
+    <string name="warning">Turn the wifi on and join a network !</string>
+    <string name="streaming">Streaming !</string>
+    <string name="notification_title">Spydroid</string>
+    <string name="notification_content">Beware ! Spydroid is running ;)</string>
+    <string name="client0">Here you can play streams from another smartphone running Spydroid. Both smartphones obviously have to be connected to the same wireless network !</string>
+    <string name="client1">Connect</string>
+    <string name="about0">Spydroid is a fun and open source application !</string>
+    <string name="about1">If you don\'t understand how to use it, the google page of project is here to help you out. For instance, it contains valuable information about how to catch the stream directly from VLC</string>
+    <string name="about2">Don\'t forget to rate the app, it\'s really important, your life depends on it !</string>
+    <string name="about3">You might also like it on facebook, why not ? Come on, like it ! It will be our little secret</string>
+    <string name="about4">Have Fun !</string>
+    <string name="about5">Help me to translate Spydroid in other languages ! If you are willing to help me in this crazy quest, send me a mail :)</string>
+    <string name="settings0">The current resolution is</string>
+    <string name="settings1">The current framerate is</string>
+    <string name="settings2">The current bitrate is</string>
+    <string name="settings3">Sound streaming</string>
+    <string name="settings4">Enable/Disable audio streaming</string>
+    <string name="settings5">Audio encoder</string>
+    <string name="settings6">AAC requires at least ICS</string>
+    <string name="settings7">Video streaming</string>
+    <string name="settings8">Enable/Disable video streaming</string>
+    <string name="settings9">Video encoder</string>
+    <string name="settings10">Two video compression algorithms are available: H.263 and H.264</string>
+    <string name="settings11">Resolution</string>
+    <string name="settings12">Framerate</string>
+    <string name="settings13">Bitrate</string>
+    <string name="settings14">More options</string>
+    <string name="settings15">Notification</string>
+    <string name="settings16">Enable/Disable the notification</string>
+    <string name="settings17">Hack for video streaming</string>
+    <string name="settings18">There currently is no clean way on Android to achieve video recording from an app running in background. This MAY CRASH the app !</string>
+</resources>

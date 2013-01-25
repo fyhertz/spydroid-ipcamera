@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<lint>
+    <issue id="MissingTranslation">
+        <ignore path="res/values/arrays.xml" />
+    </issue>
+    <issue id="NewApi">
+        <ignore path="src/net/majorkernelpanic/streaming/audio/GenericAudioStream.java" />
+    </issue>
+</lint>

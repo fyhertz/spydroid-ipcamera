@@ -1,0 +1,91 @@
+@startHeight: 45px;
+@endHeight: 340px;
+
+.accordion {
+
+    .section {
+
+	// border: black 1px solid;
+	overflow: hidden;
+	.transition(height 1s);
+	height: @startHeight;
+	cursor: pointer;
+	position: relative;
+	z-index: 0;
+
+	.title {
+	    position: absolute;
+	    z-index: 2;
+	    top: 0;
+	    left: 0;
+	    width: 257px;
+	    background: url('../images/blue-button.png');
+	    height: @startHeight;
+	    clear: both;
+	    h1 {
+		line-height: @startHeight - 4;
+	    }
+	}
+
+	.title:hover {
+	    
+	}
+
+	.section-content {
+	    position: absolute;
+	    z-index: 1;
+	    top: 40px;
+	    left: 17px;
+	    width: 220px;
+	    height: @endHeight;
+	    margin: auto;
+	    padding-top: 1px;
+	    background: rgba(255,255,255,0.1);
+	}
+
+    }
+
+    .selected {
+	height: @endHeight;
+	.title {
+	    // background-color: lighten(#fd9595,10%);
+	}
+    }
+
+
+    .block {
+
+	width: 180px;
+	margin: 15px auto;
+
+	>div {
+	    height: 27px;
+	    clear: both;
+	}
+	.checkbox-group {
+	    input {
+		margin: -1px 5px 0 0;
+		display: inline-block;
+	    }
+	    label {
+		margin-right: 10px;
+		display: inline;
+	    }
+	}
+	.select-group {
+	    label {
+		width: 90px;
+		float: left;
+	    }
+	    select {
+		padding: 1px;
+		margin: 0;
+		height: 22px;
+		float:left;
+		width: 90px;
+	    }
+	}
+    }
+
+
+}

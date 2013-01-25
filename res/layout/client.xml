@@ -1,0 +1,336 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_height="fill_parent" 
+    android:layout_width="fill_parent">
+	
+	<FrameLayout
+	    android:id="@+id/video_container"
+	    android:layout_height="fill_parent" 
+   	    android:layout_width="fill_parent">
+	</FrameLayout>
+	
+	<RelativeLayout
+	    android:background="@drawable/background"
+	    android:id="@+id/form"
+	    android:layout_height="fill_parent" 
+        android:layout_width="fill_parent">
+
+	    <TextView
+	        android:padding="20dp"
+	        android:gravity="center"
+	        android:textSize="17dp"
+	        android:layout_centerHorizontal="true"
+	        android:layout_above="@+id/server_ip"
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+	        android:text="@string/client0" />
+
+	    <EditText
+	        android:singleLine="true"
+	        android:gravity="center"
+	        android:textColor="@android:color/black"
+	        android:layout_marginTop="10dp"
+	        android:layout_width="200dp"
+	        android:layout_height="wrap_content"
+	        android:imeOptions="actionDone"
+	        android:imeActionLabel="@string/client1"
+	        android:id="@+id/server_ip"
+			android:layout_centerVertical="true"
+	        android:layout_centerHorizontal="true" />
+	    	    
+	    <Button
+	        android:layout_marginTop="20dp"
+	        android:text="@string/client1"
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content" 
+	        android:layout_below="@+id/server_ip"
+	        android:id="@+id/button_connect"
+	        android:layout_centerHorizontal="true" />
+	    	    	    
+	</RelativeLayout>
+	
+	<RelativeLayout
+	    android:visibility="gone"
+	    android:layout_height="fill_parent" 
+        android:layout_width="fill_parent"
+	    android:id="@+id/control">
+
+	    <LinearLayout
+	        android:gravity="center"
+	        android:layout_margin="10dp"
+	        android:layout_width="fill_parent"
+	        android:layout_height="wrap_content"
+	        android:layout_alignParentBottom="true"
+	        android:layout_alignParentLeft="true"
+	        android:orientation="horizontal" >
+
+	        <ImageButton
+	            android:id="@+id/button_config"
+	            android:layout_width="40dp"
+	            android:layout_height="40dp"
+	            android:layout_marginRight="30dp"
+	            android:background="@drawable/film" />
+
+	        <ImageButton
+	            android:id="@+id/button_stop"
+	            android:layout_width="40dp"
+	            android:layout_height="40dp"
+	            android:background="@drawable/stop" />
+	    </LinearLayout>
+
+	</RelativeLayout>
+	
+	<ProgressBar
+	    android:visibility="gone"
+	    android:layout_gravity="center"
+        android:id="@+id/progress"
+        style="?android:attr/progressBarStyleLarge"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content" />
+	
+	<ScrollView
+	    android:id="@+id/settings"
+	    android:visibility="gone"
+	    android:background="@drawable/background"
+	    android:layout_width="fill_parent"
+	    android:layout_height="fill_parent">
+		
+		<LinearLayout
+		    android:orientation="vertical" 
+			android:layout_height="wrap_content" 
+			android:layout_gravity="center"
+	        android:layout_width="300dp">
+		    
+		    <!-- +++++++++++++++ VIDEO +++++++++++++++ -->
+			<LinearLayout 
+	            android:orientation="horizontal"
+	            android:layout_gravity="center"
+	            android:layout_width="wrap_content"
+	            android:layout_height="wrap_content">
+		         
+	            <ImageView
+	                android:src="@drawable/check"
+	                android:paddingTop="20dp"
+	                android:paddingLeft="20dp"
+	                android:layout_width="51dp"
+	                android:layout_height="51dp" />		         
+		         
+		         <TextView
+		            android:layout_width="fill_parent"
+		            android:layout_height="wrap_content"
+		            android:padding="20dp"
+		            android:text="Video Streaming"
+		            android:textColor="@android:color/white"
+		            android:textSize="17dp" />  
+		    </LinearLayout>
+		    
+			<!-- Enable video streaming -->
+			<RelativeLayout 
+			    android:paddingLeft="20dp"
+			    android:paddingRight="20dp"
+			    android:gravity="center"
+	            android:layout_gravity="center"
+	            android:layout_width="wrap_content"
+	            android:layout_height="45dp">
+				<TextView
+				    android:layout_width="wrap_content"
+				    android:layout_height="fill_parent"
+				    android:layout_alignParentLeft="true"
+				    android:gravity="center"
+		            android:layout_gravity="center"
+		            android:textSize="17dp"
+				    android:text="Enable video streaming:" />
+				<CheckBox
+				    android:id="@+id/checkbox1"
+				    android:layout_width="wrap_content"
+				    android:layout_height="fill_parent"
+					android:gravity="center"
+		            android:layout_gravity="center"
+				    android:layout_alignParentRight="true" />
+			</RelativeLayout>
+						
+			<!-- Resolution -->
+			<RelativeLayout 
+			    android:paddingLeft="20dp"
+			    android:paddingRight="20dp"
+			    android:gravity="center"
+	            android:layout_gravity="center"
+	            android:layout_width="wrap_content"
+	            android:layout_height="45dp">
+				<TextView
+				    android:layout_width="wrap_content"
+				    android:layout_height="fill_parent"
+				    android:layout_alignParentLeft="true"
+				    android:gravity="center"
+		            android:layout_gravity="center"
+		            android:textSize="17dp"
+				    android:text="Resolution" />
+				<Spinner
+				    android:id="@+id/spinner1"
+				    android:layout_width="140dp"
+				    android:layout_height="fill_parent"
+					android:gravity="center"
+		            android:layout_gravity="center"
+				    android:layout_alignParentRight="true" />
+			</RelativeLayout>
+			
+			<!-- Framerate -->
+			<RelativeLayout 
+			    android:paddingLeft="20dp"
+			    android:paddingRight="20dp"
+			    android:gravity="center"
+	            android:layout_gravity="center"
+	            android:layout_width="wrap_content"
+	            android:layout_height="45dp">
+				<TextView
+				    android:layout_width="wrap_content"
+				    android:layout_height="fill_parent"
+				    android:layout_alignParentLeft="true"
+				    android:gravity="center"
+		            android:layout_gravity="center"
+		            android:textSize="17dp"
+				    android:text="Framerate" />
+				<Spinner
+				    android:id="@+id/spinner2"
+				    android:layout_width="140dp"
+				    android:layout_height="fill_parent"
+					android:gravity="center"
+		            android:layout_gravity="center"
+				    android:layout_alignParentRight="true" />
+			</RelativeLayout>
+			
+			<!-- Bitrate -->
+			<RelativeLayout 
+			    android:paddingLeft="20dp"
+			    android:paddingRight="20dp"
+			    android:gravity="center"
+	            android:layout_gravity="center"
+	            android:layout_width="wrap_content"
+	            android:layout_height="45dp">
+				<TextView
+				    android:layout_width="wrap_content"
+				    android:layout_height="fill_parent"
+				    android:layout_alignParentLeft="true"
+				    android:gravity="center"
+		            android:layout_gravity="center"
+		            android:textSize="17dp"
+				    android:text="Bitrate" />
+				<Spinner
+				    android:id="@+id/spinner3"
+				    android:layout_width="140dp"
+				    android:layout_height="fill_parent"
+					android:gravity="center"
+		            android:layout_gravity="center"
+				    android:layout_alignParentRight="true" />
+			</RelativeLayout>		
+			
+			<!-- Compression algo -->
+			<RelativeLayout 
+			    android:paddingLeft="20dp"
+			    android:paddingRight="20dp"
+			    android:gravity="center"
+	            android:layout_gravity="center"
+	            android:layout_width="wrap_content"
+	            android:layout_height="45dp">
+				<TextView
+				    android:layout_width="wrap_content"
+				    android:layout_height="fill_parent"
+				    android:layout_alignParentLeft="true"
+				    android:gravity="center"
+		            android:layout_gravity="center"
+		            android:textSize="17dp"
+				    android:text="Compression" />
+				<Spinner
+				    android:id="@+id/spinner4"
+				    android:layout_width="140dp"
+				    android:layout_height="fill_parent"
+					android:gravity="center"
+		            android:layout_gravity="center"
+				    android:layout_alignParentRight="true" />
+			</RelativeLayout>
+		    
+			<!-- +++++++++++++++ AUDIO +++++++++++++++ -->
+			<LinearLayout 
+	            android:orientation="horizontal"
+	            android:layout_gravity="center"
+	            android:layout_width="wrap_content"
+	            android:layout_height="wrap_content">
+		         
+	            <ImageView
+	                android:src="@drawable/check"
+	                android:paddingTop="20dp"
+	                android:paddingLeft="20dp"
+	                android:layout_width="51dp"
+	                android:layout_height="51dp" />		         
+		         
+		         <TextView
+		            android:layout_width="fill_parent"
+		            android:layout_height="wrap_content"
+		            android:padding="20dp"
+		            android:text="Audio Streaming"
+		            android:textColor="@android:color/white"
+		            android:textSize="17dp" />  
+		    </LinearLayout>
+		    
+			<!-- Enable audio streaming -->
+			<RelativeLayout 
+			    android:paddingLeft="20dp"
+			    android:paddingRight="20dp"
+			    android:gravity="center"
+	            android:layout_gravity="center"
+	            android:layout_width="wrap_content"
+	            android:layout_height="45dp">
+				<TextView
+				    android:layout_width="wrap_content"
+				    android:layout_height="fill_parent"
+				    android:layout_alignParentLeft="true"
+				    android:gravity="center"
+		            android:layout_gravity="center"
+		            android:textSize="17dp"
+				    android:text="Enable audio streaming:" />
+				<CheckBox
+				    android:id="@+id/checkbox2"
+				    android:layout_width="wrap_content"
+				    android:layout_height="fill_parent"
+					android:gravity="center"
+		            android:layout_gravity="center"
+				    android:layout_alignParentRight="true" />
+			</RelativeLayout>
+						
+			<!-- Compression algo. -->
+			<RelativeLayout 
+			    android:paddingLeft="20dp"
+			    android:paddingRight="20dp"
+			    android:gravity="center"
+	            android:layout_gravity="center"
+	            android:layout_width="wrap_content"
+	            android:layout_height="45dp">
+				<TextView
+				    android:layout_width="wrap_content"
+				    android:layout_height="fill_parent"
+				    android:layout_alignParentLeft="true"
+				    android:gravity="center"
+		            android:layout_gravity="center"
+		            android:textSize="17dp"
+				    android:text="Resolution" />
+				<Spinner
+				    android:id="@+id/spinner5"
+				    android:layout_width="140dp"
+				    android:layout_height="fill_parent"
+					android:gravity="center"
+		            android:layout_gravity="center"
+				    android:layout_alignParentRight="true" />
+			</RelativeLayout>
+			
+			<Button 
+			    android:id="@+id/reconnect"
+			    android:text="Ok"
+			    android:layout_margin="15dp"
+			    android:layout_width="fill_parent"
+	            android:layout_height="wrap_content"/>
+			
+		</LinearLayout>
+		
+	</ScrollView>
+	
+</FrameLayout>
