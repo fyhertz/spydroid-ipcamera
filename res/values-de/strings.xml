@@ -39,4 +39,6 @@
     <string name="settings14">Mehr Optionen</string>
     <string name="settings15">Mitteilung</string>
     <string name="settings16">Mitteilung anschalten/ abschalten</string>
+    <string name="settings17">Hack for video streaming</string>
+    <string name="settings18">Allow video streaming to continue when the app is sent to the background. May not work well :/</string>
 </resources>

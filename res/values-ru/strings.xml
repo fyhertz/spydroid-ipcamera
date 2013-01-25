@@ -39,4 +39,6 @@
     <string name="settings14">Дополнительные опции</string>
     <string name="settings15">Уведомления</string>
     <string name="settings16">Включить/Выключить уведомления</string>
+    <string name="settings17">Hack for video streaming</string>
+    <string name="settings18">Allow video streaming to continue when the app is sent to the background. May not work well :/</string>    
 </resources>
