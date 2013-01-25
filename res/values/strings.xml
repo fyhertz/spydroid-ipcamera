@@ -17,7 +17,7 @@
     <string name="client0">Here you can play streams from another smartphone running Spydroid. Both smartphones obviously have to be connected to the same wireless network !</string>
     <string name="client1">Connect</string>
     <string name="about0">Spydroid is a fun and open source application !</string>
-    <string name="about1">If you don\'t understand how to use it, the google page of project is here to help you out. For instance, it contains valuable information about how to catch the stream directly from VLC</string>
+    <string name="about1">If you don\'t understand how to use it, the google page of the project contains a FAQ. For example, you will find explanations on how to play the stream in VLC</string>
     <string name="about2">Don\'t forget to rate the app, it\'s really important, your life depends on it !</string>
     <string name="about3">You might also like it on facebook, why not ? Come on, like it ! It will be our little secret</string>
     <string name="about4">Have Fun !</string>

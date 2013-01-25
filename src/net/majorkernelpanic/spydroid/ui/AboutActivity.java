@@ -1,8 +1,6 @@
 package net.majorkernelpanic.spydroid.ui;
 
 import net.majorkernelpanic.spydroid.R;
-import net.majorkernelpanic.spydroid.R.id;
-import net.majorkernelpanic.spydroid.R.layout;
 import android.app.Activity;
 import android.content.Intent;
 import android.net.Uri;

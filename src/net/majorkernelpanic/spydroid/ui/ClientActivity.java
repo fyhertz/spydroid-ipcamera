@@ -26,9 +26,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import net.majorkernelpanic.spydroid.R;
-import net.majorkernelpanic.spydroid.R.array;
-import net.majorkernelpanic.spydroid.R.id;
-import net.majorkernelpanic.spydroid.R.layout;
 
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.ResponseHandler;
