@@ -38,5 +38,7 @@
     <string name="settings13">Bitrate</string>
     <string name="settings14">Plus d\'options</string>
     <string name="settings15">Notification</string>
-    <string name="settings16">Activer/Désactiver la notification</string>    
+    <string name="settings16">Activer/Désactiver la notification</string>
+    <string name="settings17">Hack pour la vidéo</string>
+    <string name="settings18">Permet au streaming de la vidéo de continuer quand l\'app passe en arrière plan. Peut mal fonctionner :/</string>    
 </resources>

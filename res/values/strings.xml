@@ -40,5 +40,5 @@
     <string name="settings15">Notification</string>
     <string name="settings16">Enable/Disable the notification</string>
     <string name="settings17">Hack for video streaming</string>
-    <string name="settings18">There currently is no clean way on Android to achieve video recording from an app running in background. This MAY CRASH the app !</string>
+    <string name="settings18">Allow video streaming to continue when the app is sent to the background. May not work well :/</string>
 </resources>
