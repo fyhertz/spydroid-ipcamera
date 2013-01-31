@@ -32,8 +32,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import net.majorkernelpanic.streaming.Session;
-
-import android.content.Context;
 import android.os.Handler;
 import android.util.Log;
 
@@ -150,7 +148,7 @@ public class RtspServer {
 					response.status = Response.STATUS_BAD_REQUEST;
 				}
 
-				// Do something accordingly like starting the streams, sending a session descriptor
+				// Do something accordingly like starting the streams, sending a session description
 				if (request != null) {
 					try {
 						response = processRequest(request);

@@ -153,6 +153,7 @@ public class H264Stream extends VideoStream {
 	
 	/**
 	 * Returns a description of the stream using SDP. It can then be included in an SDP file.
+	 * This method will fail if called when streaming.
 	 */
 	public String generateSessionDescription() throws IllegalStateException, IOException {
 		String profile,sps,pps;

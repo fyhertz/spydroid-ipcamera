@@ -21,8 +21,11 @@
 package net.majorkernelpanic.spydroid.ui;
 
 import java.io.IOException;
+import java.util.Locale;
 
 import net.majorkernelpanic.spydroid.R;
+import net.majorkernelpanic.spydroid.SpydroidApplication;
+import net.majorkernelpanic.spydroid.Utilities;
 import net.majorkernelpanic.spydroid.api.CustomHttpServer;
 import net.majorkernelpanic.streaming.Session;
 import net.majorkernelpanic.streaming.misc.HttpServer;
@@ -127,6 +130,10 @@ public class SpydroidActivity extends Activity implements OnSharedPreferenceChan
         signInformation = (LinearLayout)findViewById(R.id.information);
         pulseAnimation = AnimationUtils.loadAnimation(this, R.anim.pulse);
         
+        if (SpydroidApplication.DONATE_VERSION) {
+        	((LinearLayout)findViewById(R.id.adcontainer)).removeAllViews();
+        }
+        
         SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(this);
         settings.registerOnSharedPreferenceChangeListener(this);
        	
@@ -159,8 +166,8 @@ public class SpydroidActivity extends Activity implements OnSharedPreferenceChan
         		videoQuality);
 
         Session.setHandler(handler);
-        Session.setDefaultAudioEncoder(audioEncoder);
-        Session.setDefaultVideoEncoder(videoEncoder);
+        Session.setDefaultAudioEncoder(!settings.getBoolean("stream_audio", true)?0:audioEncoder);
+        Session.setDefaultVideoEncoder(!settings.getBoolean("stream_video", false)?0:videoEncoder);
         Session.setDefaultVideoQuality(videoQuality);
         H264Stream.setPreferences(settings);
 
@@ -221,19 +228,15 @@ public class SpydroidActivity extends Activity implements OnSharedPreferenceChan
     	else if (key.equals("video_bitrate")) {
     		videoQuality.bitrate = Integer.parseInt(sharedPreferences.getString("video_bitrate", "0"))*1000;
     	}
-    	else if (key.equals("stream_audio")) {
-    		if (!sharedPreferences.getBoolean("stream_audio", true)) Session.setDefaultAudioEncoder(0);
-    	}
-    	else if (key.equals("audio_encoder")) { 
+    	else if (key.equals("audio_encoder") || key.equals("stream_audio")) { 
     		audioEncoder = Integer.parseInt(sharedPreferences.getString("audio_encoder", "0"));
     		Session.setDefaultAudioEncoder( audioEncoder );
+    		if (!sharedPreferences.getBoolean("stream_audio", false)) Session.setDefaultAudioEncoder(0);
     	}
-    	else if (key.equals("stream_video")) {
-    		if (!sharedPreferences.getBoolean("stream_video", true)) Session.setDefaultVideoEncoder(0);
-    	}
-    	else if (key.equals("video_encoder")) {
+    	else if (key.equals("stream_video") || key.equals("video_encoder")) {
     		videoEncoder = Integer.parseInt(sharedPreferences.getString("video_encoder", "0"));
     		Session.setDefaultVideoEncoder( videoEncoder );
+    		if (!sharedPreferences.getBoolean("stream_video", true)) Session.setDefaultVideoEncoder(0);
     	}
     	else if (key.equals("enable_http")) {
     		if (sharedPreferences.getBoolean("enable_http", true)) {
@@ -427,21 +430,32 @@ public class SpydroidActivity extends Activity implements OnSharedPreferenceChan
     private void displayIpAddress() {
 		WifiManager wifiManager = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
 		WifiInfo info = wifiManager.getConnectionInfo();
+		String ipaddress = null;
+		Log.d("SpydroidActivity","getNetworkId "+info.getNetworkId());
     	if (info!=null && info.getNetworkId()>-1) {
 	    	int i = info.getIpAddress();
-	    	String ip = String.format("%d.%d.%d.%d", i & 0xff, i >> 8 & 0xff,i >> 16 & 0xff,i >> 24 & 0xff);
-	    	line1.setText("HTTP://");
+	        String ip = String.format(Locale.ENGLISH,"%d.%d.%d.%d", i & 0xff, i >> 8 & 0xff,i >> 16 & 0xff,i >> 24 & 0xff);
+	    	line1.setText("http://");
 	    	line1.append(ip);
 	    	line1.append(":"+defaultHttpPort);
-	    	line2.setText("RTSP://");
+	    	line2.setText("rtsp://");
 	    	line2.append(ip);
 	    	line2.append(":"+defaultRtspPort);
 	    	streamingState(0);
+    	} else if((ipaddress = Utilities.getLocalIpAddress(true)) != null) {
+    		line1.setText("http://");
+	    	line1.append(ipaddress);
+	    	line1.append(":"+defaultHttpPort);
+	    	line2.setText("rtsp://");
+	    	line2.append(ipaddress);
+	    	line2.append(":"+defaultRtspPort);
+	    	streamingState(0);
     	} else {
-    		line1.setText("HTTP://xxx.xxx.xxx.xxx:"+defaultHttpPort);
-    		line2.setText("RTSP://xxx.xxx.xxx.xxx:"+defaultRtspPort);
+      		line1.setText("HTTP://xxx.xxx.xxx.xxx:"+defaultHttpPort);
+    		line2.setText("RTSP://xxx.xxx.xxx.xxx:"+defaultHttpPort);
     		streamingState(2);
     	}
+    	
     }
     
     public void log(String s) {

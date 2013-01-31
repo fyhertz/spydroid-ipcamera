@@ -10,7 +10,7 @@
     <string name="about_activity_title">À propos</string>
     <string name="client_activity_title">Client</string>
     <string name="options_activity_title">Réglages</string>
-    <string name="warning">Active d\'abord le Wifi !</string>
+    <string name="warning">Active le wifi ou la fonction hotspot !</string>
     <string name="streaming">Streaming !</string>
     <string name="notification_title">Spydroid</string>
     <string name="notification_content">Attention ! Spydroid est lancé ;)</string>

@@ -8,7 +8,7 @@ gen/
 *.class
 *.o
 *.so
-*.sh
+*.py
 local.properties
 custom_rules.xml
 ant.properties

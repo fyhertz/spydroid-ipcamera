@@ -49,6 +49,8 @@ package net.majorkernelpanic.http;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InterruptedIOException;
@@ -70,6 +72,7 @@ import org.apache.http.HttpResponse;
 import org.apache.http.HttpServerConnection;
 import org.apache.http.HttpStatus;
 import org.apache.http.MethodNotSupportedException;
+import org.apache.http.entity.AbstractHttpEntity;
 import org.apache.http.entity.ContentProducer;
 import org.apache.http.entity.EntityTemplate;
 import org.apache.http.entity.InputStreamEntity;
@@ -80,7 +83,6 @@ import org.apache.http.params.BasicHttpParams;
 import org.apache.http.params.CoreConnectionPNames;
 import org.apache.http.params.CoreProtocolPNames;
 import org.apache.http.params.HttpParams;
-import org.apache.http.protocol.BasicHttpContext;
 import org.apache.http.protocol.BasicHttpProcessor;
 import org.apache.http.protocol.HttpContext;
 import org.apache.http.protocol.HttpRequestHandler;
@@ -92,6 +94,7 @@ import org.apache.http.protocol.ResponseDate;
 import org.apache.http.protocol.ResponseServer;
 import org.apache.http.util.EntityUtils;
 
+import android.content.res.AssetFileDescriptor;
 import android.content.res.AssetManager;
 import android.util.Log;
 
@@ -225,11 +228,7 @@ public class BasicHttpServer {
                 final HttpRequest request, 
                 final HttpResponse response,
                 final HttpContext context) throws HttpException, IOException {
-
-        	ByteArrayOutputStream buffer = new ByteArrayOutputStream(64000);
-        	byte[] tmp = new byte[4096]; 
-            int length; 
-            
+        	AbstractHttpEntity body = null;
         	
             final String method = request.getRequestLine().getMethod().toUpperCase(Locale.ENGLISH);
             if (!method.equals("GET") && !method.equals("HEAD") && !method.equals("POST")) {
@@ -243,15 +242,42 @@ public class BasicHttpServer {
                 Log.d(TAG,"Incoming entity content (bytes): " + entityContent.length);
             }
             
-            InputStream stream = null;
+            final String location = "www"+(url.equals("/")?"/index.htm":url);
+            response.setStatusCode(HttpStatus.SC_OK);
+            
             try {
             	Log.i(TAG,"Requested: \""+url+"\"");
-            	stream =  assetManager.open("www"+(url.equals("/")?"/index.htm":url),AssetManager.ACCESS_STREAMING);
-            }
-            catch (IOException e) {
+            	
+            	// We determine if the asset is compressed
+            	try {
+            		AssetFileDescriptor afd = assetManager.openFd(location);
+
+            		// The asset is not compressed
+            		FileInputStream fis = new FileInputStream(afd.getFileDescriptor());
+            		fis.skip(afd.getStartOffset());
+            		body = new InputStreamEntity(fis, afd.getDeclaredLength());
+            		
+            		Log.d(TAG,"Serving uncompressed file " + "www" + url);
+            		
+            	} catch (FileNotFoundException e) {
+            		
+            		// The asset may be compressed
+            		// AAPT compresses assets so first we need to uncompress them to determine their length
+            		InputStream stream =  assetManager.open(location,AssetManager.ACCESS_STREAMING);
+                	ByteArrayOutputStream buffer = new ByteArrayOutputStream(64000);
+                	byte[] tmp = new byte[4096]; int length = 0;
+                    while ((length = stream.read(tmp)) != -1) buffer.write(tmp, 0, length);
+                    body = new InputStreamEntity(new ByteArrayInputStream(buffer.toByteArray()), buffer.size());
+                    stream.close();
+                    
+                    Log.d(TAG,"Serving compressed file " + "www" + url);
+                    
+            	}
+            	
+            } catch (IOException e) {
             	// File does not exist
             	response.setStatusCode(HttpStatus.SC_NOT_FOUND);
-            	EntityTemplate body = new EntityTemplate(new ContentProducer() {
+            	body = new EntityTemplate(new ContentProducer() {
             		public void writeTo(final OutputStream outstream) throws IOException {
             			OutputStreamWriter writer = new OutputStreamWriter(outstream, "UTF-8"); 
             			writer.write("<html><body><h1>");
@@ -262,28 +288,19 @@ public class BasicHttpServer {
             			writer.flush();
             		}
             	});
-            	body.setContentType(getMimeMediaType(url)+"; charset=UTF-8");
-            	response.setEntity(body);
             	Log.d(TAG,"File " + "www" + url + " not found");
-            	return;
 
             }
+            
+        	body.setContentType(getMimeMediaType(url)+"; charset=UTF-8");
+        	response.setEntity(body);
 
-            // File exist
-            // AAPT compresses assets so first we need to uncompress them to determine their length
-            while ((length = stream.read(tmp)) != -1) buffer.write(tmp, 0, length);
-            response.setEntity(new InputStreamEntity(new ByteArrayInputStream(buffer.toByteArray()), buffer.size()));
-            response.setStatusCode(HttpStatus.SC_OK);
-            Log.d(TAG,"Serving file " + "www" + url);
-            stream.close();
-            buffer.flush(); 
-            buffer.reset();            
         }
         
         private String getMimeMediaType(String fileName) {
-        	String extension = fileName.substring(fileName.lastIndexOf(".")+1, fileName.length()-1);
+        	String extension = fileName.substring(fileName.lastIndexOf(".")+1, fileName.length());
         	for (int i=0;i<extensions.length;i++) {
-        		if (extensions[i]==extension) 
+        		if (extensions[i].equals(extension)) 
         			return mimeMediaTypes[i];
         	}
         	return mimeMediaTypes[0];

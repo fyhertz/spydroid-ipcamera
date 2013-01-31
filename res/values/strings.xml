@@ -10,7 +10,7 @@
     <string name="about_activity_title">About</string>
     <string name="client_activity_title">Client</string>
     <string name="options_activity_title">Settings</string>
-    <string name="warning">Turn the wifi on and join a network !</string>
+    <string name="warning">Turn on wifi or tethering !</string>
     <string name="streaming">Streaming !</string>
     <string name="notification_title">Spydroid</string>
     <string name="notification_content">Beware ! Spydroid is running ;)</string>
