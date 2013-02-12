@@ -176,6 +176,8 @@ public abstract class VideoStream extends MediaStream {
 						Log.e(TAG,"Media server died !");
 						// We don't know in what thread we are so stop needs to be synchronized
 						stop();
+					} else {
+						Log.e(TAG,"Error unknown with the camera: "+error);
 					}	
 				}
 			});

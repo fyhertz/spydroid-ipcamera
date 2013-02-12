@@ -145,12 +145,12 @@ public class RequestHandler {
 			final SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(SpydroidApplication.getContext());
 			
 			response.append("{\"streamAudio\":" + settings.getBoolean("stream_audio", false) + ",");
-			response.append("\"audioEncoder\":\"" + (SpydroidActivity.audioEncoder==Session.AUDIO_AMRNB?"AMR-NB":"AAC") + "\",");
+			response.append("\"audioEncoder\":\"" + (SpydroidApplication.audioEncoder==Session.AUDIO_AMRNB?"AMR-NB":"AAC") + "\",");
 			response.append("\"streamVideo\":" + settings.getBoolean("stream_video", true) + ",");
-			response.append("\"videoEncoder\":\"" + (SpydroidActivity.videoEncoder==Session.VIDEO_H263?"H.263":"H.264") + "\",");
-			response.append("\"videoResolution\":\"" + SpydroidActivity.videoQuality.resX + "x" + SpydroidActivity.videoQuality.resY + "\",");
-			response.append("\"videoFramerate\":\"" + SpydroidActivity.videoQuality.framerate + " fps\",");
-			response.append("\"videoBitrate\":\"" + SpydroidActivity.videoQuality.bitrate/1000 + " kbps\"}");
+			response.append("\"videoEncoder\":\"" + (SpydroidApplication.videoEncoder==Session.VIDEO_H263?"H.263":"H.264") + "\",");
+			response.append("\"videoResolution\":\"" + SpydroidApplication.videoQuality.resX + "x" + SpydroidApplication.videoQuality.resY + "\",");
+			response.append("\"videoFramerate\":\"" + SpydroidApplication.videoQuality.framerate + " fps\",");
+			response.append("\"videoBitrate\":\"" + SpydroidApplication.videoQuality.bitrate/1000 + " kbps\"}");
 			
 		}
 		
@@ -161,11 +161,11 @@ public class RequestHandler {
 			final Editor editor = prefs.edit();
 			
 			editor.putBoolean("stream_video", settings.getBoolean("stream_video"));
-			SpydroidActivity.videoQuality = VideoQuality.parseQuality(settings.getString("video_quality"));
-			editor.putInt("video_resX", SpydroidActivity.videoQuality.resX);
-			editor.putInt("video_resY", SpydroidActivity.videoQuality.resY);
-			editor.putString("video_framerate", String.valueOf(SpydroidActivity.videoQuality.framerate));
-			editor.putString("video_bitrate", String.valueOf(SpydroidActivity.videoQuality.bitrate/1000));
+			SpydroidApplication.videoQuality = VideoQuality.parseQuality(settings.getString("video_quality"));
+			editor.putInt("video_resX", SpydroidApplication.videoQuality.resX);
+			editor.putInt("video_resY", SpydroidApplication.videoQuality.resY);
+			editor.putString("video_framerate", String.valueOf(SpydroidApplication.videoQuality.framerate));
+			editor.putString("video_bitrate", String.valueOf(SpydroidApplication.videoQuality.bitrate/1000));
 			editor.putString("video_encoder", settings.getString("video_encoder").equals("H.263")?"2":"1");
 			editor.putBoolean("stream_audio", settings.getBoolean("stream_audio"));
 			editor.putString("audio_encoder", settings.getString("audio_encoder").equals("AMR-NB")?"3":"5");

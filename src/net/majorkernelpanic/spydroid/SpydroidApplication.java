@@ -31,25 +31,71 @@ import static org.acra.ReportField.SHARED_PREFERENCES;
 import static org.acra.ReportField.STACK_TRACE;
 import static org.acra.ReportField.USER_APP_START_DATE;
 import static org.acra.ReportField.USER_CRASH_DATE;
+import net.majorkernelpanic.streaming.Session;
+import net.majorkernelpanic.streaming.video.H264Stream;
+import net.majorkernelpanic.streaming.video.VideoQuality;
 
 import org.acra.annotation.ReportsCrashes;
 
 import android.content.Context;
+import android.content.SharedPreferences;
+import android.preference.PreferenceManager;
 
 @ReportsCrashes(formKey = "dGhWbUlacEV6X0hlS2xqcmhyYzNrWlE6MQ", customReportContent = { APP_VERSION_NAME, PHONE_MODEL, BRAND, PRODUCT, ANDROID_VERSION, STACK_TRACE, USER_APP_START_DATE, USER_CRASH_DATE, LOGCAT, DEVICE_FEATURES, SHARED_PREFERENCES })
 public class SpydroidApplication extends android.app.Application {
 	
+    /** Default listening port for the RTSP server. **/
+    public static int RtspPort = 8086;
+    
+    /** Default listening port for the HTTP server. **/
+    public static int HttpPort = 8080;
+    
+    /** Default quality of video streams **/
+	public static VideoQuality videoQuality = new VideoQuality(640,480,15,500000);
+	
+	/** By default AMR is the audio encoder **/
+	public static int audioEncoder = Session.AUDIO_AMRNB;
+	
+	/** By default H.263 is the video encoder **/
+	public static int videoEncoder = Session.VIDEO_H263;
+	
+	/** Set this flag to true to disable the ads **/
 	public final static boolean DONATE_VERSION = false;
 	
 	private static Context context;
 	
 	@Override
 	public void onCreate() {
+		
 		// The following line triggers the initialization of ACRA
 		// Please do not uncomment this line unless you change the form id or I will receive your crash reports !
 		//ACRA.init(this);
 		SpydroidApplication.context = getApplicationContext();
 		super.onCreate();
+		
+		SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(this);
+		
+        // On android 3.* AAC ADTS is not supported so we set the default encoder to AMR-NB, on android 4.* AAC is the default encoder
+        audioEncoder = (Integer.parseInt(android.os.Build.VERSION.SDK)<14) ? Session.AUDIO_AMRNB : Session.AUDIO_AAC;
+        audioEncoder = Integer.parseInt(settings.getString("audio_encoder", String.valueOf(audioEncoder)));
+        videoEncoder = Integer.parseInt(settings.getString("video_encoder", String.valueOf(videoEncoder)));
+        
+        // Read video quality settings from the preferences 
+        videoQuality = VideoQuality.merge(
+        		new VideoQuality(
+        				settings.getInt("video_resX", 0),
+        				settings.getInt("video_resY", 0), 
+        				Integer.parseInt(settings.getString("video_framerate", "0")), 
+        				Integer.parseInt(settings.getString("video_bitrate", "0"))*1000
+        		),
+        		videoQuality);
+
+        Session.setDefaultAudioEncoder(!settings.getBoolean("stream_audio", true)?0:audioEncoder);
+        Session.setDefaultVideoEncoder(!settings.getBoolean("stream_video", false)?0:videoEncoder);
+        Session.setDefaultVideoQuality(videoQuality);
+        H264Stream.setPreferences(settings);
+		
+		
 	}
 	
 	public static Context getContext() {

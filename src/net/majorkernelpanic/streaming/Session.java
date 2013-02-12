@@ -140,8 +140,10 @@ public class Session {
 		callback = new SurfaceHolder.Callback() {
 			public void surfaceChanged(SurfaceHolder holder, int format,
 					int width, int height) {
+				Log.d(TAG,"Surface changed !!");
 			}
 			public void surfaceCreated(SurfaceHolder holder) {
+				Log.d(TAG,"Surface created !!");
 			}
 			public void surfaceDestroyed(SurfaceHolder holder) {
 				Log.d(TAG,"Surface destroyed !!");

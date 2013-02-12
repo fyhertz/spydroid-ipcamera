@@ -21,18 +21,13 @@
 package net.majorkernelpanic.spydroid.ui;
 
 import java.io.IOException;
-import java.util.Locale;
 
 import net.majorkernelpanic.spydroid.R;
 import net.majorkernelpanic.spydroid.SpydroidApplication;
-import net.majorkernelpanic.spydroid.Utilities;
 import net.majorkernelpanic.spydroid.api.CustomHttpServer;
 import net.majorkernelpanic.streaming.Session;
 import net.majorkernelpanic.streaming.misc.HttpServer;
 import net.majorkernelpanic.streaming.misc.RtspServer;
-import net.majorkernelpanic.streaming.video.H264Stream;
-import net.majorkernelpanic.streaming.video.VideoQuality;
-import android.app.Activity;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
@@ -42,239 +37,137 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
-import android.net.wifi.WifiInfo;
+import android.content.pm.ActivityInfo;
 import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.os.PowerManager;
 import android.preference.PreferenceManager;
+import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentActivity;
+import android.support.v4.app.FragmentManager;
+import android.support.v4.app.FragmentPagerAdapter;
 import android.support.v4.app.NotificationCompat;
+import android.support.v4.view.MenuItemCompat;
+import android.support.v4.view.ViewPager;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.Surface;
-import android.view.SurfaceHolder;
-import android.view.SurfaceView;
-import android.view.View;
-import android.view.View.OnClickListener;
-import android.view.animation.Animation;
-import android.view.animation.AnimationUtils;
-import android.widget.ImageView;
-import android.widget.LinearLayout;
-import android.widget.TextView;
 import android.widget.Toast;
 
 /** 
  * Spydroid launches an RtspServer, clients can then connect to it and receive audio/video streams from the phone
  */
-public class SpydroidActivity extends Activity implements OnSharedPreferenceChangeListener {
+public class SpydroidActivity extends FragmentActivity implements OnSharedPreferenceChangeListener {
     
     static final public String TAG = "SpydroidActivity";
     
-    /** Default listening port for the RTSP server **/
-    private final int defaultRtspPort = 8086;
+    static private CustomHttpServer mHttpServer = null;
+    static private RtspServer mRtspServer = null;
     
-    /** Default listening port for the HTTP server **/
-    private final int defaultHttpPort = 8080;
-    
-    /** Default quality of video streams **/
-	public static VideoQuality videoQuality = new VideoQuality(640,480,15,500000);
-	
-	/** By default AMR is the audio encoder **/
-	public static int audioEncoder = Session.AUDIO_AMRNB;
-	
-	/** By default H.263 is the video encoder **/
-	public static int videoEncoder = Session.VIDEO_H263;
-
-    /** The HttpServer will use those variables to send reports about the state of the app to the http interface **/
+    // The HttpServer will use those variables to send reports about the state of the app to the http interface
     public static boolean activityPaused = true;
     public static Exception lastCaughtException;
 
-    /** 
-     * A little hack to allow video streaming while the app is running in the background, 
-     * probably works very poorly on many devices...
-     * The surface will be used to prevent garbage collection
-     **/
+    // Prevent garbage collection of the Surface
     private boolean videoHackEnabled = false;
     private Surface videoHackSurface;
-    
-    static private CustomHttpServer httpServer = null;
-    static private RtspServer rtspServer = null;
-    
-    private PowerManager.WakeLock wl;
-    private SurfaceHolder holder;
-    private SurfaceView camera;
-    private TextView line1, line2, version, signWifi, signStreaming;
-    private ImageView buttonSettings, buttonClient, buttonAbout;
-    private LinearLayout signInformation;
-    private Animation pulseAnimation;
-    
+
+    private ViewPager mViewPager;
+    private PowerManager.WakeLock mWakeLock;
+    private SectionsPagerAdapter mAdapter;
     private boolean streaming = false, notificationEnabled = true;
     
-    public void onCreate(Bundle savedInstanceState) {
+	public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         
-        setContentView(R.layout.main);
-
-        camera = (SurfaceView)findViewById(R.id.smallcameraview);
-        line1 = (TextView)findViewById(R.id.line1);
-        line2 = (TextView)findViewById(R.id.line2);
-        version = (TextView)findViewById(R.id.version);
-        buttonSettings = (ImageView)findViewById(R.id.button_settings);
-        //buttonClient = (ImageView)findViewById(R.id.button_client);
-        buttonAbout = (ImageView)findViewById(R.id.button_about);
-        signWifi = (TextView)findViewById(R.id.advice);
-        signStreaming = (TextView)findViewById(R.id.streaming);
-        signInformation = (LinearLayout)findViewById(R.id.information);
-        pulseAnimation = AnimationUtils.loadAnimation(this, R.anim.pulse);
+        setContentView(R.layout.spydroid);
         
-        if (SpydroidApplication.DONATE_VERSION) {
-        	((LinearLayout)findViewById(R.id.adcontainer)).removeAllViews();
+        if (findViewById(R.id.handset_pager) != null) {
+        	// Handset detected
+            mAdapter = new SectionsPagerAdapter(getSupportFragmentManager(),SectionsPagerAdapter.HANDSET);
+        	mViewPager = (ViewPager) findViewById(R.id.handset_pager);
+        	setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+        } else {
+        	// Tablet detected
+        	mAdapter = new SectionsPagerAdapter(getSupportFragmentManager(),SectionsPagerAdapter.TABLET);
+        	mViewPager = (ViewPager) findViewById(R.id.tablet_pager);
+        	setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
         }
         
-        SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(this);
-        settings.registerOnSharedPreferenceChangeListener(this);
-       	
-        camera.getHolder().setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
-        holder = camera.getHolder();
-		
+        mViewPager.setAdapter(mAdapter);
+        
         PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
-        wl = pm.newWakeLock(PowerManager.SCREEN_DIM_WAKE_LOCK, "net.majorkernelpanic.spydroid.wakelock");
-    
-    	// Print version number
-        try {
-			version.setText("v"+this.getPackageManager().getPackageInfo(this.getPackageName(), 0 ).versionName);
-		} catch (Exception e) {
-			version.setText("v???");
-		}
-        
-        // On android 3.* AAC ADTS is not supported so we set the default encoder to AMR-NB, on android 4.* AAC is the default encoder
-        audioEncoder = (Integer.parseInt(android.os.Build.VERSION.SDK)<14) ? Session.AUDIO_AMRNB : Session.AUDIO_AAC;
-        audioEncoder = Integer.parseInt(settings.getString("audio_encoder", String.valueOf(audioEncoder)));
-        videoEncoder = Integer.parseInt(settings.getString("video_encoder", String.valueOf(videoEncoder)));
-        
-        // Read video quality settings from the preferences 
-        videoQuality = VideoQuality.merge(
-        		new VideoQuality(
-        				settings.getInt("video_resX", 0),
-        				settings.getInt("video_resY", 0), 
-        				Integer.parseInt(settings.getString("video_framerate", "0")), 
-        				Integer.parseInt(settings.getString("video_bitrate", "0"))*1000
-        		),
-        		videoQuality);
+        mWakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "net.majorkernelpanic.spydroid.wakelock");
 
-        Session.setHandler(handler);
-        Session.setDefaultAudioEncoder(!settings.getBoolean("stream_audio", true)?0:audioEncoder);
-        Session.setDefaultVideoEncoder(!settings.getBoolean("stream_video", false)?0:videoEncoder);
-        Session.setDefaultVideoQuality(videoQuality);
-        H264Stream.setPreferences(settings);
-
-        // There is the ugly hack to make video streaming possible even if spydroid is running background
-        videoHackEnabled = settings.getBoolean("video_hack", false);
-        Session.setSurfaceHolder(holder, !videoHackEnabled);
-        holder.addCallback(new SurfaceHolder.Callback() {
-			public void surfaceDestroyed(SurfaceHolder holder) {
-				// We remove the reference to allow garbage collection if videoHackEnabled is false 
-				if (!videoHackEnabled) videoHackSurface = null;
-			}
-			public void surfaceCreated(SurfaceHolder holder) {
-				// We store a reference to the surface just to make sure that it won't be 
-				// garbage collected
-				videoHackSurface = holder.getSurface();
-			}
-			public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {}
-		});
+        Session.setHandler(mHandler);
         
-        if (rtspServer == null) rtspServer = new RtspServer(defaultRtspPort, handler);
-        if (httpServer == null) httpServer = new CustomHttpServer(defaultHttpPort, this.getApplicationContext(), handler);
-
-        buttonSettings.setOnClickListener(new OnClickListener() {
-			public void onClick(View v) {
-	            // Starts QualityListActivity where user can change the quality of the stream
-				Intent intent = new Intent(getApplicationContext(),OptionsActivity.class);
-	            startActivityForResult(intent, 0);
-			}
-		});
-        /*buttonClient.setOnClickListener(new OnClickListener() {
-			public void onClick(View v) {
-				// Starts ClientActivity, the user can then capture the stream from another phone running Spydroid
-	            Intent intent = new Intent(context,ClientActivity.class);
-	            startActivityForResult(intent, 0);
-			}
-		});*/
-        buttonAbout.setOnClickListener(new OnClickListener() {
-			public void onClick(View v) {
-	            // Display some information
-	            Intent intent = new Intent(getApplicationContext(),AboutActivity.class);
-	            startActivityForResult(intent, 0);
-			}
-		});
+        if (mRtspServer == null) mRtspServer = new RtspServer(SpydroidApplication.RtspPort, mHandler);
+        if (mHttpServer == null) mHttpServer = new CustomHttpServer(SpydroidApplication.HttpPort, this.getApplicationContext(), mHandler);    	
         
-        // Did the user disabled the notification ?
+        SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(this);
+        settings.registerOnSharedPreferenceChangeListener(this);        
         notificationEnabled = settings.getBoolean("notification_enabled", true);
         
     }
     
-    public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
-    	if (key.equals("video_resX") || key.equals("video_resY")) {
-    		videoQuality.resX = sharedPreferences.getInt("video_resX", 0);
-    		videoQuality.resY = sharedPreferences.getInt("video_resY", 0);
-    	}
-    	else if (key.equals("video_framerate")) {
-    		videoQuality.framerate = Integer.parseInt(sharedPreferences.getString("video_framerate", "0"));
-    	}
-    	else if (key.equals("video_bitrate")) {
-    		videoQuality.bitrate = Integer.parseInt(sharedPreferences.getString("video_bitrate", "0"))*1000;
-    	}
-    	else if (key.equals("audio_encoder") || key.equals("stream_audio")) { 
-    		audioEncoder = Integer.parseInt(sharedPreferences.getString("audio_encoder", "0"));
-    		Session.setDefaultAudioEncoder( audioEncoder );
-    		if (!sharedPreferences.getBoolean("stream_audio", false)) Session.setDefaultAudioEncoder(0);
-    	}
-    	else if (key.equals("stream_video") || key.equals("video_encoder")) {
-    		videoEncoder = Integer.parseInt(sharedPreferences.getString("video_encoder", "0"));
-    		Session.setDefaultVideoEncoder( videoEncoder );
-    		if (!sharedPreferences.getBoolean("stream_video", true)) Session.setDefaultVideoEncoder(0);
-    	}
-    	else if (key.equals("enable_http")) {
-    		if (sharedPreferences.getBoolean("enable_http", true)) {
-    			if (httpServer == null) httpServer = new CustomHttpServer(defaultHttpPort, this.getApplicationContext(), handler);
-    		} else {
-    			if (httpServer != null) {
-    				httpServer.stop();
-    				httpServer = null;
-    			}
-    		}
-    	}
-    	else if (key.equals("enable_rtsp")) {
-    		if (sharedPreferences.getBoolean("enable_rtsp", true)) {
-    			if (rtspServer == null) rtspServer = new RtspServer(defaultRtspPort, handler);
-    		} else {
-    			if (rtspServer != null) {
-    				rtspServer.stop();
-    				rtspServer = null;
-    			}
-    		}
-    	}
-    	else if (key.equals("notification_enabled")) {
-    		notificationEnabled  = sharedPreferences.getBoolean("notification_enabled", true);
-    		removeNotification();
-    	}
-    	else if (key.equals("video_hack")) {
-    		videoHackEnabled = sharedPreferences.getBoolean("video_hack", false);
-    		Session.setSurfaceHolder(holder,!videoHackEnabled); 
-    	}
+    class SectionsPagerAdapter extends FragmentPagerAdapter {
+
+    	public static final int HANDSET = 0x01;
+    	public static final int TABLET = 0x02;
+    	
+    	private int mode = 1; 
+    	private Fragment[] fragmentList;
+    	
+        public SectionsPagerAdapter(FragmentManager fm, int mode) {
+            super(fm);
+            this.mode = mode;
+            if (mode == HANDSET) fragmentList = new Fragment[] {new HandsetFragment(),new PreviewFragment(),new AboutFragment()};
+            else fragmentList = new Fragment[] {new TabletFragment(),new AboutFragment()};
+        }
+
+        @Override
+        public Fragment getItem(int i) {
+            return fragmentList[i];
+        }
+
+        @Override
+        public int getCount() {
+            return mode==HANDSET ? 3 : 2;
+        }
+
+        public HandsetFragment getHandsetFragment() {
+        	return (getItem(0).getView() != null) ? (HandsetFragment) getItem(0) : null;
+        }
+        
+        @Override
+        public CharSequence getPageTitle(int position) {
+        	if (mode == HANDSET) {
+        		switch (position) {
+        		case 0: return "Streaming";
+        		case 1: return "Preview";
+        		case 2: return "Help";
+        		}        		
+        	} else {
+        		switch (position) {
+        		case 0: return "Streaming";
+        		case 1: return "Help";
+        		}
+        	}
+            return null;
+        }
     }
-    
+	
     public void onStart() {
     	super.onStart();
     	
     	// Lock screen
-    	wl.acquire();
+    	mWakeLock.acquire();
     	
-    	
+    	// Did the user disabled the notification ?
     	if (notificationEnabled) {
     		Intent notificationIntent = new Intent(this, SpydroidActivity.class);
     		PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, PendingIntent.FLAG_CANCEL_CURRENT);
@@ -289,19 +182,21 @@ public class SpydroidActivity extends Activity implements OnSharedPreferenceChan
     		notification.flags |= Notification.FLAG_ONGOING_EVENT;
     		((NotificationManager)getSystemService(Context.NOTIFICATION_SERVICE)).notify(0,notification);
     	}
-    	
+        
     }
     	
     public void onStop() {
     	super.onStop();
     	// A WakeLock should only be released when isHeld() is true !
-    	if (wl.isHeld()) wl.release();
+    	if (mWakeLock.isHeld()) mWakeLock.release();
     }
     
     public void onResume() {
     	super.onResume();
     	// Determines if user is connected to a wireless network & displays ip 
-    	if (!streaming) displayIpAddress();
+    	if (!streaming) {
+    		if (mAdapter.getHandsetFragment() != null) mAdapter.getHandsetFragment().displayIpAddress();
+    	}
     	activityPaused = true;
     	startServers();
     	registerReceiver(wifiStateReceiver,new IntentFilter(WifiManager.NETWORK_STATE_CHANGED_ACTION));
@@ -318,6 +213,57 @@ public class SpydroidActivity extends Activity implements OnSharedPreferenceChan
     	super.onDestroy();
     }
     
+    public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
+    	if (key.equals("video_resX") || key.equals("video_resY")) {
+    		SpydroidApplication.videoQuality.resX = sharedPreferences.getInt("video_resX", 0);
+    		SpydroidApplication.videoQuality.resY = sharedPreferences.getInt("video_resY", 0);
+    	}
+    	else if (key.equals("video_framerate")) {
+    		SpydroidApplication.videoQuality.framerate = Integer.parseInt(sharedPreferences.getString("video_framerate", "0"));
+    	}
+    	else if (key.equals("video_bitrate")) {
+    		SpydroidApplication.videoQuality.bitrate = Integer.parseInt(sharedPreferences.getString("video_bitrate", "0"))*1000;
+    	}
+    	else if (key.equals("audio_encoder") || key.equals("stream_audio")) { 
+    		SpydroidApplication.audioEncoder = Integer.parseInt(sharedPreferences.getString("audio_encoder", "0"));
+    		Session.setDefaultAudioEncoder( SpydroidApplication.audioEncoder );
+    		if (!sharedPreferences.getBoolean("stream_audio", false)) Session.setDefaultAudioEncoder(0);
+    	}
+    	else if (key.equals("stream_video") || key.equals("video_encoder")) {
+    		SpydroidApplication.videoEncoder = Integer.parseInt(sharedPreferences.getString("video_encoder", "0"));
+    		Session.setDefaultVideoEncoder( SpydroidApplication.videoEncoder );
+    		if (!sharedPreferences.getBoolean("stream_video", true)) Session.setDefaultVideoEncoder(0);
+    	}
+    	else if (key.equals("enable_http")) {
+    		if (sharedPreferences.getBoolean("enable_http", true)) {
+    			if (mHttpServer == null) mHttpServer = new CustomHttpServer(SpydroidApplication.HttpPort, this.getApplicationContext(), mHandler);
+    		} else {
+    			if (mHttpServer != null) {
+    				mHttpServer.stop();
+    				mHttpServer = null;
+    			}
+    		}
+    	}
+    	else if (key.equals("enable_rtsp")) {
+    		if (sharedPreferences.getBoolean("enable_rtsp", true)) {
+    			if (mRtspServer == null) mRtspServer = new RtspServer(SpydroidApplication.RtspPort, mHandler);
+    		} else {
+    			if (mRtspServer != null) {
+    				mRtspServer.stop();
+    				mRtspServer = null;
+    			}
+    		}
+    	}
+    	else if (key.equals("notification_enabled")) {
+    		notificationEnabled  = sharedPreferences.getBoolean("notification_enabled", true);
+    		removeNotification();
+    	}
+    	else if (key.equals("video_hack")) {
+    		videoHackEnabled = sharedPreferences.getBoolean("video_hack", false);
+    		//Session.setSurfaceHolder(holder,!videoHackEnabled); 
+    	}
+    }  
+    
     public void onBackPressed() {
     	Intent setIntent = new Intent(Intent.ACTION_MAIN);
     	setIntent.addCategory(Intent.CATEGORY_HOME);
@@ -328,6 +274,8 @@ public class SpydroidActivity extends Activity implements OnSharedPreferenceChan
     public boolean onCreateOptionsMenu(Menu menu) {
         MenuInflater inflater = getMenuInflater();
         inflater.inflate(R.menu.menu, menu);
+        MenuItemCompat.setShowAsAction(menu.findItem(R.id.quit), 1);
+        MenuItemCompat.setShowAsAction(menu.findItem(R.id.options), 1);
         return true;
     }
     
@@ -335,11 +283,6 @@ public class SpydroidActivity extends Activity implements OnSharedPreferenceChan
     	Intent intent;
     	
         switch (item.getItemId()) {
-        /*case R.id.client:
-            // Starts ClientActivity where user can view stream from another phone
-            intent = new Intent(this.getBaseContext(),ClientActivity.class);
-            startActivityForResult(intent, 0);
-            return true;*/
         case R.id.options:
             // Starts QualityListActivity where user can change the streaming quality
             intent = new Intent(this.getBaseContext(),OptionsActivity.class);
@@ -358,16 +301,16 @@ public class SpydroidActivity extends Activity implements OnSharedPreferenceChan
     }
     
     private void startServers() {
-    	if (rtspServer != null) {
+    	if (mRtspServer != null) {
     		try {
-    			rtspServer.start();
+    			mRtspServer.start();
     		} catch (IOException e) {
     			log("RtspServer could not be started : "+(e.getMessage()!=null?e.getMessage():"Unknown error"));
     		}
     	}
-    	if (httpServer != null) {
+    	if (mHttpServer != null) {
     		try {
-    			httpServer.start();
+    			mHttpServer.start();
     		} catch (IOException e) {
     			log("HttpServer could not be started : "+(e.getMessage()!=null?e.getMessage():"Unknown error"));
     		}
@@ -375,13 +318,13 @@ public class SpydroidActivity extends Activity implements OnSharedPreferenceChan
     }
 
     private void stopServers() {
-    	if (httpServer != null) {
-    		httpServer.stop();
-    		httpServer = null;
+    	if (mHttpServer != null) {
+    		mHttpServer.stop();
+    		mHttpServer = null;
     	}
-    	if (rtspServer != null) {
-    		rtspServer.stop();
-    		rtspServer = null;
+    	if (mRtspServer != null) {
+    		mRtspServer.stop();
+    		mRtspServer = null;
     	}
     }
     
@@ -392,13 +335,13 @@ public class SpydroidActivity extends Activity implements OnSharedPreferenceChan
         	String action = intent.getAction();
         	// This intent is also received when app resumes even if wifi state hasn't changed :/
         	if (action.equals(WifiManager.NETWORK_STATE_CHANGED_ACTION)) {
-        		if (!streaming) displayIpAddress();
+        		if (!streaming && mAdapter.getHandsetFragment() != null) mAdapter.getHandsetFragment().displayIpAddress();
         	}
         } 
     };
     
     // The Handler that gets information back from the RtspServer and Session
-    private final Handler handler = new Handler() {
+    private final Handler mHandler = new Handler() {
     	
     	public void handleMessage(Message msg) { 
     		switch (msg.what) {
@@ -416,79 +359,23 @@ public class SpydroidActivity extends Activity implements OnSharedPreferenceChan
     			break;    			
     		case Session.MESSAGE_START:
     			streaming = true;
-    			streamingState(1);
+    			if (mAdapter.getHandsetFragment() != null) mAdapter.getHandsetFragment().streamingState(1);
     			break;
     		case Session.MESSAGE_STOP:
     			streaming = false;
-    			displayIpAddress();
+    			if (mAdapter.getHandsetFragment() != null) mAdapter.getHandsetFragment().displayIpAddress();
     			break;
     		}
     	}
     	
     };
     
-    private void displayIpAddress() {
-		WifiManager wifiManager = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
-		WifiInfo info = wifiManager.getConnectionInfo();
-		String ipaddress = null;
-		Log.d("SpydroidActivity","getNetworkId "+info.getNetworkId());
-    	if (info!=null && info.getNetworkId()>-1) {
-	    	int i = info.getIpAddress();
-	        String ip = String.format(Locale.ENGLISH,"%d.%d.%d.%d", i & 0xff, i >> 8 & 0xff,i >> 16 & 0xff,i >> 24 & 0xff);
-	    	line1.setText("http://");
-	    	line1.append(ip);
-	    	line1.append(":"+defaultHttpPort);
-	    	line2.setText("rtsp://");
-	    	line2.append(ip);
-	    	line2.append(":"+defaultRtspPort);
-	    	streamingState(0);
-    	} else if((ipaddress = Utilities.getLocalIpAddress(true)) != null) {
-    		line1.setText("http://");
-	    	line1.append(ipaddress);
-	    	line1.append(":"+defaultHttpPort);
-	    	line2.setText("rtsp://");
-	    	line2.append(ipaddress);
-	    	line2.append(":"+defaultRtspPort);
-	    	streamingState(0);
-    	} else {
-      		line1.setText("HTTP://xxx.xxx.xxx.xxx:"+defaultHttpPort);
-    		line2.setText("RTSP://xxx.xxx.xxx.xxx:"+defaultHttpPort);
-    		streamingState(2);
-    	}
-    	
-    }
+	private void removeNotification() {
+		((NotificationManager)getSystemService(Context.NOTIFICATION_SERVICE)).cancel(0);
+	}
     
     public void log(String s) {
     	Toast.makeText(getApplicationContext(), s, Toast.LENGTH_SHORT).show();
     }
-
-	private void streamingState(int state) {
-		// Not streaming
-		if (state==0) {
-			signStreaming.clearAnimation();
-			signWifi.clearAnimation();
-			signStreaming.setVisibility(View.GONE);
-			signInformation.setVisibility(View.VISIBLE);
-			signWifi.setVisibility(View.GONE);
-		} else if (state==1) {
-			// Streaming
-			signWifi.clearAnimation();
-			signStreaming.setVisibility(View.VISIBLE);
-			signStreaming.startAnimation(pulseAnimation);
-			signInformation.setVisibility(View.INVISIBLE);
-			signWifi.setVisibility(View.GONE);
-		} else if (state==2) {
-			// No wifi !
-			signStreaming.clearAnimation();
-			signStreaming.setVisibility(View.GONE);
-			signInformation.setVisibility(View.INVISIBLE);
-			signWifi.setVisibility(View.VISIBLE);
-			signWifi.startAnimation(pulseAnimation);
-		}
-	}
-	
-	private void removeNotification() {
-		((NotificationManager)getSystemService(Context.NOTIFICATION_SERVICE)).cancel(0);
-	}
     
 }

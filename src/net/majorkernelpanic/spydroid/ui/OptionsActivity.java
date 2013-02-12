@@ -24,6 +24,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import net.majorkernelpanic.spydroid.R;
+import net.majorkernelpanic.spydroid.SpydroidApplication;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
 import android.os.Bundle;
@@ -55,11 +56,11 @@ public class OptionsActivity extends PreferenceActivity {
 		videoFramerate.setEnabled(videoState);        
 		audioEncoder.setEnabled(settings.getBoolean("stream_audio", true));
         
-        videoEncoder.setValue(String.valueOf(SpydroidActivity.videoEncoder));
-        audioEncoder.setValue(String.valueOf(SpydroidActivity.audioEncoder));
-        videoFramerate.setValue(String.valueOf(SpydroidActivity.videoQuality.framerate));
-        videoBitrate.setValue(String.valueOf(SpydroidActivity.videoQuality.bitrate/1000));
-        videoResolution.setValue(SpydroidActivity.videoQuality.resX+"x"+SpydroidActivity.videoQuality.resY);
+        videoEncoder.setValue(String.valueOf(SpydroidApplication.videoEncoder));
+        audioEncoder.setValue(String.valueOf(SpydroidApplication.audioEncoder));
+        videoFramerate.setValue(String.valueOf(SpydroidApplication.videoQuality.framerate));
+        videoBitrate.setValue(String.valueOf(SpydroidApplication.videoQuality.bitrate/1000));
+        videoResolution.setValue(SpydroidApplication.videoQuality.resX+"x"+SpydroidApplication.videoQuality.resY);
         
         videoResolution.setSummary(getString(R.string.settings0)+" "+videoResolution.getValue()+"px");
         videoFramerate.setSummary(getString(R.string.settings1)+" "+videoFramerate.getValue()+"fps");
