@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen
+        xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <PreferenceCategory
+            android:title="@string/settings3">
+
+        <CheckBoxPreference
+                android:key="stream_audio"
+                android:title="@string/settings3"
+                android:defaultValue="false"
+                android:summary="@string/settings4" />
+
+        <ListPreference
+            android:title="@string/settings5"
+            android:key="audio_encoder"
+            android:summary="@string/settings6"
+            android:entries="@array/audioEncoderArray"
+            android:entryValues="@array/audioEncoderValues" />
+        
+    </PreferenceCategory>
+    
+        <PreferenceCategory
+            android:title="@string/settings7">
+
+        <CheckBoxPreference
+            android:key="stream_video"
+            android:title="@string/settings7"
+            android:defaultValue="true"
+            android:summary="@string/settings8" />
+            
+        <ListPreference
+            android:title="@string/settings9"
+            android:key="video_encoder"
+            android:summary="@string/settings10"
+            android:entries="@array/videoEncoderArray"
+            android:entryValues="@array/videoEncoderValues" />
+        
+        <ListPreference
+            android:title="@string/settings11"
+            android:key="video_resolution"
+            android:entries="@array/videoResolutionArray"
+            android:entryValues="@array/videoResolutionArray" />
+                
+        <ListPreference
+            android:title="@string/settings12"
+            android:key="video_framerate"
+            android:entries="@array/videoFramerateArray"
+            android:entryValues="@array/videoFramerateValues" />
+        
+        <ListPreference
+            android:title="@string/settings13"
+            android:key="video_bitrate"
+            android:entries="@array/videoBitrateArray"
+            android:entryValues="@array/videoBitrateValues" />
+
+    </PreferenceCategory>
+        
+	<PreferenceCategory 
+	    android:title="@string/settings14">
+	    
+		<CheckBoxPreference
+	        android:key="notification_enabled"
+	        android:title="@string/settings15"
+	        android:defaultValue="true"
+	        android:summary="@string/settings16" />
+		
+		<CheckBoxPreference
+	        android:key="video_hack"
+	        android:title="@string/settings17"
+	        android:defaultValue="false"
+	        android:summary="@string/settings18" />
+                    
+	</PreferenceCategory>                    
+        
+</PreferenceScreen>
