@@ -79,7 +79,7 @@ public class SessionManager {
 	}
 	
 	/**
-	 * Those callback won't necessarily be called from the ui thread !
+	 * Those callbacks won't necessarily be called from the ui thread !
 	 */
 	public interface CallbackListener {
 		

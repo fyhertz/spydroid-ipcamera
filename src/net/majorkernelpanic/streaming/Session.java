@@ -105,7 +105,7 @@ public class Session {
 	/** 
 	 * Defines the routing scheme that will be used for this session.
 	 * You must call this method before adding tracks to the session.
-	 * @param routingScheme Can be either {@link #UNICAST} or {@link MULTICAST}
+	 * @param routingScheme Can be either {@link #UNICAST} or {@link #MULTICAST}
 	 */
 	public void setRoutingScheme(int routingScheme) {
 		this.mRoutingScheme = routingScheme;

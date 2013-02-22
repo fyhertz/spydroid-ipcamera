@@ -72,7 +72,7 @@ public abstract class MediaStream extends MediaRecorder implements Stream {
 		this.mPacketizer.setDestination(dest, dport);
 	}
 	
-	/** Sets the Time To Live of the underlying RtpSocket. 
+	/** Sets the Time To Live of the underlying {@link net.majorkernelpanic.streaming.rtp.RtpSocket}. 
 	 * @throws IOException **/
 	public void setTimeToLive(int ttl) throws IOException {
 		this.mPacketizer.setTimeToLive(ttl);
@@ -89,7 +89,7 @@ public abstract class MediaStream extends MediaRecorder implements Stream {
 	}
 	
 	/**
-	 * Sets the mode of the {@link net.majorkernelpanic.streaming.MediaStreame}.
+	 * Sets the mode of the {@link MediaStreame}.
 	 * If the mode is set to {@link #MODE_STREAMING}, video is forwarded to a UDP socket,
 	 * and if the mode is {@link #MODE_DEFAULT}, video is recorded in a file.
 	 * @param mode Either {@link #MODE_STREAMING} or {@link #MODE_DEFAULT} 
@@ -106,7 +106,7 @@ public abstract class MediaStream extends MediaRecorder implements Stream {
 	}
 	
 	/**
-	 * Returns the packetizer associated with the {@link net.majorkernelpanic.MediaStream}.
+	 * Returns the packetizer associated with the {@link MediaStream}.
 	 * @return The packetizer
 	 */
 	public AbstractPacketizer getPacketizer() { 
@@ -114,8 +114,8 @@ public abstract class MediaStream extends MediaRecorder implements Stream {
 	}
 	
 	/**
-	 * Indicates if the {@link net.majorkernelpanic.MediaStream} is streaming.
-	 * @return A boolean indicating if the {@link net.majorkernelpanic.MediaStream} is streaming
+	 * Indicates if the {@link MediaStream} is streaming.
+	 * @return A boolean indicating if the {@link MediaStream} is streaming
 	 */
 	public boolean isStreaming() {
 		return mStreaming;
@@ -170,7 +170,7 @@ public abstract class MediaStream extends MediaRecorder implements Stream {
 	}
 	
 	/**
-	 * Returns the SSRC of the underlying {@link #net.majorkernelpanic.rtp.RtpSocket}.
+	 * Returns the SSRC of the underlying {@link net.majorkernelpanic.streaming.rtp.RtpSocket}.
 	 * @return the SSRC of underlying RTP socket
 	 */
 	public int getSSRC() {

@@ -27,7 +27,7 @@ import java.net.MulticastSocket;
 import java.util.Random;
 
 /**
- * A basic implementation of an RTP socket 
+ * A basic implementation of an RTP socket.
  */
 public class RtpSocket {
 
@@ -91,7 +91,7 @@ public class RtpSocket {
 		upack.setAddress(dest);
 	}
 	
-	/** Returns the buffer that you can directly modify before calling send */
+	/** Returns the buffer that you can directly modify before calling send. */
 	public byte[] getBuffer() {
 		return buffer;
 	}
@@ -104,7 +104,7 @@ public class RtpSocket {
 		return usock.getLocalPort();
 	}
 	
-	/** Sends the RTP packet over the network */
+	/** Sends the RTP packet over the network. */
 	public void send(int length) throws IOException {
 		
 		updateSequence();
@@ -118,13 +118,13 @@ public class RtpSocket {
 		
 	}
 	
-	/** Increments the sequence number */
+	/** Increments the sequence number. */
 	private void updateSequence() {
 		setLong(++seq, 2, 4);
 	}
 	
 	/** 
-	 * Overwrites the timestamp in the packet
+	 * Overwrites the timestamp in the packet.
 	 * @param timestamp The new timestamp
 	 **/
 	public void updateTimestamp(long timestamp) {

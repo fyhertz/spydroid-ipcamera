@@ -64,7 +64,7 @@ public abstract class VideoStream extends MediaStream {
 	
 	/**
 	 * Sets a Surface to show a preview of recorded media (video). 
-	 * You can call this method at any time and changes will take effect next time you call prepare()
+	 * You can call this method at any time and changes will take effect next time you call {@link #prepare()}.
 	 */
 	public void setPreviewDisplay(Surface surface) {
 		this.mSurface = surface;
@@ -77,8 +77,8 @@ public abstract class VideoStream extends MediaStream {
 	
 	/** 
 	 * Modifies the resolution of the stream. You can call this method at any time 
-	 * and changes will take effect next time you call prepare()
-	 * setVideoQuality() may be more convenient 
+	 * and changes will take effect next time you call {@link #prepare()}.
+	 * {@link #setVideoQuality(VideoQuality)} may be more convenient.
 	 * @param width Width of the stream
 	 * @param height height of the stream
 	 */
@@ -92,8 +92,8 @@ public abstract class VideoStream extends MediaStream {
 	
 	/** 
 	 * Modifies the framerate of the stream. You can call this method at any time 
-	 * and changes will take effect next time you call prepare()
-	 * setVideoQuality() may be more convenient
+	 * and changes will take effect next time you call {@link #prepare()}.
+	 * {@link #setVideoQuality(VideoQuality)} may be more convenient.
 	 * @param rate Framerate of the stream
 	 */	
 	public void setVideoFramerate(int rate) {
@@ -105,8 +105,8 @@ public abstract class VideoStream extends MediaStream {
 	
 	/** 
 	 * Modifies the bitrate of the stream. You can call this method at any time 
-	 * and changes will take effect next time you call prepare()
-	 * setVideoQuality() may be more convenient
+	 * and changes will take effect next time you call {@link #prepare()}.
+	 * {@link #setVideoQuality(VideoQuality)} may be more convenient.
 	 * @param bitrate Bitrate of the stream in bit per second
 	 */	
 	public void setVideoEncodingBitrate(int bitrate) {
@@ -118,7 +118,7 @@ public abstract class VideoStream extends MediaStream {
 	
 	/** 
 	 * Modifies the quality of the stream. You can call this method at any time 
-	 * and changes will take effect next time you call prepare()
+	 * and changes will take effect next time you call {@link prepare()}.
 	 * @param videoQuality Quality of the stream
 	 */
 	public void setVideoQuality(VideoQuality videoQuality) {
@@ -130,7 +130,7 @@ public abstract class VideoStream extends MediaStream {
 	
 	/** 
 	 * Modifies the videoEncoder of the stream. You can call this method at any time 
-	 * and changes will take effect next time you call prepare()
+	 * and changes will take effect next time you call {@link prepare()}.
 	 * @param videoEncoder Encoder of the stream
 	 */
 	public void setVideoEncoder(int videoEncoder) {
@@ -159,7 +159,7 @@ public abstract class VideoStream extends MediaStream {
 	}
 
 	/**
-	 * Prepare the VideoStream, you can then call start()
+	 * Prepare the VideoStream, you can then call {@link start()}.
 	 * The underlying Camera will be opened and configured whaen you call this method so don't forget to deal with the RuntimeExceptions !
 	 * Camera.open, Camera.setParameter, Camera.unlock may throw one !
 	 */
@@ -246,6 +246,10 @@ public abstract class VideoStream extends MediaStream {
 	
 	public abstract String generateSessionDescription() throws IllegalStateException, IOException;
 
+	/** 
+	 * Releases ressources associated with the {@link VideoStream}. 
+	 * The object can't be reused once this function has been called. 
+	 **/
 	public void release() {
 		stop();
 		super.release();
