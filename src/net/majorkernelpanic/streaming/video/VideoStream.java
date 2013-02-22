@@ -61,7 +61,7 @@ public abstract class VideoStream extends MediaStream {
 			}
 		}
 	}
-	
+
 	/**
 	 * Sets a Surface to show a preview of recorded media (video). 
 	 * You can call this method at any time and changes will take effect next time you call {@link #prepare()}.
@@ -69,12 +69,12 @@ public abstract class VideoStream extends MediaStream {
 	public void setPreviewDisplay(Surface surface) {
 		this.mSurface = surface;
 	}
-	
+
 	/** Turn flash on or off if phone has one */
 	public void setFlashState(boolean state) {
 		mFlashState = state;
 	}
-	
+
 	/** 
 	 * Modifies the resolution of the stream. You can call this method at any time 
 	 * and changes will take effect next time you call {@link #prepare()}.
@@ -89,7 +89,7 @@ public abstract class VideoStream extends MediaStream {
 			mQualityHasChanged = true;
 		}
 	}
-	
+
 	/** 
 	 * Modifies the framerate of the stream. You can call this method at any time 
 	 * and changes will take effect next time you call {@link #prepare()}.
@@ -102,7 +102,7 @@ public abstract class VideoStream extends MediaStream {
 			mQualityHasChanged = true;
 		}
 	}
-	
+
 	/** 
 	 * Modifies the bitrate of the stream. You can call this method at any time 
 	 * and changes will take effect next time you call {@link #prepare()}.
@@ -115,7 +115,7 @@ public abstract class VideoStream extends MediaStream {
 			mQualityHasChanged = true;
 		}
 	}
-	
+
 	/** 
 	 * Modifies the quality of the stream. You can call this method at any time 
 	 * and changes will take effect next time you call {@link #prepare()}.
@@ -127,7 +127,7 @@ public abstract class VideoStream extends MediaStream {
 			mQualityHasChanged = true;
 		}
 	}
-	
+
 	/** 
 	 * Modifies the videoEncoder of the stream. You can call this method at any time 
 	 * and changes will take effect next time you call {@link #prepare()}.
@@ -136,7 +136,7 @@ public abstract class VideoStream extends MediaStream {
 	public void setVideoEncoder(int videoEncoder) {
 		this.mVideoEncoder = videoEncoder;
 	}
-	
+
 	/**
 	 * Stops the stream
 	 */
@@ -185,7 +185,7 @@ public abstract class VideoStream extends MediaStream {
 
 		// If an exception is thrown after the camera was open, we must absolutly release it !
 		try {
-		
+
 			// We reconnect to camera to change flash state if needed
 			Parameters parameters = mCamera.getParameters();
 			if (mFlashState) {
@@ -231,7 +231,7 @@ public abstract class VideoStream extends MediaStream {
 
 			// Quality has been updated
 			mQualityHasChanged = false;
-		
+
 		} catch (RuntimeException e) {
 			mCamera.release();
 			mCamera = null;
@@ -243,7 +243,7 @@ public abstract class VideoStream extends MediaStream {
 		}
 
 	}
-	
+
 	public abstract String generateSessionDescription() throws IllegalStateException, IOException;
 
 	/** 
@@ -254,5 +254,5 @@ public abstract class VideoStream extends MediaStream {
 		stop();
 		super.release();
 	}
-	
+
 }
