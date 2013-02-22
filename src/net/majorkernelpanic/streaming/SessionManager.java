@@ -28,7 +28,7 @@ import android.util.Log;
 import android.view.SurfaceHolder;
 
 /**
- * Call {@link SessionManager.getManager} to get access to the SessionManager.
+ * Call {@link net.majorkernelpanic.streaming.SessionManager#getManager()} to get access to the SessionManager.
  * The SessionManager has a number of utility methods to create and manage Sessions.
  */
 public class SessionManager {
@@ -98,8 +98,8 @@ public class SessionManager {
 	private CallbackListener mListener = null;
 	
 	/**
-	 * Sets a callback class. See {@link #CallbackListener} to know what events will be fired.
-	 * @param listener
+	 * Sets a callback class. See {@link net.majorkernelpanic.streaming.SessionManager.CallbackListener} to know what events will be fired.
+	 * @param listener The listener
 	 */
 	public void setCallbackListener(CallbackListener listener) { 
 		mListener = listener;

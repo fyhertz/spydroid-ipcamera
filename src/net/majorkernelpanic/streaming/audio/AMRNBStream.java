@@ -37,7 +37,7 @@ public class AMRNBStream extends MediaStream {
 	public AMRNBStream() throws IOException {
 		super();
 		
-		this.packetizer = new AMRNBPacketizer();
+		mPacketizer = new AMRNBPacketizer();
 		
 	}
 

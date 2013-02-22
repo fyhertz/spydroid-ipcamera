@@ -58,13 +58,13 @@ public class CustomHttpServer extends HttpServer {
 
 	static class CustomRequestHandler implements HttpRequestHandler {
 
-		private Context context;
-		private Handler handler;
-		private Field[] raws = R.raw.class.getFields();
+		private Context mContext;
+		private Handler mHandler;
+		private Field[] mRaws = R.raw.class.getFields();
 		
 		public CustomRequestHandler(Context context, Handler handler) {
-			this.handler = handler;
-			this.context = context;
+			mHandler = handler;
+			mContext = context;
 		}
 		
 		public void handle(HttpRequest request, HttpResponse response, HttpContext arg2) throws HttpException, IOException {

@@ -31,6 +31,22 @@ public class VideoQuality {
 	
 	/**	Represents a quality for a video stream. **/ 
 	public VideoQuality() {}
+
+	/**
+	 * Represents a quality for a video stream.
+	 * @param resX The horizontal resolution
+	 * @param resY The vertical resolution
+	 * @param framerate The framerate in frame per seconds
+	 * @param bitrate The bitrate in bit per seconds
+	 * @param orientation The orientation of the video in the SurfaceView  
+	 */
+	public VideoQuality(int resX, int resY, int framerate, int bitrate, int orientation) {
+		this.framerate = framerate;
+		this.bitrate = bitrate;
+		this.resX = resX;
+		this.resY = resY;
+		this.orientation = orientation;
+	}	
 	
 	/**
 	 * Represents a quality for a video stream.
@@ -57,7 +73,8 @@ public class VideoQuality {
 		return (quality.resX == this.resX 				&
 				 quality.resY == this.resY 				&
 				 quality.framerate == this.framerate	&
-				 quality.bitrate == this.bitrate 		);
+				 quality.bitrate == this.bitrate 		&
+				 quality.orientation == this.orientation);
 	}
 	
 	public VideoQuality clone() {
@@ -84,6 +101,7 @@ public class VideoQuality {
 		if (videoQuality.resY==0) videoQuality.resY = withVideoQuality.resY;
 		if (videoQuality.framerate==0) videoQuality.framerate = withVideoQuality.framerate;
 		if (videoQuality.bitrate==0) videoQuality.bitrate = withVideoQuality.bitrate;
+		if (videoQuality.orientation==90) videoQuality.orientation = withVideoQuality.orientation;
 		return videoQuality;
 	}
 	

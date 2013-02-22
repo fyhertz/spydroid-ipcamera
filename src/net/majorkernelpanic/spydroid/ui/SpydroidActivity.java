@@ -105,7 +105,9 @@ public class SpydroidActivity extends FragmentActivity implements OnSharedPrefer
         settings.registerOnSharedPreferenceChangeListener(this);
         
         if (findViewById(R.id.handset_pager) != null) {
+        	
         	// Handset detected !
+        	
             mAdapter = new SectionsPagerAdapter(getSupportFragmentManager());
         	mViewPager = (ViewPager) findViewById(R.id.handset_pager);
         	setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
@@ -116,11 +118,15 @@ public class SpydroidActivity extends FragmentActivity implements OnSharedPrefer
     		SessionManager.getManager().setSurfaceHolder(mSurfaceHolder, !SpydroidActivity.hackEnabled);
         	
         } else {
+        	
         	// Tablet detected !
+        	
         	device = TABLET;
         	mAdapter = new SectionsPagerAdapter(getSupportFragmentManager());
         	mViewPager = (ViewPager) findViewById(R.id.tablet_pager);
         	setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
+        	SpydroidApplication.sVideoQuality.orientation = 0;
+        	
         }
         
         mViewPager.setAdapter(mAdapter);
@@ -142,6 +148,8 @@ public class SpydroidActivity extends FragmentActivity implements OnSharedPrefer
 					public void run() {
 						if (mAdapter.getHandsetFragment() != null) 
 							mAdapter.getHandsetFragment().displayIpAddress();
+						else
+							Log.e(TAG,"HandsetFragment does not exist");
 					}
 				});				
 			}
@@ -193,13 +201,19 @@ public class SpydroidActivity extends FragmentActivity implements OnSharedPrefer
         }
 
         public HandsetFragment getHandsetFragment() {
-        	int id = device == HANDSET ? R.id.handset_pager : R.id.tablet_pager;
-        	return (HandsetFragment) getSupportFragmentManager().findFragmentByTag("android:switcher:"+id+":0");
+        	if (device == HANDSET) {
+        		return (HandsetFragment) getSupportFragmentManager().findFragmentByTag("android:switcher:"+R.id.handset_pager+":0");
+        	} else {
+        		return (HandsetFragment) getSupportFragmentManager().findFragmentById(R.id.handset);
+        	}
         }
 
         public PreviewFragment getPreviewFragment() {
-        	int id = device == HANDSET ? R.id.handset_pager : R.id.tablet_pager;
-        	return (PreviewFragment) getSupportFragmentManager().findFragmentByTag("android:switcher:"+id+":1");
+        	if (device == HANDSET) {
+        		return (PreviewFragment) getSupportFragmentManager().findFragmentByTag("android:switcher:"+R.id.handset_pager+":1");
+        	} else {
+        		return (PreviewFragment) getSupportFragmentManager().findFragmentById(R.id.preview);
+        	}
         }
         
         @Override

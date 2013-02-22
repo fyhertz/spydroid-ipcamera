@@ -1,3 +1,23 @@
+/*
+ * Copyright (C) 2011-2013 GUIGUI Simon, fyhertz@gmail.com
+ * 
+ * This file is part of Spydroid (http://code.google.com/p/spydroid-ipcamera/)
+ * 
+ * Spydroid is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 3 of the License, or
+ * (at your option) any later version.
+ * 
+ * This source code is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with this source code; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
 package net.majorkernelpanic.spydroid.ui;
 
 import java.util.Locale;
@@ -16,8 +36,6 @@ import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.util.Log;
 import android.view.LayoutInflater;
-import android.view.SurfaceHolder;
-import android.view.SurfaceView;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.Animation;
@@ -70,13 +88,13 @@ public class HandsetFragment extends Fragment {
 	@Override
     public void onPause() {
     	super.onPause();
+    	if (!SessionManager.getManager().isStreaming()) displayIpAddress(); else streamingState(1); 
     	getActivity().unregisterReceiver(mWifiStateReceiver);
     }
 	
 	@Override
     public void onResume() {
     	super.onResume();
-    	// Determines if user is connected to a wireless network & displays ip 
     	if (!SessionManager.getManager().isStreaming()) displayIpAddress(); else streamingState(1); 
     	getActivity().registerReceiver(mWifiStateReceiver,new IntentFilter(WifiManager.NETWORK_STATE_CHANGED_ACTION));
     }

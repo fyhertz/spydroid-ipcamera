@@ -34,5 +34,10 @@ public class TabletFragment extends Fragment {
 		View rootView = inflater.inflate(R.layout.tablet,container,false);
 		return rootView ;
 	}
+	
+	@Override
+	public void onResume() {
+		super.onResume();
+	}
 
 }

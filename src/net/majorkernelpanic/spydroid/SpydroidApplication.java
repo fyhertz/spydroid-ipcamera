@@ -72,6 +72,7 @@ public class SpydroidApplication extends android.app.Application {
 		// Please do not uncomment this line unless you change the form id or I will receive your crash reports !
 		//ACRA.init(this);
 		SpydroidApplication.sContext = getApplicationContext();
+		
 		super.onCreate();
 		
 		SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(this);

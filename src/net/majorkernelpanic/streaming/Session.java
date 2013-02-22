@@ -105,7 +105,7 @@ public class Session {
 	/** 
 	 * Defines the routing scheme that will be used for this session.
 	 * You must call this method before adding tracks to the session.
-	 * @param routingScheme Can be either Session.UNICAST or Session.MULTICAST
+	 * @param routingScheme Can be either {@link #UNICAST} or {@link MULTICAST}
 	 */
 	public void setRoutingScheme(int routingScheme) {
 		this.mRoutingScheme = routingScheme;
@@ -131,7 +131,7 @@ public class Session {
 	
 	/** 
 	 * Add video track with specified quality and encoder. 
-	 * @param encoder Can be either Session.VIDEO_H264 or Session.VIDEO_H263
+	 * @param encoder Can be either {@link #VIDEO_H264} or {@link #VIDEO_H263}
 	 * @param camera Can be either CameraInfo.CAMERA_FACING_BACK or CameraInfo.CAMERA_FACING_FRONT
 	 * @param videoQuality Will determine the bitrate,framerate and resolution of the stream
 	 * @param flash Set it to true to turn the flash on, if the phone has no flash, an exception IllegalStateException will be thrown
@@ -187,7 +187,7 @@ public class Session {
 	
 	/** 
 	 * Adds audio track with specified encoder. 
-	 * @param encoder Can be either Session.AUDIO_AMRNB or Session.AUDIO_AAC
+	 * @param encoder Can be either {@link #AUDIO_AMRNB} or {@link #AUDIO_AAC}
 	 * @throws IOException
 	 */
 	public Session addAudioTrack(int encoder) throws IOException {
@@ -261,7 +261,7 @@ public class Session {
 	
 	/**
 	 * This method returns the selected routing scheme of the session.
-	 * The routing scheme can be either Session.UNICAST or Session.MULTICAST.
+	 * The routing scheme can be either {@link #UNICAST} or {@link #MULTICAST}.
 	 * @return The routing sheme of the session
 	 */
 	public String getRoutingScheme() {
