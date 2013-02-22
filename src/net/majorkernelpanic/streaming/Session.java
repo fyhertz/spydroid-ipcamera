@@ -41,45 +41,45 @@ import android.util.Log;
 public class Session {
 
 	public final static String TAG = "Session";
-	
+
 	/** Can be used with addVideoTrack to add an H.264 encoded stream */
 	public final static int VIDEO_H264 = 0x01;
-	
+
 	/** Can be used with addVideoTrack to add an H.263 encoded stream */
 	public final static int VIDEO_H263 = 0x02;
-	
+
 	/** Can be used with addAudioTrack to add an AMR encoded stream */
 	public final static int AUDIO_AMRNB = 0x03;
-	
+
 	/** Can be used with addAudioTrack to add an AAC encoded stream, only works with ICS */
 	public final static int AUDIO_AAC = 0x05;
-	
+
 	/** Do not currently work, feel free to fix it :) */
 	public final static int AUDIO_ANDROID_AMR = 0x04;
 
 	/** Use this with setRoutingScheme for unicasting */
 	public final static int UNICAST = 0x01;
-	
+
 	/** Use this with setRoutingScheme for multicasting */
 	public final static int MULTICAST = 0x02;
-	
+
 	// Indicates if a session is already streaming audio or video
 	static Session mSessionUsingTheCamera = null;
 	static Session mSessionUsingTheMic = null;
-	
+
 	// Prevents threads from modifying two sessions simultaneously
 	private static Object sLock = new Object();
-	
+
 	// The number of tracks added to this session
 	private int mSessionTrackCount = 0;
-	
+
 	private InetAddress mOrigin, mDestination;
 	private int mRoutingScheme = Session.UNICAST;
 	private int mDefaultTimeToLive = 64;
 	private Stream[] mStreamList = new Stream[2];
 	private long mTimestamp;
 	private SessionManager mManager;
-	
+
 	/** 
 	 * Creates a streaming session that can be customized by adding tracks.
 	 * @param destination The destination address of the streams
@@ -92,7 +92,7 @@ public class Session {
 		this.mTimestamp = System.currentTimeMillis();
 		this.mManager = SessionManager.getManager();
 	}	
-	
+
 	/** 
 	 * The destination address for all the streams of the session.
 	 * This method will have no effect on already existing tracks
@@ -101,7 +101,7 @@ public class Session {
 	public void setDestination(InetAddress destination) {
 		this.mDestination =  destination;
 	}
-	
+
 	/** 
 	 * Defines the routing scheme that will be used for this session.
 	 * You must call this method before adding tracks to the session.
@@ -110,7 +110,7 @@ public class Session {
 	public void setRoutingScheme(int routingScheme) {
 		this.mRoutingScheme = routingScheme;
 	}
-	
+
 	/** 
 	 * Set the TTL of all packets sent during the session.
 	 * You must call this method before adding tracks to the session.
@@ -119,7 +119,7 @@ public class Session {
 	public void setTimeToLive(int ttl) {
 		mDefaultTimeToLive = ttl;
 	}
-	
+
 	/** 
 	 * Add the default video track with default configuration.
 	 * @throws IllegalStateException
@@ -128,7 +128,7 @@ public class Session {
 	public Session addVideoTrack() throws IllegalStateException, IOException {
 		return addVideoTrack(mManager.mDefaultVideoEncoder, mManager.mDefaultCamera, mManager.mDefaultVideoQuality,false);
 	}
-	
+
 	/** 
 	 * Add video track with specified quality and encoder. 
 	 * @param encoder Can be either {@link #VIDEO_H264} or {@link #VIDEO_H263}
@@ -176,7 +176,7 @@ public class Session {
 		}
 		return this;
 	}
-	
+
 	/** 
 	 * Adds default audio track with default configuration. 
 	 * @throws IOException 
@@ -184,7 +184,7 @@ public class Session {
 	public Session addAudioTrack() throws IOException {
 		return addAudioTrack(mManager.mDefaultAudioEncoder);
 	}
-	
+
 	/** 
 	 * Adds audio track with specified encoder. 
 	 * @param encoder Can be either {@link #AUDIO_AMRNB} or {@link #AUDIO_AAC}
@@ -228,7 +228,7 @@ public class Session {
 		}
 		return this;
 	}
-	
+
 	/** 
 	 * Returns a Session Description that can be stored in a file or sent to a client with RTSP.
 	 * @return The Session Description
@@ -258,7 +258,7 @@ public class Session {
 			return sessionDescription.toString();
 		}
 	}
-	
+
 	/**
 	 * This method returns the selected routing scheme of the session.
 	 * The routing scheme can be either {@link #UNICAST} or {@link #MULTICAST}.
@@ -267,7 +267,7 @@ public class Session {
 	public String getRoutingScheme() {
 		return mRoutingScheme==Session.UNICAST ? "unicast" : "multicast";
 	}
-	
+
 	public InetAddress getDestination() {
 		return mDestination;
 	}
@@ -276,15 +276,15 @@ public class Session {
 	public int getTrackCount() {
 		return mSessionTrackCount;
 	}
-	
+
 	public boolean trackExists(int id) {
 		return mStreamList[id]!=null;
 	}
-	
+
 	public void setTrackDestinationPort(int id, int port) {
 		mStreamList[id].setDestination(mDestination,port);
 	}
-	
+
 	public int getTrackDestinationPort(int id) {
 		return mStreamList[id].getDestinationPort();
 	}
@@ -292,11 +292,11 @@ public class Session {
 	public int getTrackLocalPort(int id) {
 		return mStreamList[id].getLocalPort();
 	}
-	
+
 	public int getTrackSSRC(int id) {
 		return mStreamList[id].getSSRC();
 	}
-	
+
 	/** Starts stream with id trackId. */
 	public void start(int trackId) throws IllegalStateException, IOException {
 		synchronized (sLock) {
@@ -327,7 +327,7 @@ public class Session {
 			}
 		}
 	}
-	
+
 	/** Deletes all existing tracks & release associated resources. */
 	public void flush() {
 		synchronized (sLock) {
@@ -340,5 +340,5 @@ public class Session {
 			}
 		}
 	}
-	
+
 }

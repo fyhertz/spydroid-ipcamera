@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2012 GUIGUI Simon, fyhertz@gmail.com
+ * Copyright (C) 2011-2013 GUIGUI Simon, fyhertz@gmail.com
  * 
  * This file is part of Spydroid (http://code.google.com/p/spydroid-ipcamera/)
  * 
@@ -37,26 +37,26 @@ import android.util.Log;
 public abstract class MediaStream extends MediaRecorder implements Stream {
 
 	protected static final String TAG = "MediaStream";
-	
+
 	// If you mode==MODE_DEFAULT the MediaStream will just act as a regular MediaRecorder
 	// By default: mode = MODE_STREAMING and MediaStream forwards data to the packetizer
 	public static final int MODE_STREAMING = 0;
 	public static final int MODE_DEFAULT = 1;
-	
+
 	private static int sId = 0;
 	private int mSocketId;
 
 	protected AbstractPacketizer mPacketizer = null;
-	
+
 	protected boolean mStreaming = false, mModeDefaultWasUsed = false;
 	protected int mode = MODE_STREAMING;
-	
+
 	private LocalServerSocket mLss = null;
 	private LocalSocket mReceiver, mSender = null;
-	
+
 	public MediaStream() {
 		super();
-		
+
 		try {
 			mLss = new LocalServerSocket("net.majorkernelpanic.librtp-"+sId);
 		} catch (IOException e1) {
@@ -64,30 +64,30 @@ public abstract class MediaStream extends MediaRecorder implements Stream {
 		}
 		mSocketId = sId;
 		sId++;
-		
+
 	}
 
 	/** Sets the destination UDP packets will be sent to. **/
 	public void setDestination(InetAddress dest, int dport) {
 		this.mPacketizer.setDestination(dest, dport);
 	}
-	
+
 	/** Sets the Time To Live of the underlying {@link net.majorkernelpanic.streaming.rtp.RtpSocket}. 
 	 * @throws IOException **/
 	public void setTimeToLive(int ttl) throws IOException {
 		this.mPacketizer.setTimeToLive(ttl);
 	}
-	
+
 	/** Gets the destination port of the stream. */
 	public int getDestinationPort() {
 		return this.mPacketizer.getRtpSocket().getPort();
 	}
-	
+
 	/** Gets the source port of UDP packets. */
 	public int getLocalPort() {
 		return this.mPacketizer.getRtpSocket().getLocalPort();
 	}
-	
+
 	/**
 	 * Sets the mode of the {@link MediaStreame}.
 	 * If the mode is set to {@link #MODE_STREAMING}, video is forwarded to a UDP socket,
@@ -104,7 +104,7 @@ public abstract class MediaStream extends MediaRecorder implements Stream {
 			throw new IllegalStateException("You can't call setMode() while streaming !");
 		}
 	}
-	
+
 	/**
 	 * Returns the packetizer associated with the {@link MediaStream}.
 	 * @return The packetizer
@@ -112,7 +112,7 @@ public abstract class MediaStream extends MediaRecorder implements Stream {
 	public AbstractPacketizer getPacketizer() { 
 		return mPacketizer;
 	}
-	
+
 	/**
 	 * Indicates if the {@link MediaStream} is streaming.
 	 * @return A boolean indicating if the {@link MediaStream} is streaming
@@ -120,7 +120,7 @@ public abstract class MediaStream extends MediaRecorder implements Stream {
 	public boolean isStreaming() {
 		return mStreaming;
 	}
-	
+
 	/** Prepares the stream. */
 	public void prepare() throws IllegalStateException,IOException {
 		if (mode==MODE_STREAMING) {
@@ -132,7 +132,7 @@ public abstract class MediaStream extends MediaRecorder implements Stream {
 		}
 		super.prepare();
 	}
-	
+
 	/** Starts the stream. */
 	public void start() throws IllegalStateException {
 		super.start();
@@ -152,7 +152,7 @@ public abstract class MediaStream extends MediaRecorder implements Stream {
 			throw new IllegalStateException("setPacketizer() should be called before start(). Start failed");
 		}
 	}
-	
+
 	/** Stops the stream. */
 	public void stop() {
 		if (mStreaming) {
@@ -168,7 +168,7 @@ public abstract class MediaStream extends MediaRecorder implements Stream {
 			}
 		}
 	}
-	
+
 	/**
 	 * Returns the SSRC of the underlying {@link net.majorkernelpanic.streaming.rtp.RtpSocket}.
 	 * @return the SSRC of underlying RTP socket
@@ -176,9 +176,9 @@ public abstract class MediaStream extends MediaRecorder implements Stream {
 	public int getSSRC() {
 		return getPacketizer().getRtpSocket().getSSRC();
 	}
-	
+
 	public abstract String generateSessionDescription()  throws IllegalStateException, IOException;
-	
+
 	private void createSockets() throws IOException {
 		mReceiver = new LocalSocket();
 		mReceiver.connect( new LocalSocketAddress("net.majorkernelpanic.librtp-" + mSocketId ) );
@@ -186,14 +186,14 @@ public abstract class MediaStream extends MediaRecorder implements Stream {
 		mSender = mLss.accept();
 		mSender.setSendBufferSize(500000); 
 	}
-	
+
 	private void closeSockets() {
 		try {
 			mSender.close();
 			mReceiver.close();
 		} catch (Exception ignore) {}
 	}
-	
+
 	/** 
 	 * Releases ressources associated with the stream. 
 	 * The object can not be used anymore when this function is called. 
@@ -206,5 +206,5 @@ public abstract class MediaStream extends MediaRecorder implements Stream {
 		catch (Exception ignore) {}
 		super.release();
 	}
-	
+
 }

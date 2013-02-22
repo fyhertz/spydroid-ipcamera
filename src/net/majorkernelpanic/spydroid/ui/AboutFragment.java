@@ -38,14 +38,14 @@ public class AboutFragment extends Fragment {
 	private Button mButtonRate;
 	private Button mButtonLike;
 
-    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-    	View rootView = inflater.inflate(R.layout.about,container,false);
-    	
-        mButtonVisit = (Button)rootView.findViewById(R.id.visit);
-        mButtonRate = (Button)rootView.findViewById(R.id.rate);
-        mButtonLike = (Button)rootView.findViewById(R.id.like);
-        
-        mButtonVisit.setOnClickListener(new OnClickListener() {
+	public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+		View rootView = inflater.inflate(R.layout.about,container,false);
+
+		mButtonVisit = (Button)rootView.findViewById(R.id.visit);
+		mButtonRate = (Button)rootView.findViewById(R.id.rate);
+		mButtonLike = (Button)rootView.findViewById(R.id.like);
+
+		mButtonVisit.setOnClickListener(new OnClickListener() {
 			@Override
 			public void onClick(View v) {
 				Intent intent = new Intent(Intent.ACTION_VIEW,Uri.parse("https://code.google.com/p/spydroid-ipcamera/"));
@@ -53,8 +53,8 @@ public class AboutFragment extends Fragment {
 				startActivity(intent);
 			}
 		});
-        
-        mButtonRate.setOnClickListener(new OnClickListener() {
+
+		mButtonRate.setOnClickListener(new OnClickListener() {
 			@Override
 			public void onClick(View v) {
 				String appPackageName=SpydroidApplication.getContext().getPackageName();
@@ -63,8 +63,8 @@ public class AboutFragment extends Fragment {
 				startActivity(intent);
 			}
 		});
-        
-        mButtonLike.setOnClickListener(new OnClickListener() {
+
+		mButtonLike.setOnClickListener(new OnClickListener() {
 			@Override
 			public void onClick(View v) {
 				Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse("http://www.facebook.com/spydroidipcamera"));
@@ -72,8 +72,8 @@ public class AboutFragment extends Fragment {
 				startActivity(intent);
 			}
 		}); 
-    	
-        return rootView ;
-    }
-	
+
+		return rootView ;
+	}
+
 }
