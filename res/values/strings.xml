@@ -41,4 +41,13 @@
     <string name="settings16">Enable/Disable the notification</string>
     <string name="settings17">Hack for video streaming</string>
     <string name="settings18">Allow video streaming to continue when the app is sent to the background. May not work well :/</string>
+    <string name="settings19">HTTP server</string>
+    <string name="settings20">Port</string>
+    <string name="settings21">Port used by the HTTP server</string>
+    <string name="settings22">Enabled</string>
+    <string name="settings23">Enable/Disable the HTTP server. Leave it on if you don\'t know what you are doing !</string>
+    <string name="page0">Main</string>
+    <string name="page1">Preview</string>
+    <string name="page2">About</string>
+    
 </resources>

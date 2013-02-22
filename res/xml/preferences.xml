@@ -1,76 +1,76 @@
 <?xml version="1.0" encoding="utf-8"?>
-<PreferenceScreen
-        xmlns:android="http://schemas.android.com/apk/res/android">
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android" >
 
-    <PreferenceCategory
-            android:title="@string/settings3">
-
+    <PreferenceCategory android:title="@string/settings3" >
         <CheckBoxPreference
-                android:key="stream_audio"
-                android:title="@string/settings3"
-                android:defaultValue="false"
-                android:summary="@string/settings4" />
+            android:defaultValue="false"
+            android:key="stream_audio"
+            android:summary="@string/settings4"
+            android:title="@string/settings3" />
 
         <ListPreference
-            android:title="@string/settings5"
+            android:entries="@array/audioEncoderArray"
+            android:entryValues="@array/audioEncoderValues"
             android:key="audio_encoder"
             android:summary="@string/settings6"
-            android:entries="@array/audioEncoderArray"
-            android:entryValues="@array/audioEncoderValues" />
-        
+            android:title="@string/settings5" />
     </PreferenceCategory>
     
-        <PreferenceCategory
-            android:title="@string/settings7">
-
+    <PreferenceCategory android:title="@string/settings7" >
         <CheckBoxPreference
-            android:key="stream_video"
-            android:title="@string/settings7"
             android:defaultValue="true"
-            android:summary="@string/settings8" />
-            
+            android:key="stream_video"
+            android:summary="@string/settings8"
+            android:title="@string/settings7" />
+
         <ListPreference
-            android:title="@string/settings9"
+            android:entries="@array/videoEncoderArray"
+            android:entryValues="@array/videoEncoderValues"
             android:key="video_encoder"
             android:summary="@string/settings10"
-            android:entries="@array/videoEncoderArray"
-            android:entryValues="@array/videoEncoderValues" />
-        
+            android:title="@string/settings9" />
         <ListPreference
-            android:title="@string/settings11"
-            android:key="video_resolution"
             android:entries="@array/videoResolutionArray"
-            android:entryValues="@array/videoResolutionArray" />
-                
+            android:entryValues="@array/videoResolutionArray"
+            android:key="video_resolution"
+            android:title="@string/settings11" />
         <ListPreference
-            android:title="@string/settings12"
-            android:key="video_framerate"
             android:entries="@array/videoFramerateArray"
-            android:entryValues="@array/videoFramerateValues" />
-        
+            android:entryValues="@array/videoFramerateValues"
+            android:key="video_framerate"
+            android:title="@string/settings12" />
         <ListPreference
-            android:title="@string/settings13"
-            android:key="video_bitrate"
             android:entries="@array/videoBitrateArray"
-            android:entryValues="@array/videoBitrateValues" />
-
+            android:entryValues="@array/videoBitrateValues"
+            android:key="video_bitrate"
+            android:title="@string/settings13" />
     </PreferenceCategory>
-        
-	<PreferenceCategory 
-	    android:title="@string/settings14">
-	    
-		<CheckBoxPreference
-	        android:key="notification_enabled"
-	        android:title="@string/settings15"
-	        android:defaultValue="true"
-	        android:summary="@string/settings16" />
-		
-		<CheckBoxPreference
-	        android:key="video_hack"
-	        android:title="@string/settings17"
-	        android:defaultValue="false"
-	        android:summary="@string/settings18" />
-                    
-	</PreferenceCategory>                    
-        
+    
+    <PreferenceCategory android:title="@string/settings19" >
+        <CheckBoxPreference
+            android:defaultValue="true"
+            android:key="enable_http"
+            android:summary="@string/settings23"
+            android:title="@string/settings22" />
+        <EditTextPreference
+            android:defaultValue="8080"
+            android:inputType="number"
+            android:key="http_port"
+            android:summary="@string/settings21"
+            android:title="@string/settings20" />
+    </PreferenceCategory>
+    
+    <PreferenceCategory android:title="@string/settings14" >
+        <CheckBoxPreference
+            android:defaultValue="true"
+            android:key="notification_enabled"
+            android:summary="@string/settings16"
+            android:title="@string/settings15" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="video_hack"
+            android:summary="@string/settings18"
+            android:title="@string/settings17" />
+    </PreferenceCategory>
+
 </PreferenceScreen>

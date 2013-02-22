@@ -56,11 +56,11 @@ public class OptionsActivity extends PreferenceActivity {
 		videoFramerate.setEnabled(videoState);        
 		audioEncoder.setEnabled(settings.getBoolean("stream_audio", true));
         
-        videoEncoder.setValue(String.valueOf(SpydroidApplication.videoEncoder));
-        audioEncoder.setValue(String.valueOf(SpydroidApplication.audioEncoder));
-        videoFramerate.setValue(String.valueOf(SpydroidApplication.videoQuality.framerate));
-        videoBitrate.setValue(String.valueOf(SpydroidApplication.videoQuality.bitrate/1000));
-        videoResolution.setValue(SpydroidApplication.videoQuality.resX+"x"+SpydroidApplication.videoQuality.resY);
+        videoEncoder.setValue(String.valueOf(SpydroidApplication.sVideoEncoder));
+        audioEncoder.setValue(String.valueOf(SpydroidApplication.sAudioEncoder));
+        videoFramerate.setValue(String.valueOf(SpydroidApplication.sVideoQuality.framerate));
+        videoBitrate.setValue(String.valueOf(SpydroidApplication.sVideoQuality.bitrate/1000));
+        videoResolution.setValue(SpydroidApplication.sVideoQuality.resX+"x"+SpydroidApplication.sVideoQuality.resY);
         
         videoResolution.setSummary(getString(R.string.settings0)+" "+videoResolution.getValue()+"px");
         videoFramerate.setSummary(getString(R.string.settings1)+" "+videoFramerate.getValue()+"fps");

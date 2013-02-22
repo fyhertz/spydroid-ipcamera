@@ -32,6 +32,7 @@ import static org.acra.ReportField.STACK_TRACE;
 import static org.acra.ReportField.USER_APP_START_DATE;
 import static org.acra.ReportField.USER_CRASH_DATE;
 import net.majorkernelpanic.streaming.Session;
+import net.majorkernelpanic.streaming.SessionManager;
 import net.majorkernelpanic.streaming.video.H264Stream;
 import net.majorkernelpanic.streaming.video.VideoQuality;
 
@@ -45,24 +46,24 @@ import android.preference.PreferenceManager;
 public class SpydroidApplication extends android.app.Application {
 	
     /** Default listening port for the RTSP server. **/
-    public static int RtspPort = 8086;
+    public static int sRtspPort = 8086;
     
     /** Default listening port for the HTTP server. **/
-    public static int HttpPort = 8080;
+    public static int sHttpPort = 8080;
     
     /** Default quality of video streams **/
-	public static VideoQuality videoQuality = new VideoQuality(640,480,15,500000);
+	public static VideoQuality sVideoQuality = new VideoQuality(640,480,15,500000);
 	
 	/** By default AMR is the audio encoder **/
-	public static int audioEncoder = Session.AUDIO_AMRNB;
+	public static int sAudioEncoder = Session.AUDIO_AMRNB;
 	
 	/** By default H.263 is the video encoder **/
-	public static int videoEncoder = Session.VIDEO_H263;
+	public static int sVideoEncoder = Session.VIDEO_H263;
 	
 	/** Set this flag to true to disable the ads **/
 	public final static boolean DONATE_VERSION = false;
 	
-	private static Context context;
+	private static Context sContext;
 	
 	@Override
 	public void onCreate() {
@@ -70,36 +71,41 @@ public class SpydroidApplication extends android.app.Application {
 		// The following line triggers the initialization of ACRA
 		// Please do not uncomment this line unless you change the form id or I will receive your crash reports !
 		//ACRA.init(this);
-		SpydroidApplication.context = getApplicationContext();
+		SpydroidApplication.sContext = getApplicationContext();
 		super.onCreate();
 		
 		SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(this);
 		
+		// Sets the ports of the RTSP and HTTP server according to user settings
+		sRtspPort = Integer.parseInt(settings.getString("rtsp_port", String.valueOf(sRtspPort)));
+		sHttpPort = Integer.parseInt(settings.getString("http_port", String.valueOf(sHttpPort)));
+		
         // On android 3.* AAC ADTS is not supported so we set the default encoder to AMR-NB, on android 4.* AAC is the default encoder
-        audioEncoder = (Integer.parseInt(android.os.Build.VERSION.SDK)<14) ? Session.AUDIO_AMRNB : Session.AUDIO_AAC;
-        audioEncoder = Integer.parseInt(settings.getString("audio_encoder", String.valueOf(audioEncoder)));
-        videoEncoder = Integer.parseInt(settings.getString("video_encoder", String.valueOf(videoEncoder)));
+        sAudioEncoder = (Integer.parseInt(android.os.Build.VERSION.SDK)<14) ? Session.AUDIO_AMRNB : Session.AUDIO_AAC;
+        sAudioEncoder = Integer.parseInt(settings.getString("audio_encoder", String.valueOf(sAudioEncoder)));
+        sVideoEncoder = Integer.parseInt(settings.getString("video_encoder", String.valueOf(sVideoEncoder)));
         
         // Read video quality settings from the preferences 
-        videoQuality = VideoQuality.merge(
+        sVideoQuality = VideoQuality.merge(
         		new VideoQuality(
         				settings.getInt("video_resX", 0),
         				settings.getInt("video_resY", 0), 
         				Integer.parseInt(settings.getString("video_framerate", "0")), 
         				Integer.parseInt(settings.getString("video_bitrate", "0"))*1000
         		),
-        		videoQuality);
+        		sVideoQuality);
 
-        Session.setDefaultAudioEncoder(!settings.getBoolean("stream_audio", true)?0:audioEncoder);
-        Session.setDefaultVideoEncoder(!settings.getBoolean("stream_video", false)?0:videoEncoder);
-        Session.setDefaultVideoQuality(videoQuality);
+        SessionManager manager = SessionManager.getManager(); 
+        manager.setDefaultAudioEncoder(!settings.getBoolean("stream_audio", true)?0:sAudioEncoder);
+        manager.setDefaultVideoEncoder(!settings.getBoolean("stream_video", false)?0:sVideoEncoder);
+        manager.setDefaultVideoQuality(sVideoQuality);
+        
         H264Stream.setPreferences(settings);
-		
 		
 	}
 	
 	public static Context getContext() {
-        return SpydroidApplication.context;
+        return SpydroidApplication.sContext;
     }
 	
 }
