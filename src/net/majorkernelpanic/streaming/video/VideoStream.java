@@ -118,7 +118,7 @@ public abstract class VideoStream extends MediaStream {
 	
 	/** 
 	 * Modifies the quality of the stream. You can call this method at any time 
-	 * and changes will take effect next time you call {@link prepare()}.
+	 * and changes will take effect next time you call {@link #prepare()}.
 	 * @param videoQuality Quality of the stream
 	 */
 	public void setVideoQuality(VideoQuality videoQuality) {
@@ -130,7 +130,7 @@ public abstract class VideoStream extends MediaStream {
 	
 	/** 
 	 * Modifies the videoEncoder of the stream. You can call this method at any time 
-	 * and changes will take effect next time you call {@link prepare()}.
+	 * and changes will take effect next time you call {@link #prepare()}.
 	 * @param videoEncoder Encoder of the stream
 	 */
 	public void setVideoEncoder(int videoEncoder) {
@@ -159,7 +159,7 @@ public abstract class VideoStream extends MediaStream {
 	}
 
 	/**
-	 * Prepare the VideoStream, you can then call {@link start()}.
+	 * Prepare the VideoStream, you can then call {@link #start()}.
 	 * The underlying Camera will be opened and configured whaen you call this method so don't forget to deal with the RuntimeExceptions !
 	 * Camera.open, Camera.setParameter, Camera.unlock may throw one !
 	 */

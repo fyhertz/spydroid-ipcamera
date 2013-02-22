@@ -26,7 +26,7 @@ import java.net.InetAddress;
 
 /**
  * 
- * Each packetizer inherits from this one and therefore uses RTP and UDP
+ * Each packetizer inherits from this one and therefore uses RTP and UDP.
  *
  */
 abstract public class AbstractPacketizer {

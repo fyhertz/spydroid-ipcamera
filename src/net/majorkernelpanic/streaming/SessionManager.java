@@ -54,8 +54,8 @@ public class SessionManager {
 	private static SurfaceHolder.Callback sCallback  = null;
 	
 	/**
-	 * Returns a reference to the SessionManager.
-	 * @return The reference to the SessionManager
+	 * Returns a reference to the {@link SessionManager}.
+	 * @return The reference to the {@link SessionManager}
 	 */
 	public final static SessionManager getManager() {
 		if (sInstance == null) {
@@ -69,7 +69,7 @@ public class SessionManager {
 	}
 	
 	/**
-	 * Utility method to create a new Session.
+	 * Creates a new {@link Session}.
 	 * @param destination The destination address of the streams
 	 * @param origin The origin address of the streams
 	 * @return The new Session
@@ -78,19 +78,13 @@ public class SessionManager {
 		return new Session(origin, destination);
 	}
 	
-	/**
-	 * Those callbacks won't necessarily be called from the ui thread !
-	 */
+	/** Those callbacks won't necessarily be called from the ui thread ! */
 	public interface CallbackListener {
 		
-		/** 
-		 * Called when a stream starts. 
-		 **/
+		/** Called when a stream starts. */
 		void onStreamingStarted(SessionManager manager);
 		
-		/** 
-		 * Called when a stream stops. 
-		 **/
+		/** Called when a stream stops. */
 		void onStreamingStopped(SessionManager manager);
 		
 	}
@@ -98,30 +92,24 @@ public class SessionManager {
 	private CallbackListener mListener = null;
 	
 	/**
-	 * Sets a callback class. See {@link net.majorkernelpanic.streaming.SessionManager.CallbackListener} to know what events will be fired.
+	 * See {@link SessionManager.CallbackListener} to check out what events will be fired once you set up a listener.
 	 * @param listener The listener
 	 */
 	public void setCallbackListener(CallbackListener listener) { 
 		mListener = listener;
 	}
 	
-	/** 
-	 * Sets default video stream quality, it will be used by addVideoTrack. 
-	 **/
+	/** Sets default video stream quality, it will be used by {@link Session#addVideoTrack()}. */
 	public void setDefaultVideoQuality(VideoQuality quality) {
 		mDefaultVideoQuality = quality;
 	}
 	
-	/** 
-	 * Sets the default audio encoder, it will be used by addAudioTrack. 
-	 **/
+	/** Sets the default audio encoder, it will be used by {@link Session#addVideoTrack()}. */
 	public void setDefaultAudioEncoder(int encoder) {
 		mDefaultAudioEncoder = encoder;
 	}
 	
-	/** 
-	 * Sets the default video encoder, it will be used by addVideoTrack. 
-	 **/
+	/** Sets the default video encoder, it will be used by {@link Session#addVideoTrack()}. */
 	public void setDefaultVideoEncoder(int encoder) {
 		mDefaultVideoEncoder = encoder;
 	}
@@ -135,6 +123,7 @@ public class SessionManager {
 	public synchronized void setSurfaceHolder(SurfaceHolder surfaceHolder) {
 		if (sCallback != null) sSurfaceHolder.removeCallback(sCallback);
 		sSurfaceHolder = surfaceHolder;
+		
 		sCallback = new SurfaceHolder.Callback() {
 			public void surfaceChanged(SurfaceHolder holder, int format,
 					int width, int height) {
@@ -151,12 +140,13 @@ public class SessionManager {
 			}
 		};
 		sSurfaceHolder.addCallback(sCallback);
+		
 	}
 
 	/**
 	 * Sets the Surface required by MediaRecorder to record video.
 	 * @param surfaceHolder A SurfaceHolder wrapping a valid surface
-	 * @param setACallback Whether or not you want Session to add a callback that will stop video streaming when the surface is destroyed
+	 * @param setACallback Whether or not you want {@link Session} to add a callback that will stop video streaming when the surface is destroyed
 	 */
 	public synchronized void setSurfaceHolder(SurfaceHolder surfaceHolder, boolean setACallback) {
 		if (sCallback != null) sSurfaceHolder.removeCallback(sCallback);
@@ -164,23 +154,17 @@ public class SessionManager {
 		else sSurfaceHolder = surfaceHolder;
 	}
 	
-	/** 
-	 * Indicates whether or not a camera is being used in a session. 
-	 **/
+	/** Indicates whether or not a camera is being used in a {@link Session}. */
 	public synchronized boolean isCameraInUse() {
 		return Session.mSessionUsingTheCamera!=null;
 	}
 	
-	/** 
-	 * Indicates whether or not the microphone is being used in a session. 
-	 **/
+	/** Indicates whether or not the microphone is being used in a {@link Session}. */
 	public synchronized boolean isMicrophoneInUse() {
 		return Session.mSessionUsingTheMic!=null;
 	}
 	
-	/** 
-	 * Indicates if a Session is currently streaming audio or video 
-	 **/
+	/** Indicates if a {@link Session} is currently streaming audio or video */
 	public synchronized boolean isStreaming() {
 		return isCameraInUse() | isMicrophoneInUse();
 	}
@@ -193,9 +177,7 @@ public class SessionManager {
 		return sSurfaceHolder;
 	}
 	
-	/**
-	 * Called by sessions to signal when streaming starts
-	 */
+	/** Called by sessions to signal when streaming starts */
 	synchronized void incStreamCount() {
 		mStartedStreamCount++;
 		if (mStartedStreamCount == 1) {
@@ -205,9 +187,7 @@ public class SessionManager {
 		}
 	}
 	
-	/** 
-	 * Called by sessions to signal when streaming stops
-	 */
+	/** Called by sessions to signal when streaming stops */
 	synchronized void decStreamCount() {
 		mStartedStreamCount--;
 		if (mStartedStreamCount == 0) {

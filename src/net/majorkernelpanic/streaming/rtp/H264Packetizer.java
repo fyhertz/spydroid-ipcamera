@@ -31,7 +31,7 @@ import android.util.Log;
  *   
  *   H.264 streaming over RTP.
  *   
- *   Must be fed with an InputStream containing H.264. NAL units must be preceded by their length (4 bytes).
+ *   Must be fed with an InputStream containing H.264 NAL units preceded by their length (4 bytes).
  *   The stream must start with mpeg4 or 3gpp header, it will be skipped.
  *   
  */
