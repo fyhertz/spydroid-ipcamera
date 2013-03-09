@@ -39,6 +39,9 @@ public class AACADTSPacketizer extends AbstractPacketizer implements Runnable {
 
 	private final static String TAG = "AACADTSPacketizer";
 
+	// Maximum size of RTP packets
+	private final static int MAXPACKETSIZE = 1400;
+	
 	private Thread t;
 	private Statistics stats = new Statistics();
 
@@ -67,9 +70,15 @@ public class AACADTSPacketizer extends AbstractPacketizer implements Runnable {
 
 	public void run() {
 
+		// "A packet SHALL carry either one or more complete Access Units, or a
+		// single fragment of an Access Unit.  Fragments of the same Access Unit
+		// have the same time stamp but different RTP sequence numbers.  The
+		// marker bit in the RTP header is 1 on the last fragment of an Access
+		// Unit, and 0 on all other fragments." RFC 3640
+		
 		// Adts header fields that we need to parse
 		boolean protection;
-		int frameLength;
+		int frameLength, sum, length;
 		long ts=0, oldtime = SystemClock.elapsedRealtime(), now = oldtime;
 
 		try {
@@ -92,37 +101,49 @@ public class AACADTSPacketizer extends AbstractPacketizer implements Runnable {
 						(buffer[rtphl+5]&0xFF) >> 5 ;
 				frameLength -= (protection ? 7 : 9);
 
-				//Log.d(TAG,"frameLength: "+frameLength+" protection: "+protection);
-
 				// Read CRS if any
 				if (!protection) is.read(buffer,rtphl,2);
-
-				// Read frame
-				is.read(buffer,rtphl+4,frameLength);
-
-				// AU-headers-length field: contains the size in bits of a AU-header
-				// 13+3 = 16 bits -> 13bits for AU-size and 3bits for AU-Index / AU-Index-delta 
-				// 13 bits will be enough because ADTS uses 13 bits for frame length
-				buffer[rtphl] = 0;
-				buffer[rtphl+1] = 0x10; 
-
-				// AU-size
-				buffer[rtphl+2] = (byte) (frameLength>>5);
-				buffer[rtphl+3] = (byte) (frameLength<<3);
-
-				// AU-Index
-				buffer[rtphl+3] &= 0xF8;
-				buffer[rtphl+3] |= 0x00;
-
-				socket.markNextPacket();
 
 				now = SystemClock.elapsedRealtime();
 				stats.push(now-oldtime);
 				oldtime = now;
-				ts += stats.average()*90;
+				ts += 1024; //stats.average()*90;
 				oldtime = now;
 				socket.updateTimestamp(ts);
-				socket.send(rtphl+frameLength+4);
+				
+				sum = 0;
+				while (sum<frameLength) {
+
+					// Read frame
+					if (frameLength-sum > MAXPACKETSIZE-rtphl-4) {
+						length = MAXPACKETSIZE-rtphl-4;
+					}
+					else {
+						length = frameLength-sum;
+						socket.markNextPacket();
+					}
+					sum += length;
+					is.read(buffer,rtphl+4, length);
+
+					// AU-headers-length field: contains the size in bits of a AU-header
+					// 13+3 = 16 bits -> 13bits for AU-size and 3bits for AU-Index / AU-Index-delta 
+					// 13 bits will be enough because ADTS uses 13 bits for frame length
+					buffer[rtphl] = 0;
+					buffer[rtphl+1] = 0x10; 
+
+					// AU-size
+					buffer[rtphl+2] = (byte) (frameLength>>5);
+					buffer[rtphl+3] = (byte) (frameLength<<3);
+
+					// AU-Index
+					buffer[rtphl+3] &= 0xF8;
+					buffer[rtphl+3] |= 0x00;
+
+					//Log.d(TAG,"frameLength: "+frameLength+" protection: "+protection+ " length: "+length);
+					
+					socket.send(rtphl+4+length);
+
+				}
 
 			}
 		} catch (IOException e) {

@@ -49,9 +49,12 @@ public class HandsetFragment extends Fragment {
     private LinearLayout mSignInformation;
     private Animation mPulseAnimation;
     
+    private SpydroidApplication mApplication;
+    
     @Override
     public void onCreate(Bundle savedInstanceState) {
     	super.onCreate(savedInstanceState);
+    	mApplication  = (SpydroidApplication) getActivity().getApplication();
     }
     
     
@@ -64,7 +67,7 @@ public class HandsetFragment extends Fragment {
         mSignWifi = (TextView)rootView.findViewById(R.id.advice);
         mSignStreaming = (TextView)rootView.findViewById(R.id.streaming);
         mSignInformation = (LinearLayout)rootView.findViewById(R.id.information);
-        mPulseAnimation = AnimationUtils.loadAnimation(SpydroidApplication.getContext(), R.anim.pulse);
+        mPulseAnimation = AnimationUtils.loadAnimation(mApplication.getApplicationContext(), R.anim.pulse);
         
         return rootView ;
     }
@@ -74,7 +77,7 @@ public class HandsetFragment extends Fragment {
     	super.onStart();
     	
     	// Print version number
-    	Context mContext = SpydroidApplication.getContext();
+    	Context mContext = mApplication.getApplicationContext();
         try {
 			mVersion.setText("v"+mContext.getPackageManager().getPackageInfo(mContext.getPackageName(), 0 ).versionName);
 		} catch (Exception e) {
@@ -125,7 +128,7 @@ public class HandsetFragment extends Fragment {
 	}
 	
     public void displayIpAddress() {
-		WifiManager wifiManager = (WifiManager) SpydroidApplication.getContext().getSystemService(Context.WIFI_SERVICE);
+		WifiManager wifiManager = (WifiManager) mApplication.getApplicationContext().getSystemService(Context.WIFI_SERVICE);
 		WifiInfo info = wifiManager.getConnectionInfo();
 		String ipaddress = null;
 		Log.d("SpydroidActivity","getNetworkId "+info.getNetworkId());
@@ -134,22 +137,22 @@ public class HandsetFragment extends Fragment {
 	        String ip = String.format(Locale.ENGLISH,"%d.%d.%d.%d", i & 0xff, i >> 8 & 0xff,i >> 16 & 0xff,i >> 24 & 0xff);
 	    	mLine1.setText("http://");
 	    	mLine1.append(ip);
-	    	mLine1.append(":"+SpydroidApplication.sHttpPort);
+	    	mLine1.append(":"+mApplication.mHttpPort);
 	    	mLine2.setText("rtsp://");
 	    	mLine2.append(ip);
-	    	mLine2.append(":"+SpydroidApplication.sRtspPort);
+	    	mLine2.append(":"+mApplication.mRtspPort);
 	    	streamingState(0);
     	} else if((ipaddress = Utilities.getLocalIpAddress(true)) != null) {
     		mLine1.setText("http://");
 	    	mLine1.append(ipaddress);
-	    	mLine1.append(":"+SpydroidApplication.sHttpPort);
+	    	mLine1.append(":"+mApplication.mHttpPort);
 	    	mLine2.setText("rtsp://");
 	    	mLine2.append(ipaddress);
-	    	mLine2.append(":"+SpydroidApplication.sRtspPort);
+	    	mLine2.append(":"+mApplication.mRtspPort);
 	    	streamingState(0);
     	} else {
-      		mLine1.setText("HTTP://xxx.xxx.xxx.xxx:"+SpydroidApplication.sHttpPort);
-    		mLine2.setText("RTSP://xxx.xxx.xxx.xxx:"+SpydroidApplication.sHttpPort);
+      		mLine1.setText("HTTP://xxx.xxx.xxx.xxx:"+mApplication.mHttpPort);
+    		mLine2.setText("RTSP://xxx.xxx.xxx.xxx:"+mApplication.mHttpPort);
     		streamingState(2);
     	}
     	

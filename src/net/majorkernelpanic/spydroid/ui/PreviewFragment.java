@@ -21,12 +21,10 @@
 package net.majorkernelpanic.spydroid.ui;
 
 import net.majorkernelpanic.spydroid.R;
+import net.majorkernelpanic.spydroid.SpydroidApplication;
 import net.majorkernelpanic.streaming.SessionManager;
-import android.graphics.Canvas;
-import android.graphics.PorterDuff;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
@@ -39,7 +37,15 @@ public class PreviewFragment extends Fragment {
 
 	private SurfaceView mSurfaceView;
 	private SurfaceHolder mSurfaceHolder;
+	
+	private SpydroidApplication mApplication;
 
+	@Override
+    public void onCreate(Bundle savedInstanceState) {
+    	super.onCreate(savedInstanceState);
+    	mApplication  = (SpydroidApplication) getActivity().getApplication();
+    }
+	
 	@Override
 	public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
 		View rootView = inflater.inflate(R.layout.preview,container,false);
@@ -52,7 +58,7 @@ public class PreviewFragment extends Fragment {
 			// We still need this line for backward compatibility reasons with android 2
 			mSurfaceHolder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
 			
-			SessionManager.getManager().setSurfaceHolder(mSurfaceHolder, !SpydroidActivity.hackEnabled);
+			SessionManager.getManager().setSurfaceHolder(mSurfaceHolder, !mApplication.mHackEnabled);
 			
 		} 
 		

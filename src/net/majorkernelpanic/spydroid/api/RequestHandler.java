@@ -24,7 +24,6 @@ import java.lang.reflect.Field;
 
 import net.majorkernelpanic.spydroid.R;
 import net.majorkernelpanic.spydroid.SpydroidApplication;
-import net.majorkernelpanic.spydroid.ui.SpydroidActivity;
 import net.majorkernelpanic.streaming.Session;
 import net.majorkernelpanic.streaming.SessionManager;
 import net.majorkernelpanic.streaming.video.VideoQuality;
@@ -34,6 +33,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 
+import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
 import android.media.AudioManager;
@@ -42,6 +42,11 @@ import android.media.SoundPool.OnLoadCompleteListener;
 import android.preference.PreferenceManager;
 import android.util.Log;
 
+/**
+ * 
+ * Used by the {@link CustomHttpServer}. 
+ *
+ */
 public class RequestHandler {
 
 	public final static String TAG = "RequestHandler";
@@ -113,6 +118,10 @@ public class RequestHandler {
 	 * @throws IllegalArgumentException 
 	 **/
 	static private void exec(JSONObject object, StringBuilder response) throws JSONException, IllegalArgumentException, IllegalAccessException {
+		
+		SpydroidApplication application = SpydroidApplication.getInstance();
+		Context context = application.getApplicationContext();
+		
 		String action = object.getString("action");
 		
 		// Returns a list of available sounds on the phone
@@ -127,7 +136,7 @@ public class RequestHandler {
 		
 		// Returns the screen state (whether the app. is on the foreground or not)
 		else if (action.equals("screen")) {
-			response.append(SpydroidActivity.activityPaused ? "\"1\"" : "\"0\"");
+			response.append(application.mApplicationForeground ? "\"1\"" : "\"0\"");
 		}
 		
 		// Plays a sound on the phone
@@ -135,7 +144,7 @@ public class RequestHandler {
 			Field[] raws = R.raw.class.getFields();
 			for(int i=0; i < raws.length; i++) {
 				if (raws[i].getName().equals(object.getString("name"))) {
-					mSoundPool.load(SpydroidApplication.getContext(), raws[i].getInt(null), 0);
+					mSoundPool.load(application, raws[i].getInt(null), 0);
 				}
 			}
 			response.append("[]");
@@ -143,30 +152,30 @@ public class RequestHandler {
 		
 		// Returns Spydroid's configuration (framerate, bitrate...)
 		else if (action.equals("get")) {
-			final SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(SpydroidApplication.getContext());
+			final SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(context);
 			
 			response.append("{\"streamAudio\":" + settings.getBoolean("stream_audio", false) + ",");
-			response.append("\"audioEncoder\":\"" + (SpydroidApplication.sAudioEncoder==Session.AUDIO_AMRNB?"AMR-NB":"AAC") + "\",");
+			response.append("\"audioEncoder\":\"" + (application.mAudioEncoder==Session.AUDIO_AMRNB?"AMR-NB":"AAC") + "\",");
 			response.append("\"streamVideo\":" + settings.getBoolean("stream_video", true) + ",");
-			response.append("\"videoEncoder\":\"" + (SpydroidApplication.sVideoEncoder==Session.VIDEO_H263?"H.263":"H.264") + "\",");
-			response.append("\"videoResolution\":\"" + SpydroidApplication.sVideoQuality.resX + "x" + SpydroidApplication.sVideoQuality.resY + "\",");
-			response.append("\"videoFramerate\":\"" + SpydroidApplication.sVideoQuality.framerate + " fps\",");
-			response.append("\"videoBitrate\":\"" + SpydroidApplication.sVideoQuality.bitrate/1000 + " kbps\"}");
+			response.append("\"videoEncoder\":\"" + (application.mVideoEncoder==Session.VIDEO_H263?"H.263":"H.264") + "\",");
+			response.append("\"videoResolution\":\"" + application.mVideoQuality.resX + "x" + application.mVideoQuality.resY + "\",");
+			response.append("\"videoFramerate\":\"" + application.mVideoQuality.framerate + " fps\",");
+			response.append("\"videoBitrate\":\"" + application.mVideoQuality.bitrate/1000 + " kbps\"}");
 			
 		}
 		
 		// Update Spydroid's configuration
 		else if (action.equals("set")) {
 			final JSONObject settings = object.getJSONObject("settings");
-			final SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(SpydroidApplication.getContext());
+			final SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
 			final Editor editor = prefs.edit();
 			
 			editor.putBoolean("stream_video", settings.getBoolean("stream_video"));
-			SpydroidApplication.sVideoQuality = VideoQuality.parseQuality(settings.getString("video_quality"));
-			editor.putInt("video_resX", SpydroidApplication.sVideoQuality.resX);
-			editor.putInt("video_resY", SpydroidApplication.sVideoQuality.resY);
-			editor.putString("video_framerate", String.valueOf(SpydroidApplication.sVideoQuality.framerate));
-			editor.putString("video_bitrate", String.valueOf(SpydroidApplication.sVideoQuality.bitrate/1000));
+			application.mVideoQuality = VideoQuality.parseQuality(settings.getString("video_quality"));
+			editor.putInt("video_resX", application.mVideoQuality.resX);
+			editor.putInt("video_resY", application.mVideoQuality.resY);
+			editor.putString("video_framerate", String.valueOf(application.mVideoQuality.framerate));
+			editor.putString("video_bitrate", String.valueOf(application.mVideoQuality.bitrate/1000));
 			editor.putString("video_encoder", settings.getString("video_encoder").equals("H.263")?"2":"1");
 			editor.putBoolean("stream_audio", settings.getBoolean("stream_audio"));
 			editor.putString("audio_encoder", settings.getString("audio_encoder").equals("AMR-NB")?"3":"5");
@@ -177,17 +186,19 @@ public class RequestHandler {
 		
 		// Returns a JSON containing information about the state of the application
 		else if (action.equals("state")) {
+
+			Exception exception = application.mLastCaughtException;
 			
 			response.append("{");
 			
-			if (SpydroidActivity.lastCaughtException!=null) {
+			if (exception!=null) {
 				
 				// Used to display the message on the user interface
-				String lastError = SpydroidActivity.lastCaughtException.getMessage();
+				String lastError = exception.getMessage();
 				
 				// Useful to display additional information to the user depending on the error
-				StackTraceElement[] stack = SpydroidActivity.lastCaughtException.getStackTrace();
-				StringBuilder builder = new StringBuilder(SpydroidActivity.lastCaughtException.getClass().getName()+" : "+lastError+"||");
+				StackTraceElement[] stack = exception.getStackTrace();
+				StringBuilder builder = new StringBuilder(exception.getClass().getName()+" : "+lastError+"||");
 				for (int i=0;i<stack.length;i++) builder.append("at "+stack[i].getClassName()+"."+stack[i].getMethodName()+" ("+stack[i].getFileName()+":"+stack[i].getLineNumber()+")||");
 				
 				response.append("\"lastError\":\""+(lastError!=null?lastError:"unknown error")+"\",");
@@ -197,13 +208,13 @@ public class RequestHandler {
 			
 			response.append("\"cameraInUse\":\""+SessionManager.getManager().isCameraInUse()+"\",");
 			response.append("\"microphoneInUse\":\""+SessionManager.getManager().isMicrophoneInUse()+"\",");
-			response.append("\"activityPaused\":\""+(SpydroidActivity.activityPaused?"1":"0")+"\"");
+			response.append("\"activityPaused\":\""+(application.mApplicationForeground ? "1" : "0")+"\"");
 			response.append("}");
 			
 		}
 		
 		else if (action.equals("clear")) {
-			SpydroidActivity.lastCaughtException = null;
+			application.mLastCaughtException = null;
 			response.append("[]");
 		}
 		

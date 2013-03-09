@@ -57,7 +57,7 @@ public class AboutFragment extends Fragment {
 		mButtonRate.setOnClickListener(new OnClickListener() {
 			@Override
 			public void onClick(View v) {
-				String appPackageName=SpydroidApplication.getContext().getPackageName();
+				String appPackageName=SpydroidApplication.getInstance().getApplicationContext().getPackageName();
 				Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id="+appPackageName));
 				intent.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY | Intent.FLAG_ACTIVITY_CLEAR_WHEN_TASK_RESET);
 				startActivity(intent);

@@ -40,9 +40,7 @@ import org.apache.http.protocol.HttpContext;
 import org.apache.http.protocol.HttpRequestHandler;
 import org.apache.http.util.EntityUtils;
 
-import android.content.Context;
-import android.os.Handler;
-import android.util.Log;
+import android.content.Intent;
 
 /** 
  * HTTP server of Spydroid
@@ -51,34 +49,31 @@ import android.util.Log;
  **/
 public class CustomHttpServer extends HttpServer {
 
-	public CustomHttpServer(int port, Context context, Handler handler) {
-		super(port, context, handler);
-		addRequestHandler("/request.json*", new CustomRequestHandler(context, handler));
+	@Override
+	public void onCreate() {
+		super.onCreate();
+		addRequestHandler("/request.json*", new CustomRequestHandler());
 	}
 
-	static class CustomRequestHandler implements HttpRequestHandler {
+	class CustomRequestHandler implements HttpRequestHandler {
 
-		private Context mContext;
-		private Handler mHandler;
 		private Field[] mRaws = R.raw.class.getFields();
-		
-		public CustomRequestHandler(Context context, Handler handler) {
-			mHandler = handler;
-			mContext = context;
+
+		public CustomRequestHandler() {
 		}
-		
+
 		public void handle(HttpRequest request, HttpResponse response, HttpContext arg2) throws HttpException, IOException {
-			
+
 			if (request.getRequestLine().getMethod().equals("POST")) {
-				
+
 				// Retrieve the POST content
 				HttpEntityEnclosingRequest post = (HttpEntityEnclosingRequest) request;
 				byte[] entityContent = EntityUtils.toByteArray(post.getEntity());
 				String content = new String(entityContent, Charset.forName("UTF-8"));
-				
+
 				// Execute the request
 				final String json = RequestHandler.handle(content);
-				
+
 				// Return the response
 				EntityTemplate body = new EntityTemplate(new ContentProducer() {
 					public void writeTo(final OutputStream outstream) throws IOException {
@@ -88,11 +83,11 @@ public class CustomHttpServer extends HttpServer {
 					}
 				});
 				response.setStatusCode(HttpStatus.SC_OK);
-	        	body.setContentType("application/json; charset=UTF-8");
-	        	response.setEntity(body);
+				body.setContentType("application/json; charset=UTF-8");
+				response.setEntity(body);
 			}
-			
+
 		}
 	}
-	
+
 }

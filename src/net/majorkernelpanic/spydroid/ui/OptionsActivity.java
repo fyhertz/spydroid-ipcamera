@@ -35,9 +35,13 @@ import android.preference.PreferenceManager;
 
 public class OptionsActivity extends PreferenceActivity {
 
+	private SpydroidApplication mApplication = null;
+	
 	protected void onCreate(Bundle savedInstanceState){
 		super.onCreate(savedInstanceState);
 
+		mApplication = (SpydroidApplication) getApplication();
+		
 		addPreferencesFromResource(R.xml.preferences);
 
 		final SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(this);
@@ -48,6 +52,9 @@ public class OptionsActivity extends PreferenceActivity {
 		final ListPreference videoResolution = (ListPreference) findPreference("video_resolution");
 		final ListPreference videoBitrate = (ListPreference) findPreference("video_bitrate");
 		final ListPreference videoFramerate = (ListPreference) findPreference("video_framerate");
+		final Preference httpEnabled = findPreference("http_enabled");
+		final Preference httpsEnabled = findPreference("https_enabled");
+		final Preference httpPort = findPreference("http_port");
 
 		boolean videoState = settings.getBoolean("stream_video", true);
 		videoEncoder.setEnabled(videoState);
@@ -56,16 +63,25 @@ public class OptionsActivity extends PreferenceActivity {
 		videoFramerate.setEnabled(videoState);        
 		audioEncoder.setEnabled(settings.getBoolean("stream_audio", true));
 
-		videoEncoder.setValue(String.valueOf(SpydroidApplication.sVideoEncoder));
-		audioEncoder.setValue(String.valueOf(SpydroidApplication.sAudioEncoder));
-		videoFramerate.setValue(String.valueOf(SpydroidApplication.sVideoQuality.framerate));
-		videoBitrate.setValue(String.valueOf(SpydroidApplication.sVideoQuality.bitrate/1000));
-		videoResolution.setValue(SpydroidApplication.sVideoQuality.resX+"x"+SpydroidApplication.sVideoQuality.resY);
+		videoEncoder.setValue(String.valueOf(mApplication.mVideoEncoder));
+		audioEncoder.setValue(String.valueOf(mApplication.mAudioEncoder));
+		videoFramerate.setValue(String.valueOf(mApplication.mVideoQuality.framerate));
+		videoBitrate.setValue(String.valueOf(mApplication.mVideoQuality.bitrate/1000));
+		videoResolution.setValue(mApplication.mVideoQuality.resX+"x"+mApplication.mVideoQuality.resY);
 
 		videoResolution.setSummary(getString(R.string.settings0)+" "+videoResolution.getValue()+"px");
 		videoFramerate.setSummary(getString(R.string.settings1)+" "+videoFramerate.getValue()+"fps");
 		videoBitrate.setSummary(getString(R.string.settings2)+" "+videoBitrate.getValue()+"kbps");
 
+		httpEnabled.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
+			public boolean onPreferenceChange(Preference preference, Object newValue) {
+				boolean state = (Boolean)newValue;
+				httpsEnabled.setEnabled(state);
+				httpPort.setEnabled(state);
+				return true;
+			}
+		});
+		
 		videoResolution.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
 			public boolean onPreferenceChange(Preference preference, Object newValue) {
 				Editor editor = settings.edit();

@@ -115,7 +115,7 @@ public class AACStream extends MediaStream {
 
 		return "m=audio "+String.valueOf(getDestinationPort())+" RTP/AVP 96\r\n" +
 		"b=RR:0\r\n" +
-		"a=rtpmap:96 mpeg4-generic/"+90000+"\r\n" + //ADTSSamplingRates[samplingRateIndex]
+		"a=rtpmap:96 mpeg4-generic/"+90000+"\r\n" + // sADTSSamplingRates[mSamplingRateIndex]
 		"a=fmtp:96 streamtype=5; profile-level-id=15; mode=AAC-hbr; config="+Integer.toHexString(mConfig)+"; SizeLength=13; IndexLength=3; IndexDeltaLength=3;\r\n";
 	}
 

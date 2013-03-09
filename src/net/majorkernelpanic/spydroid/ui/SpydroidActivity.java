@@ -24,23 +24,18 @@ import java.io.IOException;
 
 import net.majorkernelpanic.spydroid.R;
 import net.majorkernelpanic.spydroid.SpydroidApplication;
-import net.majorkernelpanic.spydroid.api.CustomHttpServer;
 import net.majorkernelpanic.streaming.SessionManager;
-import net.majorkernelpanic.streaming.misc.HttpServer;
 import net.majorkernelpanic.streaming.misc.RtspServer;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
-import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.content.pm.ActivityInfo;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.os.PowerManager;
-import android.preference.PreferenceManager;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.FragmentManager;
@@ -61,7 +56,7 @@ import android.widget.Toast;
  * Spydroid basically launches an RtspServer and an HttpServer, 
  * clients can then connect to them and start/stop audio/video streams from the phone
  */
-public class SpydroidActivity extends FragmentActivity implements OnSharedPreferenceChangeListener {
+public class SpydroidActivity extends FragmentActivity {
 
 	static final public String TAG = "SpydroidActivity";
 
@@ -71,37 +66,24 @@ public class SpydroidActivity extends FragmentActivity implements OnSharedPrefer
 	// We assume that the device is a phone
 	public static int device = HANDSET;
 
-	// The HTTP and RTSP servers
-	static private CustomHttpServer mHttpServer = null;
+	// The RTSP server
 	static private RtspServer mRtspServer = null;
-
-	// The HttpServer will use those variables to send reports about the state of the app to the web interface
-	public static boolean activityPaused = true;
-	public static Exception lastCaughtException;
-
-	// Prevent garbage collection of the Surface
-	public static boolean hackEnabled = false;
 
 	private ViewPager mViewPager;
 	private PowerManager.WakeLock mWakeLock;
 	private SectionsPagerAdapter mAdapter;
-	private boolean mNotificationEnabled = true;
 
 	private SurfaceView mSurfaceView;
 	private SurfaceHolder mSurfaceHolder;
+	
+	private SpydroidApplication mApplication;
 
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
+		mApplication = (SpydroidApplication) getApplication();
+		
 		setContentView(R.layout.spydroid);
-
-		// Restores some settings 
-		SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(this);
-		mNotificationEnabled = settings.getBoolean("notification_enabled", true);
-		hackEnabled = settings.getBoolean("video_hack", false);
-
-		// Listens to changes of preferences
-		settings.registerOnSharedPreferenceChangeListener(this);
 
 		if (findViewById(R.id.handset_pager) != null) {
 
@@ -114,7 +96,7 @@ public class SpydroidActivity extends FragmentActivity implements OnSharedPrefer
 			mSurfaceHolder = mSurfaceView.getHolder();
 			// We still need this line for backward compatibility reasons with android 2
 			mSurfaceHolder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
-			SessionManager.getManager().setSurfaceHolder(mSurfaceHolder, !SpydroidActivity.hackEnabled);
+			SessionManager.getManager().setSurfaceHolder(mSurfaceHolder, !mApplication.mHackEnabled);
 
 		} else {
 
@@ -124,7 +106,7 @@ public class SpydroidActivity extends FragmentActivity implements OnSharedPrefer
 			mAdapter = new SectionsPagerAdapter(getSupportFragmentManager());
 			mViewPager = (ViewPager) findViewById(R.id.tablet_pager);
 			setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
-			SpydroidApplication.sVideoQuality.orientation = 0;
+			mApplication.mVideoQuality.orientation = 0;
 
 		}
 
@@ -147,15 +129,13 @@ public class SpydroidActivity extends FragmentActivity implements OnSharedPrefer
 					public void run() {
 						if (mAdapter.getHandsetFragment() != null) 
 							mAdapter.getHandsetFragment().displayIpAddress();
-						else
-							Log.e(TAG,"HandsetFragment does not exist");
 					}
 				});				
 			}
 		});
 
 		// Remove the ads if this is the donate version of the app.
-		if (SpydroidApplication.DONATE_VERSION) {
+		if (mApplication.DONATE_VERSION) {
 			((LinearLayout)findViewById(R.id.adcontainer)).removeAllViews();
 		}
 
@@ -163,11 +143,9 @@ public class SpydroidActivity extends FragmentActivity implements OnSharedPrefer
 		PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
 		mWakeLock = pm.newWakeLock(PowerManager.FULL_WAKE_LOCK, "net.majorkernelpanic.spydroid.wakelock");
 
-		// Instantiation of the HTTP and RTSP servers
+		// Instantiation of the RTSP server
 		if (mRtspServer == null) 
-			mRtspServer = new RtspServer(SpydroidApplication.sRtspPort, mHandler);
-		if (mHttpServer == null && settings.getBoolean("enable_http", true)) 
-			mHttpServer = new CustomHttpServer(SpydroidApplication.sHttpPort, this.getApplicationContext(), mHandler);  
+			mRtspServer = new RtspServer(mApplication.mRtspPort, mHandler);
 
 	}
 
@@ -241,7 +219,7 @@ public class SpydroidActivity extends FragmentActivity implements OnSharedPrefer
 		mWakeLock.acquire();
 
 		// Did the user disabled the notification ?
-		if (mNotificationEnabled) {
+		if (mApplication.mNotificationEnabled) {
 			Intent notificationIntent = new Intent(this, SpydroidActivity.class);
 			PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, PendingIntent.FLAG_CANCEL_CURRENT);
 
@@ -254,6 +232,8 @@ public class SpydroidActivity extends FragmentActivity implements OnSharedPrefer
 					.setContentText(getText(R.string.notification_content)).build();
 			notification.flags |= Notification.FLAG_ONGOING_EVENT;
 			((NotificationManager)getSystemService(Context.NOTIFICATION_SERVICE)).notify(0,notification);
+		} else {
+			removeNotification();
 		}
 
 	}
@@ -268,14 +248,14 @@ public class SpydroidActivity extends FragmentActivity implements OnSharedPrefer
 	@Override
 	public void onResume() {
 		super.onResume();
-		activityPaused = true;
+		mApplication.mApplicationForeground = true;
 		startServers();
 	}
 
 	@Override
 	public void onPause() {
 		super.onPause();
-		activityPaused = false;
+		mApplication.mApplicationForeground = false;
 	}
 
 	@Override
@@ -283,74 +263,6 @@ public class SpydroidActivity extends FragmentActivity implements OnSharedPrefer
 		Log.d(TAG,"SpydroidActivity destroyed");
 		super.onDestroy();
 	}
-
-	@Override
-	public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
-		if (key.equals("video_resX") || key.equals("video_resY")) {
-			SpydroidApplication.sVideoQuality.resX = sharedPreferences.getInt("video_resX", 0);
-			SpydroidApplication.sVideoQuality.resY = sharedPreferences.getInt("video_resY", 0);
-		}
-		else if (key.equals("video_framerate")) {
-			SpydroidApplication.sVideoQuality.framerate = Integer.parseInt(sharedPreferences.getString("video_framerate", "0"));
-		}
-		else if (key.equals("video_bitrate")) {
-			SpydroidApplication.sVideoQuality.bitrate = Integer.parseInt(sharedPreferences.getString("video_bitrate", "0"))*1000;
-		}
-		else if (key.equals("audio_encoder") || key.equals("stream_audio")) { 
-			SpydroidApplication.sAudioEncoder = Integer.parseInt(sharedPreferences.getString("audio_encoder", "0"));
-			SessionManager.getManager().setDefaultAudioEncoder( SpydroidApplication.sAudioEncoder );
-			if (!sharedPreferences.getBoolean("stream_audio", false)) 
-				SessionManager.getManager().setDefaultAudioEncoder(0);
-		}
-		else if (key.equals("stream_video") || key.equals("video_encoder")) {
-			SpydroidApplication.sVideoEncoder = Integer.parseInt(sharedPreferences.getString("video_encoder", "0"));
-			SessionManager.getManager().setDefaultVideoEncoder( SpydroidApplication.sVideoEncoder );
-			if (!sharedPreferences.getBoolean("stream_video", true)) 
-				SessionManager.getManager().setDefaultVideoEncoder(0);
-		}
-		else if (key.equals("enable_http")) {
-			if (sharedPreferences.getBoolean("enable_http", true)) {
-				if (mHttpServer == null) {
-					mHttpServer = new CustomHttpServer(SpydroidApplication.sHttpPort, this.getApplicationContext(), mHandler);
-					startServers();
-				}
-			} else {
-				if (mHttpServer != null) {
-					mHttpServer.stop();
-					mHttpServer = null;
-				}
-			}
-		}
-		else if (key.equals("enable_rtsp")) {
-			if (sharedPreferences.getBoolean("enable_rtsp", true)) {
-				if (mRtspServer == null) {
-					mRtspServer = new RtspServer(SpydroidApplication.sRtspPort, mHandler);
-					startServers();
-				}
-			} else {
-				if (mRtspServer != null) {
-					mRtspServer.stop();
-					mRtspServer = null;
-				}
-			}
-		}
-		else if (key.equals("notification_enabled")) {
-			mNotificationEnabled  = sharedPreferences.getBoolean("notification_enabled", true);
-			removeNotification();
-		}
-		else if (key.equals("video_hack")) {
-			hackEnabled = sharedPreferences.getBoolean("video_hack", false);
-			SurfaceHolder holder = SessionManager.getManager().getSurfaceHolder();
-			SessionManager.getManager().setSurfaceHolder(holder,!hackEnabled);
-		}
-		else if (key.equals("http_port")) {
-			int port = Integer.parseInt(sharedPreferences.getString("http_port", String.valueOf(SpydroidApplication.sHttpPort)));
-			SpydroidApplication.sHttpPort = port;
-			mHttpServer.stop();
-			mHttpServer = new CustomHttpServer(port, this.getApplicationContext(), mHandler);
-			startServers();
-		}
-	}  
 
 	@Override    
 	public void onBackPressed() {
@@ -383,7 +295,7 @@ public class SpydroidActivity extends FragmentActivity implements OnSharedPrefer
 			// Quits Spydroid i.e. stops the HTTP & RTSP servers
 			stopServers();  
 			// Remove notification
-			if (mNotificationEnabled) removeNotification();          	
+			if (mApplication.mNotificationEnabled) removeNotification();          	
 			finish();	
 			return true;
 		default:
@@ -399,19 +311,14 @@ public class SpydroidActivity extends FragmentActivity implements OnSharedPrefer
 				log("RtspServer could not be started : "+(e.getMessage()!=null?e.getMessage():"Unknown error"));
 			}
 		}
-		if (mHttpServer != null) {
-			try {
-				mHttpServer.start();
-			} catch (IOException e) {
-				log("HttpServer could not be started : "+(e.getMessage()!=null?e.getMessage():"Unknown error"));
-			}
+		if (mApplication.mHttpServer != null) {
+			mApplication.mHttpServer.start();
 		}
 	}
 
 	private void stopServers() {
-		if (mHttpServer != null) {
-			mHttpServer.stop();
-			mHttpServer = null;
+		if (mApplication.mHttpServer != null) {
+			mApplication.mHttpServer.stop();
 		}
 		if (mRtspServer != null) {
 			mRtspServer.stop();
@@ -419,23 +326,19 @@ public class SpydroidActivity extends FragmentActivity implements OnSharedPrefer
 		}
 	}
 
-	// The Handler that gets information back from the RtspServer and the HttpServer
+	// The Handler that gets information back from the RtspServer
 	private final Handler mHandler = new Handler() {
 
 		public void handleMessage(Message msg) { 
 			switch (msg.what) {
 			case RtspServer.MESSAGE_ERROR:
 				Exception e1 = (Exception)msg.obj;
-				lastCaughtException = e1;
+				mApplication.mLastCaughtException = e1;
 				log(e1.getMessage()!=null?e1.getMessage():"An error occurred !");
 				break;
 			case RtspServer.MESSAGE_LOG:
 				//log((String)msg.obj);
-				break;
-			case HttpServer.MESSAGE_ERROR:
-				Exception e2 = (Exception)msg.obj;
-				lastCaughtException = e2;
-				break;    			
+				break;  			
 			}
 		}
 

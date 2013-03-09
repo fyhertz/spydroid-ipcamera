@@ -49,9 +49,14 @@
     <PreferenceCategory android:title="@string/settings19" >
         <CheckBoxPreference
             android:defaultValue="true"
-            android:key="enable_http"
+            android:key="http_enabled"
             android:summary="@string/settings23"
             android:title="@string/settings22" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="https_enabled"
+            android:summary="@string/settings25"
+            android:title="@string/settings24" />        
         <EditTextPreference
             android:defaultValue="8080"
             android:inputType="number"
