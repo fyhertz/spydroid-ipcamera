@@ -65,6 +65,7 @@
 		              error = false;
 		              startTimer = setInterval(function () {
 			               if (object.playlist.isPlaying) {
+                            console.log("STARTED !");
 			                   restarting = false;
 			                   starting = false;
 			                   clearInterval(startTimer);
@@ -116,7 +117,7 @@
 	     var audioEncoder, videoEncoder, cache, rotation, flash, camera, res;
 
 	     // Audio conf
-	     if ($('#audioEnabled').attr('checked')) {
+	     if ($('#audioEnabled').prop('checked')) {
 	         audioEncoder = $('#audioEncoder').val()=='AMR-NB'?'amr':'aac';
 	     } else {
 	         audioEncoder = "nosound";
@@ -126,7 +127,7 @@
 	     res = /([0-9]+)x([0-9]+)/.exec($('#resolution').val());
 
 	     // Video conf
-	     if ($('#videoEnabled').attr('checked')) {
+	     if ($('#videoEnabled').prop('checked')) {
 	         videoEncoder = ($('#videoEncoder').val()=='H.263'?'h263':'h264')+'='+
 		          /[0-9]+/.exec($('#bitrate').val())[0]+'-'+
 		          /[0-9]+/.exec($('#framerate').val())[0]+'-';
@@ -302,20 +303,20 @@
 		          $(this).val()===config.videoBitrate || 
 		          $(this).val()===config.audioEncoder ||
 		          $(this).val()===config.videoEncoder ) {
-		          $(this).parent().children().removeAttr('selected');
-		          $(this).attr('selected','true');
+		          $(this).parent().children().prop('selected',false);
+		          $(this).prop('selected',true);
 		      }
 	     });	    
-	     if (config.streamAudio===false) $('#audioEnabled').removeAttr('checked');
-	     if (config.streamVideo===false) $('#videoEnabled').removeAttr('checked');
+	     if (config.streamAudio===false) $('#audioEnabled').prop('checked',false);
+	     if (config.streamVideo===false) $('#videoEnabled').prop('checked',false);
     },
 
     saveSettings = function () {
         var res = /([0-9]+)x([0-9]+)/.exec($('#resolution').val());
         var videoQuality = /[0-9]+/.exec($('#bitrate').val())[0]+'-'+/[0-9]+/.exec($('#framerate').val())[0]+'-'+res[1]+'-'+res[2];		          
         var settings = {
-            'stream_video': $('#videoEnabled').attr('checked')=='checked',
-            'stream_audio': $('#audioEnabled').attr('checked')=='checked',
+            'stream_video': $('#videoEnabled').prop('checked')===true,
+            'stream_audio': $('#audioEnabled').prop('checked')===true,
             'video_encoder': $('#videoEncoder').val(),
             'audio_encoder': $('#audioEncoder').val(),
             'video_quality': videoQuality
@@ -325,9 +326,9 @@
 
     // Disable input for one sec to prevent user from flooding the RTSP server by clicking around too quickly
     disableAndEnable = function (input) {
-	     input.attr('disabled','true');
+	     input.prop('disabled',true);
 	     setTimeout(function () {
-	         input.removeAttr('disabled');
+	         input.prop('disabled',false);
 	     },1000);
     },
 
@@ -374,24 +375,24 @@
 	     setInterval(function () {updateStatus();},400);
 
 	     $('#connect').click(function () {
-	         if ($(this).attr('disabled')!==undefined) return;
+	         if ($(this).prop('disabled')===true) return;
 	         disableAndEnable($(this));
 	         if ((videoStream.getState()!=='idle' && videoStream.getState()!=='error') || 
 		          (audioStream.getState()!=='idle' && audioStream.getState()!=='error')) {
 		          videoStream.stop();
 		          audioStream.stop();
 	         } else {
-		          if (!$('#videoEnabled').attr('checked') && !$('#audioEnabled').attr('checked')) return;
+		          if (!$('#videoEnabled').prop('checked') && !$('#audioEnabled').prop('checked')) return;
 		          videoPlugin.css('visibility','hidden'); 
 		          cover.css('background','black').html('<div id="mask"></div><div id="wrapper"><h1>'+__('CONNECTION')+'</h1></div>').show();
-		          if ($('#videoEnabled').attr('checked')) videoStream.start(); else videoStream.stop();
-		          if ($('#audioEnabled').attr('checked')) audioStream.start();
+		          if ($('#videoEnabled').prop('checked')) videoStream.start(); else videoStream.stop();
+		          if ($('#audioEnabled').prop('checked')) audioStream.start();
 		          updateStatus();
 	         }
 	     });
 	     
 	     $('#torch-button').click(function () {
-	         if ($(this).attr('disabled')!==undefined || videoStream.getState()==='starting') return;
+	         if ($(this).prop('disabled')===true || videoStream.getState()==='starting') return;
 	         disableAndEnable($(this));
 	         if ($('#flashEnabled').val()=='0') {
 		          $('#flashEnabled').val('1');
@@ -410,8 +411,8 @@
             $.post('request.json',"[{'action':'buzz'}]");
         });
 
-	     $('.camera-not-selected').live('click',function () {
-	         if ($(this).attr('disabled')!==undefined || videoStream.getState()==='starting') return;
+	     $(document).on('click', '.camera-not-selected', function () {
+	         if ($(this).prop('disabled')!==true || videoStream.getState()==='starting') return;
 	         $('#cameras span').addClass('camera-not-selected');
 	         $(this).removeClass('camera-not-selected');
 	         disableAndEnable($('.camera-not-selected'));
@@ -419,7 +420,7 @@
 	         if (videoStream.getState()==='streaming') videoStream.restart();
 	     }) 
 	     
-	     $('.audio select,').change(function () {
+	     $('.audio select').change(function () {
 	         if (audioStream.isStreaming()) {
 		          audioStream.restart();
 	         }
@@ -427,7 +428,7 @@
 
 	     $('.audio input').change(function () {
 	         if (audioStream.isStreaming() || videoStream.isStreaming()) {
-		          if ($('#audioEnabled').attr('checked')) audioStream.restart(); else audioStream.stop();
+		          if ($('#audioEnabled').prop('checked')) audioStream.restart(); else audioStream.stop();
 		          disableAndEnable($(this));
 	         }
 	     });
@@ -440,7 +441,7 @@
 
 	     $('.video input').change(function () {
 	         if (audioStream.isStreaming() || videoStream.isStreaming()) {
-		          if ($('#videoEnabled').attr('checked')) videoStream.restart(); else videoStream.stop();
+		          if ($('#videoEnabled').prop('checked')) videoStream.restart(); else videoStream.stop();
 		          disableAndEnable($(this));
 	         }
 	     });
@@ -464,7 +465,7 @@
 	         updateTooltip($(this).attr('id'));
 	     });
 
-	     $('.sound').live('click', function () {
+	     $(document).on('click', '.sound', function () {
 	         $.post('request.json',JSON.stringify({'action':'play','name':$(this).attr('id')}));
 	     });
 

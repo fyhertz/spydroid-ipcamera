@@ -385,7 +385,7 @@ public class TinyHttpServer extends Service {
 			}
 
 			try {
-				SSLContext sslContext = SSLContext.getInstance("TLS");
+				SSLContext sslContext = SSLContext.getInstance("SSL");
 				sslContext.init(new KeyManager[] {mKeyManager}, null, null);
 				ServerSocket serverSocket = sslContext.getServerSocketFactory().createServerSocket(port);
 				construct(serverSocket);
@@ -609,12 +609,14 @@ public class TinyHttpServer extends Service {
 					try {
 						this.httpservice.handleRequest(this.conn, context);
 					} catch (UnsupportedOperationException e) {
+						e.printStackTrace();
 						// shutdownOutput is not implemented by SSLSocket, and it is called in the implementation
 						// of org.apache.http.impl.SocketHttpServerConnection.close().
 					}
 				}
 			} catch (ConnectionClosedException e) {
 				Log.d(TAG,"Client closed connection");
+				e.printStackTrace();
 			} catch (SocketTimeoutException e) {
 				Log.d(TAG,"Socket timeout");
 			} catch (IOException e) {
@@ -622,12 +624,12 @@ public class TinyHttpServer extends Service {
 			} catch (HttpException e) {
 				Log.e(TAG,"Unrecoverable HTTP protocol violation: " + e.getMessage());
 			} finally {
-				try {
-					socket.close();
-				} catch (IOException e) {}
 				/*try {
+					socket.close();
+				} catch (IOException e) {}*/
+				try {
 					this.conn.shutdown();
-				} catch (IOException ignore) {}*/
+				} catch (Exception ignore) {}
 			}
 		}
 	}
