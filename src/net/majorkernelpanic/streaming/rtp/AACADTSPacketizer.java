@@ -44,6 +44,7 @@ public class AACADTSPacketizer extends AbstractPacketizer implements Runnable {
 	
 	private Thread t;
 	private Statistics stats = new Statistics();
+	private int samplingRate = 8000;
 
 	public AACADTSPacketizer() throws IOException {
 		super();
@@ -68,6 +69,10 @@ public class AACADTSPacketizer extends AbstractPacketizer implements Runnable {
 		} catch (InterruptedException e) {}
 	}
 
+	public void setSamplingRate(int samplingRate) {
+		this.samplingRate = samplingRate;
+	}
+	
 	public void run() {
 
 		// "A packet SHALL carry either one or more complete Access Units, or a
@@ -78,7 +83,7 @@ public class AACADTSPacketizer extends AbstractPacketizer implements Runnable {
 		
 		// Adts header fields that we need to parse
 		boolean protection;
-		int frameLength, sum, length;
+		int frameLength, sum, length, nbau, nbpk;
 		long ts=0, oldtime = SystemClock.elapsedRealtime(), now = oldtime;
 
 		try {
@@ -100,14 +105,21 @@ public class AACADTSPacketizer extends AbstractPacketizer implements Runnable {
 						(buffer[rtphl+4]&0xFF) << 3 | 
 						(buffer[rtphl+5]&0xFF) >> 5 ;
 				frameLength -= (protection ? 7 : 9);
-
+				
+				// Number of AAC frames in the ADTS frame
+				nbau = (buffer[rtphl+6]&0x03) + 1;
+				if (nbau>1) continue;
+				
+				// The number of packets that will be sent for this ADTS frame
+				nbpk = frameLength/MAXPACKETSIZE + 1;
+				
 				// Read CRS if any
 				if (!protection) is.read(buffer,rtphl,2);
 
 				now = SystemClock.elapsedRealtime();
 				stats.push(now-oldtime);
 				oldtime = now;
-				ts += 1024; //stats.average()*90;
+				ts += (nbau*1024*1000 / samplingRate )*90;
 				oldtime = now;
 				socket.updateTimestamp(ts);
 				
@@ -140,6 +152,10 @@ public class AACADTSPacketizer extends AbstractPacketizer implements Runnable {
 					buffer[rtphl+3] |= 0x00;
 
 					//Log.d(TAG,"frameLength: "+frameLength+" protection: "+protection+ " length: "+length);
+										
+					// We wait before calling send() so that we won't send too many packets at once
+					Log.e(TAG,"SLEEP: "+ ( 2*nbau*1024*1000 / (3*nbpk*samplingRate) ) );
+					Thread.sleep( ( 2*nbau*1024*1000 / (3*nbpk*samplingRate) ) );
 					
 					socket.send(rtphl+4+length);
 
@@ -147,10 +163,14 @@ public class AACADTSPacketizer extends AbstractPacketizer implements Runnable {
 
 			}
 		} catch (IOException e) {
+			// Ignore
 		} catch (ArrayIndexOutOfBoundsException e) {
 			Log.e(TAG,"ArrayIndexOutOfBoundsException: "+(e.getMessage()!=null?e.getMessage():"unknown error"));
 			e.printStackTrace();
-		} finally {
+		} catch (InterruptedException e) {
+			// Ignore
+		}
+		finally {
 			running = false;
 		}
 

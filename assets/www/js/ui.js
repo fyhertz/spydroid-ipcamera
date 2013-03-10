@@ -281,6 +281,20 @@
 	     if (audioStream.getState()!=='error') audioStream.stop();
     },
 
+    refreshBatteryLevel = function (level) {
+        $('#battery>#level').text(level);
+        setTimeout(function () {
+	         $.ajax({type: 'POST', url: 'request.json',data: "[{'action':'battery'}]",
+		              success: function (json) {
+                        refreshBatteryLevel(json.battery);
+                    },
+                    error: function () {
+                        refreshBatteryLevel('?');
+                    }
+                   });
+        },50000);
+    },
+
     fetchSettings = function (config) {
 	     $('#resolution,#framerate,#bitrate,#audioEncoder,#videoEncoder').children().each(function (c) {
 		      if ($(this).val()===config.videoResolution || 
@@ -389,6 +403,13 @@
 	         if (videoStream.getState()==='streaming') videoStream.restart();
 	     });
 
+	     $('#buzz-button').click(function () {
+            $(this).animate({'padding-left':'+=10'}, 40, 'linear')
+                .animate({'padding-left':'-=20'}, 80, 'linear')
+                .animate({'padding-left':'+=10'}, 40, 'linear');
+            $.post('request.json',"[{'action':'buzz'}]");
+        });
+
 	     $('.camera-not-selected').live('click',function () {
 	         if ($(this).attr('disabled')!==undefined || videoStream.getState()==='starting') return;
 	         $('#cameras span').addClass('camera-not-selected');
@@ -476,7 +497,7 @@
 
     $(document).ready(function () {
 
-        $.post('request.json',"[{'action':'sounds'},{'action':'screen'},{'action':'get'}]", function (data) {
+        $.post('request.json',"[{'action':'sounds'},{'action':'screen'},{'action':'get'},{'action':'battery'}]", function (data) {
 
 	         // Verify that the screen is not turned off
 	         testScreenState(data.screen);
@@ -486,6 +507,9 @@
 
 	         // Retrieve the configuration of Spydroid on the phone
 	         fetchSettings(data.get);
+
+            // Retrieve battery level
+            refreshBatteryLevel(data.battery);
             
         });
 

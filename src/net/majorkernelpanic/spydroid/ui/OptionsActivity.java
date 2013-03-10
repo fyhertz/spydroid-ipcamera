@@ -33,15 +33,16 @@ import android.preference.Preference;
 import android.preference.PreferenceActivity;
 import android.preference.PreferenceManager;
 
+@SuppressWarnings("deprecation")
 public class OptionsActivity extends PreferenceActivity {
 
 	private SpydroidApplication mApplication = null;
-	
+
 	protected void onCreate(Bundle savedInstanceState){
 		super.onCreate(savedInstanceState);
 
 		mApplication = (SpydroidApplication) getApplication();
-		
+
 		addPreferencesFromResource(R.xml.preferences);
 
 		final SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(this);
@@ -52,9 +53,9 @@ public class OptionsActivity extends PreferenceActivity {
 		final ListPreference videoResolution = (ListPreference) findPreference("video_resolution");
 		final ListPreference videoBitrate = (ListPreference) findPreference("video_bitrate");
 		final ListPreference videoFramerate = (ListPreference) findPreference("video_framerate");
-		final Preference httpEnabled = findPreference("http_enabled");
-		final Preference httpsEnabled = findPreference("https_enabled");
-		final Preference httpPort = findPreference("http_port");
+		final Preference httpEnabled = findPreference("http_server_enabled");
+		final Preference httpsEnabled = findPreference("use_https");
+		final Preference httpPort = findPreference("http_server_port");
 
 		boolean videoState = settings.getBoolean("stream_video", true);
 		videoEncoder.setEnabled(videoState);
@@ -78,10 +79,61 @@ public class OptionsActivity extends PreferenceActivity {
 				boolean state = (Boolean)newValue;
 				httpsEnabled.setEnabled(state);
 				httpPort.setEnabled(state);
+				Editor editor = settings.edit();
+				// Updates the HTTP server
+				if (!state) {
+					editor.putBoolean("http_enabled", false);
+					editor.putBoolean("https_enabled", false);
+				} else {
+					// HTTP/HTTPS, it's one or the other
+					if (httpsEnabled.isEnabled()) {
+						editor.putBoolean("https_enabled", true);
+						editor.putBoolean("http_enabled", false);
+					} else {
+						editor.putBoolean("https_enabled", false);
+						editor.putBoolean("http_enabled", true);
+					}
+				}
+				editor.commit();
+				return true;
+			}
+		});
+
+		httpsEnabled.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
+			public boolean onPreferenceChange(Preference preference, Object newValue) {
+				boolean state = (Boolean)newValue;
+				Editor editor = settings.edit();
+				// Updates the HTTP server
+				if (!httpEnabled.isEnabled()) {
+					editor.putBoolean("http_enabled", false);
+					editor.putBoolean("https_enabled", false);
+				} else {
+					// HTTP/HTTPS, it's one or the other
+					if (state) {
+						editor.putBoolean("https_enabled", true);
+						editor.putBoolean("http_enabled", false);
+					} else {
+						editor.putBoolean("https_enabled", false);
+						editor.putBoolean("http_enabled", true);
+					}
+				}
+				editor.commit();
 				return true;
 			}
 		});
 		
+		httpPort.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
+			public boolean onPreferenceChange(Preference preference, Object newValue) {
+				int port = Integer.parseInt((String)newValue);
+				Editor editor = settings.edit();
+				// Updates the HTTP server
+				editor.putString("http_port", String.valueOf(port));
+				editor.putString("https_port", String.valueOf(port));
+				editor.commit();
+				return true;
+			}
+		});		
+
 		videoResolution.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
 			public boolean onPreferenceChange(Preference preference, Object newValue) {
 				Editor editor = settings.edit();

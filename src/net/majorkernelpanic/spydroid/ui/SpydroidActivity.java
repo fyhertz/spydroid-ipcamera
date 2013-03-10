@@ -22,18 +22,26 @@ package net.majorkernelpanic.spydroid.ui;
 
 import java.io.IOException;
 
+import net.majorkernelpanic.http.TinyHttpServer;
+import net.majorkernelpanic.http.TinyHttpServer.CallbackListener;
 import net.majorkernelpanic.spydroid.R;
 import net.majorkernelpanic.spydroid.SpydroidApplication;
+import net.majorkernelpanic.spydroid.api.CustomHttpServer;
 import net.majorkernelpanic.streaming.SessionManager;
 import net.majorkernelpanic.streaming.misc.RtspServer;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.ServiceConnection;
+import android.content.SharedPreferences;
+import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.content.pm.ActivityInfo;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.IBinder;
 import android.os.Message;
 import android.os.PowerManager;
 import android.support.v4.app.Fragment;
@@ -67,7 +75,10 @@ public class SpydroidActivity extends FragmentActivity {
 	public static int device = HANDSET;
 
 	// The RTSP server
-	static private RtspServer mRtspServer = null;
+	static private RtspServer sRtspServer = null;
+	
+	// The HTTP/S server.
+	private CustomHttpServer mHttpServer = null;
 
 	private ViewPager mViewPager;
 	private PowerManager.WakeLock mWakeLock;
@@ -144,9 +155,12 @@ public class SpydroidActivity extends FragmentActivity {
 		mWakeLock = pm.newWakeLock(PowerManager.FULL_WAKE_LOCK, "net.majorkernelpanic.spydroid.wakelock");
 
 		// Instantiation of the RTSP server
-		if (mRtspServer == null) 
-			mRtspServer = new RtspServer(mApplication.mRtspPort, mHandler);
+		if (sRtspServer == null) 
+			sRtspServer = new RtspServer(mApplication.mRtspPort, mHandler);
 
+		// Start the HTTP server
+		this.startService(new Intent(this,CustomHttpServer.class));
+		
 	}
 
 	class SectionsPagerAdapter extends FragmentPagerAdapter {
@@ -292,11 +306,7 @@ public class SpydroidActivity extends FragmentActivity {
 			startActivityForResult(intent, 0);
 			return true;
 		case R.id.quit:
-			// Quits Spydroid i.e. stops the HTTP & RTSP servers
-			stopServers();  
-			// Remove notification
-			if (mApplication.mNotificationEnabled) removeNotification();          	
-			finish();	
+			quitSpydroid();
 			return true;
 		default:
 			return super.onOptionsItemSelected(item);
@@ -304,28 +314,28 @@ public class SpydroidActivity extends FragmentActivity {
 	}
 
 	private void startServers() {
-		if (mRtspServer != null) {
+		if (sRtspServer != null) {
 			try {
-				mRtspServer.start();
+				sRtspServer.start();
 			} catch (IOException e) {
 				log("RtspServer could not be started : "+(e.getMessage()!=null?e.getMessage():"Unknown error"));
 			}
 		}
-		if (mApplication.mHttpServer != null) {
-			mApplication.mHttpServer.start();
-		}
 	}
 
-	private void stopServers() {
-		if (mApplication.mHttpServer != null) {
-			mApplication.mHttpServer.stop();
+	private void quitSpydroid() {
+		// Removes notification
+		if (mApplication.mNotificationEnabled) removeNotification();       
+		// Kills HTTP server
+		this.stopService(new Intent(this,CustomHttpServer.class));
+		// Kills RTSP server
+		if (sRtspServer != null) {
+			sRtspServer.stop();
+			sRtspServer = null;
 		}
-		if (mRtspServer != null) {
-			mRtspServer.stop();
-			mRtspServer = null;
-		}
+		finish();
 	}
-
+	
 	// The Handler that gets information back from the RtspServer
 	private final Handler mHandler = new Handler() {
 

@@ -80,11 +80,14 @@ import org.apache.http.util.EntityUtils;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
+import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.content.res.AssetFileDescriptor;
 import android.content.res.AssetManager;
 import android.os.Binder;
 import android.os.IBinder;
+import android.preference.PreferenceManager;
 import android.util.Log;
 
 /**
@@ -133,24 +136,6 @@ public class TinyHttpServer extends Service {
 	private boolean mHttpEnabled = true, mHttpUpdate = false;
 	private boolean mHttpsEnabled = false, mHttpsUpdate = false;
 
-	public void setHttpPort(int port) {
-		if (port != mHttpPort) mHttpUpdate = true;
-		mHttpPort = port;
-	}
-
-	public void setHttpsPort(int port) {
-		if (port != mHttpsPort) mHttpsUpdate = true;
-		mHttpsPort = port;
-	}
-
-	public void setHttpEnabled(boolean enable) {
-		mHttpEnabled = enable;
-	}
-
-	public void setHttpsEnabled(boolean enable) {
-		mHttpsEnabled = enable;
-	}	
-
 	@Override
 	public void onCreate() {
 
@@ -184,13 +169,81 @@ public class TinyHttpServer extends Service {
 		} catch (NameNotFoundException e) {
 			mLastModified = new Date(0);
 		}
+		
+		// Let's restore the state of the service 
+		SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(this);
+		mHttpPort = Integer.parseInt(settings.getString("http_port", String.valueOf(mHttpPort)));
+		mHttpsPort = Integer.parseInt(settings.getString("https_port", String.valueOf(mHttpsPort)));
+		mHttpEnabled = settings.getBoolean("http_enabled", mHttpEnabled);
+		mHttpsEnabled = settings.getBoolean("https_enabled", mHttpsEnabled);
+		
+		// Starts the HTTP server
+		start();
+		
+		// If the configuration is modified, the server will adjust
+		settings.registerOnSharedPreferenceChangeListener(mOnSharedPreferenceChangeListener);
 
 	}
 
+	private OnSharedPreferenceChangeListener mOnSharedPreferenceChangeListener = new OnSharedPreferenceChangeListener() {
+		@Override
+		public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
+
+			if (key.equals("http_port")) {
+				mHttpPort = Integer.parseInt(sharedPreferences.getString("http_port", String.valueOf(mHttpPort)));
+				setHttpPort(mHttpPort);
+				start();
+			}
+			
+			else if (key.equals("https_port")) {
+				mHttpsPort = Integer.parseInt(sharedPreferences.getString("https_port", String.valueOf(mHttpsPort)));
+				setHttpsPort(mHttpPort);
+				start();
+			}
+
+			else if (key.equals("https_enabled")) {
+				mHttpsEnabled = sharedPreferences.getBoolean("https_enabled", true);
+				setHttpsEnabled(mHttpsEnabled);
+				start();
+			}			
+
+			else if (key.equals("http_enabled")) {
+				mHttpEnabled = sharedPreferences.getBoolean("http_enabled", true);
+				setHttpEnabled(mHttpEnabled);
+				start();
+			}
+		}
+	};
+	
+	private void setHttpPort(int port) {
+		if (port != mHttpPort) mHttpUpdate = true;
+		mHttpPort = port;
+	}
+
+	private void setHttpsPort(int port) {
+		if (port != mHttpsPort) mHttpsUpdate = true;
+		mHttpsPort = port;
+	}
+
+	private void setHttpEnabled(boolean enable) {
+		mHttpEnabled = enable;
+	}
+
+	private void setHttpsEnabled(boolean enable) {
+		mHttpsEnabled = enable;
+	}	
+	
 	@Override
 	public int onStartCommand (Intent intent, int flags, int startId) {
-		Log.d(TAG,"TinyServerHttp started !");
+		//Log.d(TAG,"TinyServerHttp started !");
 		return START_STICKY;
+	}
+	
+	@Override
+	public void onDestroy() {
+		stop();
+		SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(this);
+		settings.unregisterOnSharedPreferenceChangeListener(mOnSharedPreferenceChangeListener);
 	}
 
 	public void start() {
