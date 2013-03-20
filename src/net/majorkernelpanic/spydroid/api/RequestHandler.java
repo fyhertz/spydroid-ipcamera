@@ -102,6 +102,7 @@ public class RequestHandler {
 
 		Log.d(TAG,"Request: " + request);
 		Log.d(TAG,"Answer: " + response.toString());
+		
 		return response.toString();
 	}
 

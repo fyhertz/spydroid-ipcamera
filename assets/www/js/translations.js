@@ -44,7 +44,8 @@
 	         40:"Cache size",
 	         41:"This generally happens when you are trying to use settings that are not supported by your phone.",
 	         42:"Retrieving error message...",
-	         43:"An error occurred"
+	         43:"An error occurred",
+            44:"Click on the phone to make your phone buzz"
 	     },
 
 	     fr: {
@@ -90,7 +91,8 @@
 	         40:"Taille cache",
 	         41:"En général, cette erreur se produit quand les paramètres sélectionnés ne sont pas compatibles avec le smartphone.",
 	         42:"Attente du message d'erreur...",
-	         43:"Une erreur s'est produite"
+	         43:"Une erreur s'est produite",
+            44:"Clique pour faire vibrer ton tel."
 	     },
 
 	     ru: {

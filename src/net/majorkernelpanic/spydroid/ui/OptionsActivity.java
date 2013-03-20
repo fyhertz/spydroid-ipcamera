@@ -55,7 +55,8 @@ public class OptionsActivity extends PreferenceActivity {
 		final ListPreference videoFramerate = (ListPreference) findPreference("video_framerate");
 		final Preference httpEnabled = findPreference("http_server_enabled");
 		final Preference httpsEnabled = findPreference("use_https");
-		final Preference httpPort = findPreference("http_server_port");
+		final Preference httpPort = findPreference("http_port");
+		final Preference httpsPort = findPreference("https_port");
 
 		boolean videoState = settings.getBoolean("stream_video", true);
 		videoEncoder.setEnabled(videoState);
@@ -79,6 +80,7 @@ public class OptionsActivity extends PreferenceActivity {
 				boolean state = (Boolean)newValue;
 				httpsEnabled.setEnabled(state);
 				httpPort.setEnabled(state);
+				httpsPort.setEnabled(state);
 				Editor editor = settings.edit();
 				// Updates the HTTP server
 				if (!state) {
@@ -99,7 +101,7 @@ public class OptionsActivity extends PreferenceActivity {
 			}
 		});
 
-		httpsEnabled.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
+		/*httpsEnabled.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
 			public boolean onPreferenceChange(Preference preference, Object newValue) {
 				boolean state = (Boolean)newValue;
 				Editor editor = settings.edit();
@@ -120,19 +122,7 @@ public class OptionsActivity extends PreferenceActivity {
 				editor.commit();
 				return true;
 			}
-		});
-		
-		httpPort.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
-			public boolean onPreferenceChange(Preference preference, Object newValue) {
-				int port = Integer.parseInt((String)newValue);
-				Editor editor = settings.edit();
-				// Updates the HTTP server
-				editor.putString("http_port", String.valueOf(port));
-				editor.putString("https_port", String.valueOf(port));
-				editor.commit();
-				return true;
-			}
-		});		
+		});*/
 
 		videoResolution.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
 			public boolean onPreferenceChange(Preference preference, Object newValue) {

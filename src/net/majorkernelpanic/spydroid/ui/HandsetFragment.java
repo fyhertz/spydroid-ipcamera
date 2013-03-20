@@ -22,17 +22,22 @@ package net.majorkernelpanic.spydroid.ui;
 
 import java.util.Locale;
 
+import net.majorkernelpanic.http.TinyHttpServer;
 import net.majorkernelpanic.spydroid.R;
 import net.majorkernelpanic.spydroid.SpydroidApplication;
 import net.majorkernelpanic.spydroid.Utilities;
+import net.majorkernelpanic.spydroid.api.CustomHttpServer;
 import net.majorkernelpanic.streaming.SessionManager;
 import android.content.BroadcastReceiver;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.ServiceConnection;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.support.v4.app.Fragment;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -50,6 +55,7 @@ public class HandsetFragment extends Fragment {
     private Animation mPulseAnimation;
     
     private SpydroidApplication mApplication;
+    private CustomHttpServer mHttpServer;
     
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -68,7 +74,6 @@ public class HandsetFragment extends Fragment {
         mSignStreaming = (TextView)rootView.findViewById(R.id.streaming);
         mSignInformation = (LinearLayout)rootView.findViewById(R.id.information);
         mPulseAnimation = AnimationUtils.loadAnimation(mApplication.getApplicationContext(), R.anim.pulse);
-        
         return rootView ;
     }
 	
@@ -84,8 +89,6 @@ public class HandsetFragment extends Fragment {
 			mVersion.setText("v???");
 		}
     	
-    	displayIpAddress();
-    	
     }
     
 	@Override
@@ -93,12 +96,13 @@ public class HandsetFragment extends Fragment {
     	super.onPause();
     	if (!SessionManager.getManager().isStreaming()) displayIpAddress(); else streamingState(1); 
     	getActivity().unregisterReceiver(mWifiStateReceiver);
+    	getActivity().unbindService(mServiceConnection);
     }
 	
 	@Override
     public void onResume() {
     	super.onResume();
-    	if (!SessionManager.getManager().isStreaming()) displayIpAddress(); else streamingState(1); 
+		getActivity().bindService(new Intent(getActivity(),CustomHttpServer.class), mServiceConnection, Context.BIND_AUTO_CREATE);
     	getActivity().registerReceiver(mWifiStateReceiver,new IntentFilter(WifiManager.NETWORK_STATE_CHANGED_ACTION));
     }
 	
@@ -137,7 +141,7 @@ public class HandsetFragment extends Fragment {
 	        String ip = String.format(Locale.ENGLISH,"%d.%d.%d.%d", i & 0xff, i >> 8 & 0xff,i >> 16 & 0xff,i >> 24 & 0xff);
 	    	mLine1.setText("http://");
 	    	mLine1.append(ip);
-	    	mLine1.append(":"+mApplication.mHttpPort);
+	    	mLine1.append(":"+mHttpServer.getHttpPort());
 	    	mLine2.setText("rtsp://");
 	    	mLine2.append(ip);
 	    	mLine2.append(":"+mApplication.mRtspPort);
@@ -145,18 +149,29 @@ public class HandsetFragment extends Fragment {
     	} else if((ipaddress = Utilities.getLocalIpAddress(true)) != null) {
     		mLine1.setText("http://");
 	    	mLine1.append(ipaddress);
-	    	mLine1.append(":"+mApplication.mHttpPort);
+	    	mLine1.append(":"+mHttpServer.getHttpPort());
 	    	mLine2.setText("rtsp://");
 	    	mLine2.append(ipaddress);
 	    	mLine2.append(":"+mApplication.mRtspPort);
 	    	streamingState(0);
     	} else {
-      		mLine1.setText("HTTP://xxx.xxx.xxx.xxx:"+mApplication.mHttpPort);
-    		mLine2.setText("RTSP://xxx.xxx.xxx.xxx:"+mApplication.mHttpPort);
     		streamingState(2);
     	}
     	
     }
+    
+    private final ServiceConnection mServiceConnection = new ServiceConnection() {
+
+		@Override
+		public void onServiceConnected(ComponentName name, IBinder service) {
+			mHttpServer = (CustomHttpServer) ((TinyHttpServer.LocalBinder)service).getService();
+	    	if (!SessionManager.getManager().isStreaming()) displayIpAddress(); else streamingState(1); 
+		}
+
+		@Override
+		public void onServiceDisconnected(ComponentName name) {}
+		
+	};
     
     // BroadcastReceiver that detects wifi state changements
     private final BroadcastReceiver mWifiStateReceiver = new BroadcastReceiver() {

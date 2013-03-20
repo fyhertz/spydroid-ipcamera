@@ -23,107 +23,244 @@
 
 package net.majorkernelpanic.http;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InterruptedIOException;
 import java.io.OutputStream;
-import java.io.OutputStreamWriter;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
+import java.net.BindException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
-import java.net.URLDecoder;
 import java.util.Date;
-import java.util.Locale;
+import java.util.Map;
 
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.X509KeyManager;
 
 import org.apache.http.ConnectionClosedException;
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpEntityEnclosingRequest;
 import org.apache.http.HttpException;
-import org.apache.http.HttpRequest;
-import org.apache.http.HttpResponse;
 import org.apache.http.HttpServerConnection;
-import org.apache.http.HttpStatus;
-import org.apache.http.MethodNotSupportedException;
-import org.apache.http.entity.AbstractHttpEntity;
-import org.apache.http.entity.ContentProducer;
-import org.apache.http.entity.EntityTemplate;
-import org.apache.http.entity.InputStreamEntity;
 import org.apache.http.impl.DefaultConnectionReuseStrategy;
 import org.apache.http.impl.DefaultHttpResponseFactory;
 import org.apache.http.impl.DefaultHttpServerConnection;
-import org.apache.http.impl.cookie.DateParseException;
-import org.apache.http.impl.cookie.DateUtils;
 import org.apache.http.params.BasicHttpParams;
 import org.apache.http.params.CoreConnectionPNames;
 import org.apache.http.params.CoreProtocolPNames;
 import org.apache.http.params.HttpParams;
+import org.apache.http.protocol.BasicHttpContext;
 import org.apache.http.protocol.BasicHttpProcessor;
 import org.apache.http.protocol.HttpContext;
 import org.apache.http.protocol.HttpRequestHandler;
+import org.apache.http.protocol.HttpRequestHandlerRegistry;
 import org.apache.http.protocol.ResponseConnControl;
 import org.apache.http.protocol.ResponseContent;
 import org.apache.http.protocol.ResponseDate;
 import org.apache.http.protocol.ResponseServer;
-import org.apache.http.util.EntityUtils;
+import org.apache.http.protocol.UriPatternMatcher;
 
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.SharedPreferences.Editor;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.content.pm.PackageManager.NameNotFoundException;
-import android.content.res.AssetFileDescriptor;
-import android.content.res.AssetManager;
 import android.os.Binder;
 import android.os.IBinder;
 import android.preference.PreferenceManager;
 import android.util.Log;
 
 /**
- * HTTP server based on this one: http://hc.apache.org/httpcomponents-core-ga/examples.html.
+ * 
+ * A Service that contains a HTTP server and a HTTPS server.
+ * 
+ * Check out the github page of this project for further information.
+ * 
  * You may add some logic to this server with {@link #addRequestHandler(String, HttpRequestHandler)}.
  * By default it serves files from /assets/www.
+ * 
  */
 public class TinyHttpServer extends Service {
 
-	public static final String TAG = "HttpServer";
+	/** The tag used by the server. */
+	public static final String TAG = "TinyHttpServer";
 
 	/** Default port for HTTP. */
 	public final static int DEFAULT_HTTP_PORT = 8080;
 
 	/** Default port for HTTPS. */
 	public final static int DEFAULT_HTTPS_PORT = 8443;
+	
+	/** Key used in the SharedPreferences to store whether the HTTP server is enabled or not. */
+	public static final String PREF_HTTP_ENABLED = "http_enabled";
+	
+	/** Key used in the SharedPreferences to store whether the HTTPS server is enabled or not. */
+	public static final String PREF_HTTPS_ENABLED = "https_enabled";
+	
+	/** Key used in the SharedPreferences for the port used by the HTTP server. */
+	public static final String PREF_HTTP_PORT = "http_port";
+	
+	/** Key used in the SharedPreferences for the port used by the HTTPS server. */
+	public static final String PREF_HTTPS_PORT = "https_port";
 
-	/** The list of MIME Media Types supported by the server. */
-	protected static String[] mimeMediaTypes = new String[] {
-		"htm",	"text/html", 
-		"html",	"text/html", 
-		"gif",	"image/gif",
-		"jpg",	"image/jpeg",
-		"png",	"image/png", 
-		"js",	"text/javascript",
-		"json",	"text/json",
-		"css",	"text/css"
-	};
+	/** Key used in the SharedPreferences for storing the password of the keystore. */
+	public final static String PREF_PASSWORD = "https_password";
+	
+	/** Port already in use. */
+	public final static int ERROR_HTTP_BIND_FAILED = 0x00;
 
-	/** Contains the date corresponding to the last update time the app. was updated. */
-	protected static Date mLastModified;
+	/** Port already in use. */
+	public final static int ERROR_HTTPS_BIND_FAILED = 0x01;
 
-	private static final Object sLock = new Object();
+	/** You need to add the class {@link ModSSL} to the {@link net.majorkernelpanic.http} package. */
+	public final static int ERROR_HTTPS_NOT_SUPPORTED = 0x02;
 
-	private ModifiedHttpRequestHandlerRegistry mRegistry;
-	private Context mContext;
+	/** An error occured with the HTTPS server :( */
+	public final static int ERROR_HTTPS_SERVER_CRASHED = 0x03;
+	
+	/** Common name that will appear in the root certificate. */
+	public final static String CA_COMMON_NAME = "TinyHttpServer CA";
+
+	/** Name of the file used to store the keystore containing the certificates for HTTPS. */
+	public final static String KEYSTORE_NAME = "keystore.jks";
+	
+	public final static String[] MODULES = new String[] {
+		"ModAssetServer",
+		"ModInternationalization"
+		};
+	
+	/** Be careful: those callbacks won't necessarily be called from the ui thread ! */
+	public interface CallbackListener {
+
+		/** Called when an error occurs. */
+		void onError(TinyHttpServer server, Exception e, int error);
+
+	}
+
+	/**
+	 * See {@link TinyHttpServer.CallbackListener} to check out what events will be fired once you set up a listener.
+	 * @param listener The listener
+	 */
+	public void setCallbackListener(CallbackListener listener) { 
+		mListener = listener;
+	}
+
+	/** 
+	 * You may add some HttpRequestHandler to modify the default behavior of the server.
+	 * @param pattern Patterns may have three formats: * or *<uri> or <uri>*
+	 * @param handler A HttpRequestHandler
+	 */ 
+	protected void addRequestHandler(String pattern, HttpRequestHandler handler) {
+		mRegistry.register(pattern, handler);
+	}
+	
+	/**
+	 * Sets the port for the HTTP server to use.
+	 * @param port The port to use
+	 */
+	public void setHttpPort(int port) {
+		Editor editor = mSharedPreferences.edit();
+		editor.putString("http_port", String.valueOf(port));
+		editor.commit();
+	}
+
+	/**
+	 * Sets the port for the HTTPS server to use.
+	 * @param port The port to use
+	 */
+	public void setHttpsPort(int port) {
+		Editor editor = mSharedPreferences.edit();
+		editor.putString("https_port", String.valueOf(port));
+		editor.commit();
+	}
+
+	/** Enables the HTTP server, you then need to call {@link start()} to actually start it. */
+	public void setHttpEnabled(boolean enable) {
+		mHttpEnabled = enable;
+	}
+
+	/** Enables the HTTPS server, you then need to call {@link start()} to actually start it. */	
+	public void setHttpsEnabled(boolean enable) {
+		mHttpsEnabled = enable;
+	}
+
+	/** Returns the port used by the HTTP server. */	
+	public int getHttpPort() {
+		return mHttpPort;
+	}
+
+	/** Returns the port used by the HTTPS server. */
+	public int getHttpsPort() {
+		return mHttpsPort;
+	}
+
+	/** Indicates whether or not the HTTP server is enabled. */
+	public boolean isHttpEnabled() {
+		return mHttpEnabled;
+	}
+
+	/** Indicates whether or not the HTTPS server is enabled. */
+	public boolean isHttpsEnabled() {
+		return mHttpsEnabled;
+	}	
+
+	/** Starting this Service is not enough, you must bind a client to it and call this method. */
+	public void start() {
+
+		// Stops the HTTP server if it has been disabled or if it needs to be restarted
+		if ((!mHttpEnabled || mHttpUpdate) && mHttpRequestListener != null) {
+			mHttpRequestListener.kill();
+			mHttpRequestListener = null;
+		}
+		// Stops the HTTPS server if it has been disabled or if it needs to be restarted
+		if ((!mHttpsEnabled || mHttpsUpdate) && mHttpsRequestListener != null) {
+			mHttpsRequestListener.kill();
+			mHttpsRequestListener = null;
+		}
+		// Starts the HTTP server if needed
+		if (mHttpEnabled && mHttpRequestListener == null) {
+			try {
+				mHttpRequestListener = new HttpRequestListener(mHttpPort);
+			} catch (Exception e) {
+				mHttpRequestListener = null;
+			}
+		}
+		// Starts the HTTPS server if needed
+		if (mHttpsEnabled && mHttpsRequestListener == null) {
+			try {
+				mHttpsRequestListener = new HttpsRequestListener(mHttpsPort);
+			} catch (Exception e) {
+				mHttpsRequestListener = null;
+			}
+		}
+
+		mHttpUpdate = false;
+		mHttpsUpdate = false;
+
+	}
+
+	/** Stops the HTTP server and/or the HTTPS server but not the Android service. */
+	public void stop() {
+		if (mHttpRequestListener != null) {
+			// Stops the HTTP server
+			mHttpRequestListener.kill();
+			mHttpRequestListener = null;
+		}
+		if (mHttpsRequestListener != null) {
+			// Stops the HTTPS server
+			mHttpsRequestListener.kill();
+			mHttpsRequestListener = null;
+		}
+	}
+	
+	Date mLastModified;
+	MHttpRequestHandlerRegistry mRegistry;
+	Context mContext;
+	
 	private BasicHttpProcessor mHttpProcessor;
 	private HttpParams mParams; 
 
@@ -136,13 +273,18 @@ public class TinyHttpServer extends Service {
 	private boolean mHttpEnabled = true, mHttpUpdate = false;
 	private boolean mHttpsEnabled = false, mHttpsUpdate = false;
 
+	private SharedPreferences mSharedPreferences;
+	
+	protected CallbackListener mListener = null;
+	
 	@Override
 	public void onCreate() {
 
 		super.onCreate();
 
 		mContext = getApplicationContext();
-		mRegistry = new ModifiedHttpRequestHandlerRegistry();
+		mRegistry = new MHttpRequestHandlerRegistry();
+		mSharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
 
 		mParams = new BasicHttpParams();
 		mParams
@@ -159,9 +301,6 @@ public class TinyHttpServer extends Service {
 		mHttpProcessor.addInterceptor(new ResponseContent());
 		mHttpProcessor.addInterceptor(new ResponseConnControl());
 
-		// Default request handler: serves file in assets/www
-		addRequestHandler("*", new HttpFileHandler(getAssets()));
-
 		// Will be used in the "Last-Modifed" entity-header field
 		try {
 			String packageName = mContext.getPackageName();
@@ -169,69 +308,38 @@ public class TinyHttpServer extends Service {
 		} catch (NameNotFoundException e) {
 			mLastModified = new Date(0);
 		}
-		
+
 		// Let's restore the state of the service 
-		SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(this);
-		mHttpPort = Integer.parseInt(settings.getString("http_port", String.valueOf(mHttpPort)));
-		mHttpsPort = Integer.parseInt(settings.getString("https_port", String.valueOf(mHttpsPort)));
-		mHttpEnabled = settings.getBoolean("http_enabled", mHttpEnabled);
-		mHttpsEnabled = settings.getBoolean("https_enabled", mHttpsEnabled);
-		
-		// Starts the HTTP server
-		start();
-		
+		mHttpPort = Integer.parseInt(mSharedPreferences.getString("http_port", String.valueOf(mHttpPort)));
+		mHttpsPort = Integer.parseInt(mSharedPreferences.getString("https_port", String.valueOf(mHttpsPort)));
+		mHttpEnabled = mSharedPreferences.getBoolean("http_enabled", mHttpEnabled);
+		mHttpsEnabled = mSharedPreferences.getBoolean("https_enabled", mHttpsEnabled);
+
 		// If the configuration is modified, the server will adjust
-		settings.registerOnSharedPreferenceChangeListener(mOnSharedPreferenceChangeListener);
+		mSharedPreferences.registerOnSharedPreferenceChangeListener(mOnSharedPreferenceChangeListener);
 
-	}
-
-	private OnSharedPreferenceChangeListener mOnSharedPreferenceChangeListener = new OnSharedPreferenceChangeListener() {
-		@Override
-		public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
-
-			if (key.equals("http_port")) {
-				mHttpPort = Integer.parseInt(sharedPreferences.getString("http_port", String.valueOf(mHttpPort)));
-				setHttpPort(mHttpPort);
-				start();
-			}
-			
-			else if (key.equals("https_port")) {
-				mHttpsPort = Integer.parseInt(sharedPreferences.getString("https_port", String.valueOf(mHttpsPort)));
-				setHttpsPort(mHttpPort);
-				start();
-			}
-
-			else if (key.equals("https_enabled")) {
-				mHttpsEnabled = sharedPreferences.getBoolean("https_enabled", true);
-				setHttpsEnabled(mHttpsEnabled);
-				start();
-			}			
-
-			else if (key.equals("http_enabled")) {
-				mHttpEnabled = sharedPreferences.getBoolean("http_enabled", true);
-				setHttpEnabled(mHttpEnabled);
-				start();
+		// Loads plugins available in the package net.majorkernelpanic.http
+		for (int i=0; i<MODULES.length; i++) {
+			try {
+				Class<?> pluginClass = Class.forName(TinyHttpServer.class.getPackage().getName()+"."+MODULES[i]);
+				Constructor<?> pluginConstructor = pluginClass.getConstructor(new Class[]{TinyHttpServer.class});
+				addRequestHandler((String) pluginClass.getField("PATTERN").get(null), (HttpRequestHandler)pluginConstructor.newInstance(this));
+			} catch (ClassNotFoundException ignore) {
+				// Module disabled
+			} catch (Exception e) {
+				Log.e(TAG, "Bad module: "+MODULES[i]);
+				e.printStackTrace();
 			}
 		}
-	};
-	
-	private void setHttpPort(int port) {
-		if (port != mHttpPort) mHttpUpdate = true;
-		mHttpPort = port;
+		
 	}
 
-	private void setHttpsPort(int port) {
-		if (port != mHttpsPort) mHttpsUpdate = true;
-		mHttpsPort = port;
+	@Override
+	public void onDestroy() {
+		stop();
+		SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(this);
+		settings.unregisterOnSharedPreferenceChangeListener(mOnSharedPreferenceChangeListener);
 	}
-
-	private void setHttpEnabled(boolean enable) {
-		mHttpEnabled = enable;
-	}
-
-	private void setHttpsEnabled(boolean enable) {
-		mHttpsEnabled = enable;
-	}	
 	
 	@Override
 	public int onStartCommand (Intent intent, int flags, int startId) {
@@ -239,78 +347,39 @@ public class TinyHttpServer extends Service {
 		return START_STICKY;
 	}
 	
-	@Override
-	public void onDestroy() {
-		stop();
-		SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(this);
-		settings.unregisterOnSharedPreferenceChangeListener(mOnSharedPreferenceChangeListener);
-	}
+	private OnSharedPreferenceChangeListener mOnSharedPreferenceChangeListener = new OnSharedPreferenceChangeListener() {
+		@Override
+		public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
 
-	public void start() {
-		// Stops the HTTP server if it has been disabled or if it needs to be restarted
-		if ((!mHttpEnabled || mHttpUpdate) && mHttpRequestListener != null) {
-			mHttpRequestListener.kill();
-			mHttpRequestListener = null;
-		}
-		// Stops the HTTPS server if it has been disabled or if it needs to be restarted
-		if ((!mHttpsEnabled || mHttpsUpdate) && mHttpsRequestListener != null) {
-			mHttpsRequestListener.kill();
-			mHttpsRequestListener = null;
-		}
-		// Starts the HTTP server if needed
-		if (mHttpEnabled && mHttpRequestListener == null) {
-			try {
-				mHttpRequestListener = new HttpRequestListener(mHttpPort);
-			} catch (IOException e) {
-				if (mListener != null) mListener.onError(this, e);
-				mHttpRequestListener = null;
+			if (key.equals("http_port")) {
+				int port = Integer.parseInt(sharedPreferences.getString("http_port", String.valueOf(mHttpPort)));
+				if (port != mHttpPort) {
+					mHttpPort = port;
+					mHttpUpdate = true;
+					start();
+				}
+			}
+
+			else if (key.equals("https_port")) {
+				int port = Integer.parseInt(sharedPreferences.getString("https_port", String.valueOf(mHttpsPort)));
+				if (port != mHttpsPort) {
+					mHttpsPort = port;
+					mHttpUpdate = true;
+					start();
+				}
+			}
+
+			else if (key.equals("https_enabled")) {
+				mHttpsEnabled = sharedPreferences.getBoolean("https_enabled", true);
+				start();
+			}			
+
+			else if (key.equals("http_enabled")) {
+				mHttpEnabled = sharedPreferences.getBoolean("http_enabled", true);
+				start();
 			}
 		}
-		// Starts the HTTPS server if needed
-		if (mHttpsEnabled && mHttpsRequestListener == null) {
-			try {
-				mHttpsRequestListener = new HttpsRequestListener(mHttpsPort);
-			} catch (IOException e) {
-				if (mListener != null) mListener.onError(this, e);
-				mHttpsRequestListener = null;
-			}
-		}
-
-		mHttpUpdate = false;
-		mHttpsUpdate = false;
-
-	}
-
-	public void stop() {
-		if (mHttpRequestListener != null) {
-			// Stops the HTTP server
-			mHttpRequestListener.kill();
-			mHttpRequestListener = null;
-		}
-		if (mHttpsRequestListener != null) {
-			// Stops the HTTPS server
-			mHttpsRequestListener.kill();
-			mHttpsRequestListener = null;
-		}
-	}
-
-	/** Be careful: those callbacks won't necessarily be called from the ui thread ! */
-	public interface CallbackListener {
-
-		/** Called when an error occurs. */
-		void onError(TinyHttpServer server, Exception e);
-
-	}
-
-	protected CallbackListener mListener = null;
-
-	/**
-	 * See {@link TinyHttpServer.CallbackListener} to check out what events will be fired once you set up a listener.
-	 * @param listener The listener
-	 */
-	public void setCallbackListener(CallbackListener listener) { 
-		mListener = listener;
-	}
+	};
 
 	/** The Binder you obtain when a connection with the Service is established. */
 	public class LocalBinder extends Binder {
@@ -327,22 +396,17 @@ public class TinyHttpServer extends Service {
 
 	private final IBinder mBinder = new LocalBinder();
 
-	/** 
-	 * You may add some HttpRequestHandlers before calling start()
-	 * All HttpRequestHandlers added after start() will be ignored
-	 * @param pattern Patterns may have three formats: * or *<uri> or <uri>*
-	 * @param handler A HttpRequestHandler
-	 */ 
-	protected void addRequestHandler(String pattern, HttpRequestHandler handler) {
-		mRegistry.register(pattern, handler);
-	}
+	protected class HttpRequestListener extends RequestListener {
 
-	private class HttpRequestListener extends RequestListener {
-
-		public HttpRequestListener(final int port) throws IOException {
-			ServerSocket serverSocket = new ServerSocket(port);
-			construct(serverSocket);
-			Log.i(TAG,"HTTP server listening on port " + serverSocket.getLocalPort());
+		public HttpRequestListener(final int port) throws Exception {
+			try {
+				ServerSocket serverSocket = new ServerSocket(port);
+				construct(serverSocket);
+				Log.i(TAG,"HTTP server listening on port " + serverSocket.getLocalPort());
+			} catch (BindException e) {
+				mListener.onError(TinyHttpServer.this, e, ERROR_HTTP_BIND_FAILED); 
+				throw e;
+			}
 		}
 
 		protected void kill() {
@@ -352,63 +416,81 @@ public class TinyHttpServer extends Service {
 
 	}
 
-	private class HttpsRequestListener extends RequestListener {
+	protected class HttpsRequestListener extends RequestListener {
 
 		private X509KeyManager mKeyManager;
 		private char[] mPassword;
 		private boolean mNotSupported = false;
 
-		private final static String FILE_NAME = "keystore.jks";
-		private final static String CLASSPATH = "net.majorkernelpanic.http.X509KeyManager";
+		private final String mClasspath = TinyHttpServer.class.getPackage().getName()+".ModSSL$X509KeyManager";
 
-		public HttpsRequestListener(final int port) throws IOException {
+		public HttpsRequestListener(final int port) throws Exception {
 
-			mPassword = "COUCOU".toCharArray();
+			SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(TinyHttpServer.this);
+			
+			if (!settings.contains(PREF_PASSWORD)) {
+				// Generates a password for the keystore
+				// TODO: entropy of Math.random() ?
+				String password = Integer.toString((int) (Math.random() * Integer.MAX_VALUE), 36);
+				Editor editor = settings.edit();
+				editor.putString(PREF_PASSWORD, password);
+				editor.commit();
+				mPassword = password.toCharArray();
+				mContext.deleteFile(KEYSTORE_NAME);
+			} else {
+				mPassword = settings.getString(PREF_PASSWORD, "XX").toCharArray();
+			}
 
 			// We create the X509KeyManager through reflexion so that SSL support can easily be removed if not needed
 			try {
-				Class<?> X509KeyManager = Class.forName(CLASSPATH);
+				Class<?> X509KeyManager = Class.forName(mClasspath);
 				Method loadFromKeyStore = X509KeyManager.getDeclaredMethod("loadFromKeyStore", InputStream.class, char[].class);
 
 				try {
-					InputStream is = mContext.openFileInput(FILE_NAME);
+					InputStream is = mContext.openFileInput(KEYSTORE_NAME);
 					mKeyManager = (X509KeyManager) loadFromKeyStore.invoke(null, is, mPassword);
-				} catch (FileNotFoundException e) {
-					Constructor<?> constructor = X509KeyManager.getConstructor(new Class[]{char[].class});
-					mKeyManager = (javax.net.ssl.X509KeyManager) constructor.newInstance(mPassword);
+				} catch (Exception e) {
+					Constructor<?> constructor = X509KeyManager.getConstructor(new Class[]{char[].class, String.class});
+					mKeyManager = (javax.net.ssl.X509KeyManager) constructor.newInstance(mPassword, CA_COMMON_NAME);
 				}
-			} catch (Exception e1) {
-				// HTTPS support disabled !
-				Log.e(TAG,"HTTPS not supported !");
-				if (e1 instanceof IOException) throw (IOException)e1;
-				else throw new IOException("HTTPS not supported !");
-			}
 
-			try {
-				SSLContext sslContext = SSLContext.getInstance("SSL");
+				SSLContext sslContext = SSLContext.getInstance("TLS");
 				sslContext.init(new KeyManager[] {mKeyManager}, null, null);
 				ServerSocket serverSocket = sslContext.getServerSocketFactory().createServerSocket(port);
 				construct(serverSocket);
 				Log.i(TAG,"HTTPS server listening on port " + serverSocket.getLocalPort());
-			} catch (Exception e1) {
+
+			} catch (NoSuchMethodException e) {
+				// HTTPS support disabled !
+				Log.e(TAG,"HTTPS not supported !");
+				mListener.onError(TinyHttpServer.this, e, ERROR_HTTPS_NOT_SUPPORTED);
+				throw e;
+			} catch (BindException e) {
+				mListener.onError(TinyHttpServer.this, e, ERROR_HTTPS_BIND_FAILED); 
+				throw e;
+			} catch (Exception e) {
 				Log.e(TAG,"HTTPS server crashed !");
-				if (e1 instanceof IOException) throw (IOException)e1;
-				else throw new IOException("HTTPS server crashed !");
+				e.printStackTrace();
+				mListener.onError(TinyHttpServer.this, e, ERROR_HTTPS_SERVER_CRASHED);
+				throw e;
 			}
+
 		}
 
+		/** Stops the {@link TinyHttpServer.RequestListener} */
 		protected void kill() {
 			if (!mNotSupported) {
 				super.kill();
 				// Saves all the certificates generated by the our KeyManager in a keystore
-				// Again we use reflexion
 				try {
-					Method saveToKeyStore = Class.forName(CLASSPATH).getDeclaredMethod("saveToKeyStore", OutputStream.class, char[].class);
-					synchronized (sLock) {
-						// Prevents concurrent write operation in the keystore  
-						OutputStream os = mContext.openFileOutput(FILE_NAME, Context.MODE_PRIVATE); 
-						saveToKeyStore.invoke(mKeyManager, os, mPassword);
-					}
+					Method saveToKeyStore = Class.forName(mClasspath).getDeclaredMethod("saveToKeyStore", OutputStream.class, char[].class);
+					// Prevents concurrent write operation in the keystore  
+					OutputStream os = mContext.openFileOutput(KEYSTORE_NAME, Context.MODE_PRIVATE); 
+					saveToKeyStore.invoke(mKeyManager, os, mPassword);
+				} catch (NoSuchMethodException e) {
+					// HTTPS support disabled !
+					Log.e(TAG,"HTTPS not supported !");
+					mListener.onError(TinyHttpServer.this, e, ERROR_HTTPS_NOT_SUPPORTED);
 				} catch (Exception e) {
 					System.out.println("An error occured while saving the KeyStore");
 					e.printStackTrace();
@@ -424,7 +506,7 @@ public class TinyHttpServer extends Service {
 		private ServerSocket mServerSocket;
 		private final org.apache.http.protocol.HttpService mHttpService;
 
-		protected RequestListener() throws IOException {
+		protected RequestListener() throws Exception {
 
 			mHttpService = new org.apache.http.protocol.HttpService(
 					mHttpProcessor, 
@@ -468,121 +550,11 @@ public class TinyHttpServer extends Service {
 					Log.e(TAG,"Interrupted !");
 					break;
 				} catch (IOException e) {
-					Log.d(TAG,"I/O error initialising connection thread: " 
-							+ e.getMessage());
+					Log.d(TAG,"I/O error initialising connection thread: " + e.getMessage());
 					break;
 				}
 			}
 		}
-	}
-
-	private class HttpFileHandler implements HttpRequestHandler  {
-
-		private final AssetManager assetManager;
-
-		public HttpFileHandler(final AssetManager assetManager) {
-			super();
-			this.assetManager = assetManager;
-		}
-
-		public void handle(
-				final HttpRequest request, 
-				final HttpResponse response,
-				final HttpContext context) throws HttpException, IOException {
-			AbstractHttpEntity body = null;
-
-			final String method = request.getRequestLine().getMethod().toUpperCase(Locale.ENGLISH);
-			if (!method.equals("GET") && !method.equals("HEAD") && !method.equals("POST")) {
-				throw new MethodNotSupportedException(method + " method not supported"); 
-			}
-
-			final String url = URLDecoder.decode(request.getRequestLine().getUri());
-			if (request instanceof HttpEntityEnclosingRequest) {
-				HttpEntity entity = ((HttpEntityEnclosingRequest) request).getEntity();
-				byte[] entityContent = EntityUtils.toByteArray(entity);
-				Log.d(TAG,"Incoming entity content (bytes): " + entityContent.length);
-			}
-
-			final String location = "www"+(url.equals("/")?"/index.htm":url);
-			response.setStatusCode(HttpStatus.SC_OK);
-
-			try {
-				Log.i(TAG,"Requested: \""+url+"\"");
-
-				// Compares the Last-Modified date header (if present) with the If-Modified-Since date
-				if (request.containsHeader("If-Modified-Since")) {
-					try {
-						Date date = DateUtils.parseDate(request.getHeaders("If-Modified-Since")[0].getValue());
-						if (date.compareTo(mLastModified)<=0) {
-							// The file has not been modified
-							response.setStatusCode(HttpStatus.SC_NOT_MODIFIED);
-							return;
-						}
-					} catch (DateParseException e) {
-						e.printStackTrace();
-					}
-				}
-
-				// We determine if the asset is compressed
-				try {
-					AssetFileDescriptor afd = assetManager.openFd(location);
-
-					// The asset is not compressed
-					FileInputStream fis = new FileInputStream(afd.getFileDescriptor());
-					fis.skip(afd.getStartOffset());
-					body = new InputStreamEntity(fis, afd.getDeclaredLength());
-
-					Log.d(TAG,"Serving uncompressed file " + "www" + url);
-
-				} catch (FileNotFoundException e) {
-
-					// The asset may be compressed
-					// AAPT compresses assets so first we need to uncompress them to determine their length
-					InputStream stream =  assetManager.open(location,AssetManager.ACCESS_STREAMING);
-					ByteArrayOutputStream buffer = new ByteArrayOutputStream(64000);
-					byte[] tmp = new byte[4096]; int length = 0;
-					while ((length = stream.read(tmp)) != -1) buffer.write(tmp, 0, length);
-					body = new InputStreamEntity(new ByteArrayInputStream(buffer.toByteArray()), buffer.size());
-					stream.close();
-
-					Log.d(TAG,"Serving compressed file " + "www" + url);
-
-				}
-
-				body.setContentType(getMimeMediaType(url)+"; charset=UTF-8");
-				response.addHeader("Last-Modified", DateUtils.formatDate(mLastModified));
-
-			} catch (IOException e) {
-				// File does not exist
-				response.setStatusCode(HttpStatus.SC_NOT_FOUND);
-				body = new EntityTemplate(new ContentProducer() {
-					public void writeTo(final OutputStream outstream) throws IOException {
-						OutputStreamWriter writer = new OutputStreamWriter(outstream, "UTF-8"); 
-						writer.write("<html><body><h1>");
-						writer.write("File ");
-						writer.write("www"+url);
-						writer.write(" not found");
-						writer.write("</h1></body></html>");
-						writer.flush();
-					}
-				});
-				Log.d(TAG,"File " + "www" + url + " not found");
-				body.setContentType("text/html; charset=UTF-8");
-			}
-
-			response.setEntity(body);
-
-		}
-
-		private String getMimeMediaType(String fileName) {
-			String extension = fileName.substring(fileName.lastIndexOf(".")+1, fileName.length());
-			for (int i=0;i<mimeMediaTypes.length;i+=2) {
-				if (mimeMediaTypes[i].equals(extension)) 
-					return mimeMediaTypes[i+1];
-			}
-			return mimeMediaTypes[0];
-		}
-
 	}
 
 	static class WorkerThread extends Thread {
@@ -603,7 +575,7 @@ public class TinyHttpServer extends Service {
 
 		public void run() {
 			Log.d(TAG,"New connection thread");
-			HttpContext context = new ModifiedHttpContext(socket);
+			HttpContext context = new MHttpContext(socket);
 			try {
 				while (!Thread.interrupted() && this.conn.isOpen()) {
 					try {
@@ -634,4 +606,55 @@ public class TinyHttpServer extends Service {
 		}
 	}
 
+	/** Little modification of BasicHttpContext to add access to the underlying tcp socket. */
+	public static class MHttpContext extends BasicHttpContext {
+
+		private Socket socket;
+
+		public MHttpContext(Socket socket) {
+			super(null);
+			this.socket = socket;
+		}
+
+		/** Returns a reference to the underlying socket of the connection. */
+		public Socket getSocket() {
+			return socket;
+		}
+
+	}
+
+	/**
+	 * A slightly modified version of org.apache.http.protocol.HttpRequestHandlerRegistry 
+	 * that allows the registry to be modified while some threads may be using it.
+	 * Recent versions of this file are thread-safe, but Android seems to be using an old version. 
+	 */
+	public static class MHttpRequestHandlerRegistry extends HttpRequestHandlerRegistry {
+
+		private final UriPatternMatcher matcher;
+
+		public MHttpRequestHandlerRegistry() {
+			matcher = new UriPatternMatcher();
+		}
+
+		public synchronized void register(final String pattern, final HttpRequestHandler handler) {
+			matcher.register(pattern, handler);
+		}
+
+		public synchronized void unregister(final String pattern) {
+			matcher.unregister(pattern);
+		}
+
+		public synchronized void setHandlers(final Map map) {
+			matcher.setHandlers(map);
+		}
+
+		public synchronized HttpRequestHandler lookup(final String requestURI) {
+			// This is the only function that will often be called by threads of the HTTP server
+			// and it seems like a rather small crtical section to me, so it should not slow things down much
+			return (HttpRequestHandler) matcher.lookup(requestURI);
+		}
+
+	}
+
 }
+

@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+
     <string name="options">Options</string>
     <string name="quit">Quitter</string>
     <string name="client">Client</string>
@@ -40,13 +41,18 @@
     <string name="settings15">Notification</string>
     <string name="settings16">Activer/Désactiver la notification</string>
     <string name="settings17">Hack pour la vidéo</string>
-    <string name="settings18">Permet au streaming de la vidéo de continuer quand l\'app passe en arrière plan. Peut mal fonctionner :/</string> 
+    <string name="settings18">Permet au streaming de la vidéo de continuer quand l\'app passe en arrière plan. Peut mal fonctionner :/</string>
     <string name="settings19">Serveur HTTP</string>
     <string name="settings20">Port</string>
     <string name="settings21">Configuration de port utilisé par le serveur HTTP</string>
     <string name="settings22">Activé</string>
     <string name="settings23">Active/désactive le serveur HTTP. Laisse le activé si tu ne sais pas ce que tu fais !</string>
+    <string name="settings24">Utiliser HTTPS</string>
+    <string name="settings25">Plus sûr, regarde la FAQ pour plus d\'infos.</string>
+    <string name="settings26">Port pour le HTTPS</string>
+    <string name="settings27">Port utilisé par le serveur HTTPS</string>
     <string name="page0">Infos</string>
     <string name="page1">Aperçu</string>
-    <string name="page2">À propos</string>      
+    <string name="page2">À propos</string>
+
 </resources>

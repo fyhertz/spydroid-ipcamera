@@ -21,13 +21,14 @@
 package net.majorkernelpanic.spydroid.ui;
 
 import java.io.IOException;
+import java.security.acl.LastOwnerException;
 
 import net.majorkernelpanic.http.TinyHttpServer;
-import net.majorkernelpanic.http.TinyHttpServer.CallbackListener;
 import net.majorkernelpanic.spydroid.R;
 import net.majorkernelpanic.spydroid.SpydroidApplication;
 import net.majorkernelpanic.spydroid.api.CustomHttpServer;
 import net.majorkernelpanic.streaming.SessionManager;
+import net.majorkernelpanic.streaming.misc.HttpServer;
 import net.majorkernelpanic.streaming.misc.RtspServer;
 import android.app.Notification;
 import android.app.NotificationManager;
@@ -36,8 +37,6 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
-import android.content.SharedPreferences;
-import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.content.pm.ActivityInfo;
 import android.os.Bundle;
 import android.os.Handler;
@@ -61,24 +60,24 @@ import android.widget.LinearLayout;
 import android.widget.Toast;
 
 /** 
- * Spydroid basically launches an RtspServer and an HttpServer, 
- * clients can then connect to them and start/stop audio/video streams from the phone
+ * Spydroid basically launches an RTSP server and an HTTP server, 
+ * clients can then connect to them and start/stop audio/video streams from the phone.
  */
 public class SpydroidActivity extends FragmentActivity {
 
 	static final public String TAG = "SpydroidActivity";
 
-	public static final int HANDSET = 0x01;
-	public static final int TABLET = 0x02;
+	public final int HANDSET = 0x01;
+	public final int TABLET = 0x02;
 
 	// We assume that the device is a phone
-	public static int device = HANDSET;
+	public int device = HANDSET;
 
 	// The RTSP server
 	static private RtspServer sRtspServer = null;
-	
+
 	// The HTTP/S server.
-	private CustomHttpServer mHttpServer = null;
+	public CustomHttpServer mHttpServer = null;
 
 	private ViewPager mViewPager;
 	private PowerManager.WakeLock mWakeLock;
@@ -86,14 +85,14 @@ public class SpydroidActivity extends FragmentActivity {
 
 	private SurfaceView mSurfaceView;
 	private SurfaceHolder mSurfaceHolder;
-	
+
 	private SpydroidApplication mApplication;
 
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
 		mApplication = (SpydroidApplication) getApplication();
-		
+
 		setContentView(R.layout.spydroid);
 
 		if (findViewById(R.id.handset_pager) != null) {
@@ -158,9 +157,6 @@ public class SpydroidActivity extends FragmentActivity {
 		if (sRtspServer == null) 
 			sRtspServer = new RtspServer(mApplication.mRtspPort, mHandler);
 
-		// Start the HTTP server
-		this.startService(new Intent(this,CustomHttpServer.class));
-		
 	}
 
 	class SectionsPagerAdapter extends FragmentPagerAdapter {
@@ -250,6 +246,8 @@ public class SpydroidActivity extends FragmentActivity {
 			removeNotification();
 		}
 
+		bindService(new Intent(this,CustomHttpServer.class), mHttpServiceConnection, Context.BIND_AUTO_CREATE);
+
 	}
 
 	@Override
@@ -257,6 +255,7 @@ public class SpydroidActivity extends FragmentActivity {
 		super.onStop();
 		// A WakeLock should only be released when isHeld() is true !
 		if (mWakeLock.isHeld()) mWakeLock.release();
+		unbindService(mHttpServiceConnection);
 	}
 
 	@Override
@@ -327,7 +326,9 @@ public class SpydroidActivity extends FragmentActivity {
 		// Removes notification
 		if (mApplication.mNotificationEnabled) removeNotification();       
 		// Kills HTTP server
-		this.stopService(new Intent(this,CustomHttpServer.class));
+		if (mHttpServer != null) {
+			mHttpServer.stop();
+		}
 		// Kills RTSP server
 		if (sRtspServer != null) {
 			sRtspServer.stop();
@@ -335,7 +336,40 @@ public class SpydroidActivity extends FragmentActivity {
 		}
 		finish();
 	}
-	
+
+	HttpServer.CallbackListener mHttpCallbackListener = new HttpServer.CallbackListener() {
+
+		@Override
+		public void onError(TinyHttpServer server, Exception e, int error) {
+			switch (error) {
+			case HttpServer.ERROR_HTTPS_BIND_FAILED:
+				server.setHttpsPort(server.getHttpsPort()+1);
+				break;
+			case HttpServer.ERROR_HTTP_BIND_FAILED:
+				server.setHttpPort(server.getHttpPort()+1);
+				break;
+			case HttpServer.ERROR_START_FAILED:
+				mApplication.mLastCaughtException = e;
+				break;
+			}
+		}
+
+	}; 
+
+	ServiceConnection mHttpServiceConnection = new ServiceConnection() {
+
+		@Override
+		public void onServiceConnected(ComponentName name, IBinder service) {
+			mHttpServer = (CustomHttpServer) ((TinyHttpServer.LocalBinder)service).getService();
+			mHttpServer.setCallbackListener(mHttpCallbackListener);
+			mHttpServer.start();
+		}
+
+		@Override
+		public void onServiceDisconnected(ComponentName name) {}
+
+	};
+
 	// The Handler that gets information back from the RtspServer
 	private final Handler mHandler = new Handler() {
 

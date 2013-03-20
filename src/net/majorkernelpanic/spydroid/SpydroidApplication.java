@@ -31,6 +31,7 @@ import static org.acra.ReportField.SHARED_PREFERENCES;
 import static org.acra.ReportField.STACK_TRACE;
 import static org.acra.ReportField.USER_APP_START_DATE;
 import static org.acra.ReportField.USER_CRASH_DATE;
+import net.majorkernelpanic.spydroid.api.CustomHttpServer;
 import net.majorkernelpanic.streaming.Session;
 import net.majorkernelpanic.streaming.SessionManager;
 import net.majorkernelpanic.streaming.video.H264Stream;
@@ -56,9 +57,6 @@ public class SpydroidApplication extends android.app.Application {
 	/** Default listening port for the RTSP server. */
 	public int mRtspPort = 8086;
 
-	/** Default listening port for the HTTP server. */
-	public int mHttpPort = 8080;
-
 	/** Default quality of video streams. */
 	public VideoQuality mVideoQuality = new VideoQuality(640,480,15,500000);
 
@@ -81,10 +79,10 @@ public class SpydroidApplication extends android.app.Application {
 	public boolean mApplicationForeground = true;
 	public Exception mLastCaughtException = null;
 
-	/** Prevent garbage collection of the Surface */
+	/** Prevent garbage collection of the Surface. */
 	public boolean mHackEnabled = false;
 
-	/** Contains an approximation of the battery level */
+	/** Contains an approximation of the battery level. */
 	public int mBatteryLevel = 0;
 	
 	private static SpydroidApplication sApplication;
@@ -105,9 +103,8 @@ public class SpydroidApplication extends android.app.Application {
 		mNotificationEnabled = settings.getBoolean("notification_enabled", true);
 		mHackEnabled = settings.getBoolean("video_hack", false);
 
-		// Sets the ports of the RTSP and HTTP/S servers according to user settings
+		// Sets the ports of the RTSP according to user settings
 		mRtspPort = Integer.parseInt(settings.getString("rtsp_port", String.valueOf(mRtspPort)));
-		mHttpPort = Integer.parseInt(settings.getString("http_port", String.valueOf(mHttpPort)));
 
 		// Sets the ports of the RTSP and HTTP/S servers according to user settings
 		mRtspEnabled = settings.getBoolean("rtsp_enabled", mRtspEnabled);
@@ -136,15 +133,10 @@ public class SpydroidApplication extends android.app.Application {
 		// Listens to changes of preferences
 		settings.registerOnSharedPreferenceChangeListener(mOnSharedPreferenceChangeListener);
 
-		// If this the first time the app. is lauched, we need to adjust some prefs.
-		if (settings.getString("http_server_port", "X")=="X") {
-			Editor editor = settings.edit();
-			editor.putString("https_port", "8080");
-			editor.putString("http_server_port", "8080");
-			editor.commit();
-		}
-		
 		registerReceiver(mBatteryInfoReceiver, new IntentFilter(Intent.ACTION_BATTERY_CHANGED));
+		
+		// Starts the service of the HTTP server
+		this.startService(new Intent(this,CustomHttpServer.class));
 		
 	}
 

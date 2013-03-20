@@ -50,7 +50,7 @@ public class PreviewFragment extends Fragment {
 	public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
 		View rootView = inflater.inflate(R.layout.preview,container,false);
 
-		if (SpydroidActivity.device == SpydroidActivity.TABLET) {
+		if (((SpydroidActivity)getActivity()).device == ((SpydroidActivity)getActivity()).TABLET) {
 			
 			mSurfaceView = (SurfaceView)rootView.findViewById(R.id.tablet_camera_view);
 			mSurfaceHolder = mSurfaceView.getHolder();

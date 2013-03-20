@@ -29,7 +29,6 @@ import java.net.URI;
 import java.util.Iterator;
 import java.util.List;
 
-import net.majorkernelpanic.http.ModifiedHttpContext;
 import net.majorkernelpanic.http.TinyHttpServer;
 import net.majorkernelpanic.streaming.Session;
 
@@ -44,7 +43,7 @@ import org.apache.http.entity.EntityTemplate;
 import org.apache.http.protocol.HttpContext;
 import org.apache.http.protocol.HttpRequestHandler;
 
-import android.content.Intent;
+import android.os.Binder;
 import android.util.Log;
 
 /**
@@ -59,6 +58,8 @@ import android.util.Log;
  */
 public class HttpServer extends TinyHttpServer {
 
+	public final static int ERROR_START_FAILED = 0xFE;
+	
 	/** Maximal number of streams that you can start from the HTTP server. **/
 	protected static final int MAX_STREAM_NUM = 2;
 	
@@ -97,7 +98,7 @@ public class HttpServer extends TinyHttpServer {
 		}
 		
 		public synchronized void handle(HttpRequest request, HttpResponse response, HttpContext context) throws HttpException {
-			Socket socket = ((ModifiedHttpContext)context).getSocket();
+			Socket socket = ((TinyHttpServer.MHttpContext)context).getSocket();
 			String uri = request.getRequestLine().getUri();
 			int id = 0;
 			
@@ -155,7 +156,7 @@ public class HttpServer extends TinyHttpServer {
 				response.setStatusCode(HttpStatus.SC_INTERNAL_SERVER_ERROR);
 				Log.e(TAG,e.getMessage()!=null?e.getMessage():"An unknown error occurred");
 				e.printStackTrace();
-				mListener.onError(HttpServer.this, e);
+				mListener.onError(HttpServer.this, e, ERROR_START_FAILED);
 			}
 
 		}

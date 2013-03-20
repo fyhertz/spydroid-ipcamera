@@ -109,7 +109,7 @@ public class AACADTSPacketizer extends AbstractPacketizer implements Runnable {
 				// Number of AAC frames in the ADTS frame
 				nbau = (buffer[rtphl+6]&0x03) + 1;
 				
-				// The number of packets that will be sent for this ADTS frame
+				// The number of RTP packets that will be sent for this ADTS frame
 				nbpk = frameLength/MAXPACKETSIZE + 1;
 				
 				// Read CRS if any
@@ -118,7 +118,7 @@ public class AACADTSPacketizer extends AbstractPacketizer implements Runnable {
 				now = SystemClock.elapsedRealtime();
 				stats.push(now-oldtime);
 				oldtime = now;
-				ts += (nbau*1024*1000 / samplingRate )*90;
+				ts +=  (nbau*1024*1000 / samplingRate )*90; // FIXME: 1024 seems to work better on certain players...
 				oldtime = now;
 				socket.updateTimestamp(ts);
 				
@@ -153,8 +153,8 @@ public class AACADTSPacketizer extends AbstractPacketizer implements Runnable {
 					//Log.d(TAG,"frameLength: "+frameLength+" protection: "+protection+ " length: "+length);
 										
 					// We wait before calling send() so that we won't send too many packets at once
-					//Log.e(TAG,"SLEEP: "+ ( 2*nbau*1024*1000 / (3*nbpk*samplingRate) ) );
-					//Thread.sleep( ( 2*nbau*1024*1000 / (3*nbpk*samplingRate) ) );
+					//Log.d(TAG,"SLEEP: "+ ( 2*nbau*1024*1000 / (3*nbpk*samplingRate) ) );
+					Thread.sleep( ( 2*nbau*1024*1000 / (3*nbpk*samplingRate) ) );
 					
 					socket.send(rtphl+4+length);
 
@@ -166,10 +166,14 @@ public class AACADTSPacketizer extends AbstractPacketizer implements Runnable {
 		} catch (ArrayIndexOutOfBoundsException e) {
 			Log.e(TAG,"ArrayIndexOutOfBoundsException: "+(e.getMessage()!=null?e.getMessage():"unknown error"));
 			e.printStackTrace();
+		} catch (InterruptedException e) {
+			// Ignore
 		} finally {
 			running = false;
 		}
 
+		Log.d(TAG,"AAC packetizer stopped !");
+		
 	}
 
 }

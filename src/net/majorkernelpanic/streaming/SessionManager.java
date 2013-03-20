@@ -70,6 +70,14 @@ public class SessionManager {
 	
 	/**
 	 * Creates a new {@link Session}.
+	 * @return The new Session
+	 */
+	public Session createSession() {
+		return new Session();
+	}	
+	
+	/**
+	 * Creates a new {@link Session}.
 	 * @param destination The destination address of the streams
 	 * @param origin The origin address of the streams
 	 * @return The new Session

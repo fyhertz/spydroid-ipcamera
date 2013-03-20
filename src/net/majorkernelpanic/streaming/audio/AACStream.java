@@ -32,15 +32,15 @@ import android.util.Log;
 
 /**
  * A class for streaming AAC from the microphone of an android device using RTP.
- * Call setDestination(), prepare() & start() and that's it !
- * Call stop() to stop the stream.
- * You don't need to call reset().
+ * Call {@link #setDestination(java.net.InetAddress, int)}, {@link #prepare()} & {@link #start()} and that's it !
+ * Call {@link #stop()} to stop the stream.
+ * You don't need to call {@link #reset()}.
  */
 public class AACStream extends MediaStream {
 
 	public final static String TAG = "AACStream";
 
-	/** MPEG-4 Audio Object Types supported by ADTS **/
+	/** MPEG-4 Audio Object Types supported by ADTS. **/
 	private static final String[] sAudioObjectTypes = {
 		"NULL",							  // 0
 		"AAC Main",						  // 1
@@ -49,7 +49,7 @@ public class AACStream extends MediaStream {
 		"AAC LTP (Long Term Prediction)"  // 4	
 	};
 
-	/** There are 13 supported frequencies by ADTS **/
+	/** There are 13 supported frequencies by ADTS. **/
 	private static final int[] sADTSSamplingRates = {
 		96000, // 0
 		88200, // 1
@@ -69,7 +69,7 @@ public class AACStream extends MediaStream {
 		-1,   // 15
 	};
 
-	/** Default sampling rate **/
+	/** Default sampling rate. **/
 	private int mRequestedSamplingRate = 16000;
 	private int mActualSamplingRate = 16000;
 
