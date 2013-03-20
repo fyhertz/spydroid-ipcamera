@@ -123,26 +123,7 @@ public class SpydroidActivity extends FragmentActivity {
 		mViewPager.setAdapter(mAdapter);
 
 		// Those callbacks will be called when streaming starts/stops
-		SessionManager.getManager().setCallbackListener(new SessionManager.CallbackListener() {
-			@Override
-			public void onStreamingStarted(SessionManager manager) {
-				runOnUiThread(new Runnable () {
-					public void run() {
-						if (mAdapter.getHandsetFragment() != null) 
-							mAdapter.getHandsetFragment().streamingState(1);
-					}
-				});
-			}
-			@Override
-			public void onStreamingStopped(SessionManager manager) {
-				runOnUiThread(new Runnable () {
-					public void run() {
-						if (mAdapter.getHandsetFragment() != null) 
-							mAdapter.getHandsetFragment().displayIpAddress();
-					}
-				});				
-			}
-		});
+		SessionManager.getManager().setCallbackListener(mSessionManagerCallbacks);
 
 		// Remove the ads if this is the donate version of the app.
 		if (mApplication.DONATE_VERSION) {
@@ -337,16 +318,20 @@ public class SpydroidActivity extends FragmentActivity {
 		finish();
 	}
 
-	HttpServer.CallbackListener mHttpCallbackListener = new HttpServer.CallbackListener() {
+	private HttpServer.CallbackListener mHttpCallbackListener = new HttpServer.CallbackListener() {
 
 		@Override
 		public void onError(TinyHttpServer server, Exception e, int error) {
 			switch (error) {
 			case HttpServer.ERROR_HTTPS_BIND_FAILED:
 				server.setHttpsPort(server.getHttpsPort()+1);
+				if (mAdapter.getHandsetFragment() != null) 
+					mAdapter.getHandsetFragment().displayIpAddress();
 				break;
 			case HttpServer.ERROR_HTTP_BIND_FAILED:
 				server.setHttpPort(server.getHttpPort()+1);
+				if (mAdapter.getHandsetFragment() != null) 
+					mAdapter.getHandsetFragment().displayIpAddress();
 				break;
 			case HttpServer.ERROR_START_FAILED:
 				mApplication.mLastCaughtException = e;
@@ -356,7 +341,7 @@ public class SpydroidActivity extends FragmentActivity {
 
 	}; 
 
-	ServiceConnection mHttpServiceConnection = new ServiceConnection() {
+	private ServiceConnection mHttpServiceConnection = new ServiceConnection() {
 
 		@Override
 		public void onServiceConnected(ComponentName name, IBinder service) {
@@ -368,6 +353,27 @@ public class SpydroidActivity extends FragmentActivity {
 		@Override
 		public void onServiceDisconnected(ComponentName name) {}
 
+	};
+	
+	private SessionManager.CallbackListener mSessionManagerCallbacks = new SessionManager.CallbackListener() {
+		@Override
+		public void onStreamingStarted(SessionManager manager) {
+			runOnUiThread(new Runnable () {
+				public void run() {
+					if (mAdapter.getHandsetFragment() != null) 
+						mAdapter.getHandsetFragment().streamingState(1);
+				}
+			});
+		}
+		@Override
+		public void onStreamingStopped(SessionManager manager) {
+			runOnUiThread(new Runnable () {
+				public void run() {
+					if (mAdapter.getHandsetFragment() != null) 
+						mAdapter.getHandsetFragment().displayIpAddress();
+				}
+			});				
+		}
 	};
 
 	// The Handler that gets information back from the RtspServer
