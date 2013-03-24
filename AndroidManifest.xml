@@ -51,8 +51,8 @@
             android:label="@string/about_activity_title" >
         </activity>
 
-        <service
-            android:name="net.majorkernelpanic.spydroid.api.CustomHttpServer"/>
+        <service android:name="net.majorkernelpanic.spydroid.api.CustomHttpServer"/>
+        <service android:name="net.majorkernelpanic.streaming.misc.RtspServer"/>
         
     </application>
 

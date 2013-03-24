@@ -24,15 +24,24 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.net.BindException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import net.majorkernelpanic.http.TinyHttpServer;
 import net.majorkernelpanic.streaming.Session;
-import android.os.Handler;
+import android.app.Service;
+import android.content.Intent;
+import android.content.SharedPreferences;
+import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
+import android.os.Binder;
+import android.os.IBinder;
+import android.preference.PreferenceManager;
 import android.util.Log;
 
 /**
@@ -42,60 +51,186 @@ import android.util.Log;
  * For each connected client, a Session is instantiated.
  * The Session will start or stop streams according to what the client wants.
  * 
- * Will soon be converted to an Android Service !
- * 
  */
-public class RtspServer {
-	
+public class RtspServer extends Service {
+
 	private final static String TAG = "RtspServer";
 
-	// Message types for UI thread
-	public static final int MESSAGE_LOG = 2;
-	public static final int MESSAGE_ERROR = 6;
+	/** The server name that will appear in responses. */
+	public static String SERVER_NAME = "MajorKernelPanic RTSP Server";
 
-	private final Handler mHandler;
-	private final int mPort;
-	private boolean mRunning = false;
-	private RequestListenerThread listenerThread;
-	
-	public RtspServer(int port, Handler handler) {
-		this.mHandler = handler;
-		this.mPort = port;
+	/** Port used by default. */
+	public static final int DEFAULT_RTSP_PORT = 8086;
+
+	/** Key used in the SharedPreferences for the port used by the HTTP server. */
+	public static final String PREF_HTTP_PORT = "http_port";
+
+	/** Port already in use. */
+	public final static int ERROR_BIND_FAILED = 0x00;
+
+	/** A stream could not be started. */
+	public final static int ERROR_START_FAILED = 0x01;
+
+	/** Key used in the SharedPreferences to store whether the HTTPS server is enabled or not. */
+	protected String mEnabledKey = "rtsp_enabled";
+
+	/** Key used in the SharedPreferences for the port used by the HTTP server. */
+	protected String mPortKey = "rtsp_port";
+
+	private int mPort = DEFAULT_RTSP_PORT;
+	private boolean mEnabled = true, mRestart = false;
+	private RequestListener mListenerThread;
+	private SharedPreferences mSharedPreferences;
+	private final IBinder mBinder = new LocalBinder();
+	private final LinkedList<CallbackListener> mListeners = new LinkedList<CallbackListener>();
+
+	public RtspServer() {
 	}
-	
-	public void start() throws IOException {
-		if (mRunning) return;
-		mRunning = true;
-		listenerThread = new RequestListenerThread(mPort,mHandler);
-		listenerThread.start();
+
+	/** Be careful: those callbacks won't necessarily be called from the ui thread ! */
+	public interface CallbackListener {
+
+		/** Called when an error occurs. */
+		void onError(RtspServer server, Exception e, int error);
+
 	}
-	
+
+	/**
+	 * See {@link TinyHttpServer.CallbackListener} to check out what events will be fired once you set up a listener.
+	 * @param listener The listener
+	 */
+	public void addCallbackListener(CallbackListener listener) {
+		synchronized (mListeners) {
+			mListeners.add(listener);			
+		}
+	}
+
+	/**
+	 * Removes the listener.
+	 * @param listener The listener
+	 */
+	public void removeCallbackListener(CallbackListener listener) {
+		synchronized (mListeners) {
+			mListeners.remove(listener);				
+		}
+	}
+
+	/** Returns the port used by the RTSP server. */	
+	public int getPort() {
+		return mPort;
+	}
+
+	/** Starts (or restart if needed) the RTSP server. */
+	public void start() {
+		if (mRestart) stop();
+		if (mEnabled && mListenerThread == null) {
+			try {
+				mListenerThread = new RequestListener();
+			} catch (Exception e) {
+				mListenerThread = null;
+			}
+		}
+		mRestart = false;
+	}
+
+	/** Stops the RTSP server but not the service. */
 	public void stop() {
-		if (!mRunning) return;
-		mRunning = false;
-		try {
-			listenerThread.mServer.close();
-			listenerThread = null;
-		} catch (Exception e) {
-			Log.e(TAG,"Error when close was called on serversocket: "+e.getMessage());
+		if (mListenerThread != null) {
+			try {
+				mListenerThread.kill();
+			} catch (Exception e) {
+			} finally {
+				mListenerThread = null;
+			}
 		}
 	}
-	
-	static class RequestListenerThread extends Thread implements Runnable {
-		
-		private final ServerSocket mServer;
-		private final Handler mHandler;
-		
-		public RequestListenerThread(final int port, final Handler handler) throws IOException {
-			mServer = new ServerSocket(port);
-			mHandler = handler;
+
+	@Override
+	public int onStartCommand(Intent intent, int flags, int startId) {
+		return START_STICKY;
+	}
+
+	@Override
+	public void onCreate() {
+
+		// Let's restore the state of the service 
+		mSharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+		mPort = Integer.parseInt(mSharedPreferences.getString(mPortKey, String.valueOf(mPort)));
+		mEnabled = mSharedPreferences.getBoolean(mEnabledKey, mEnabled);
+
+		// If the configuration is modified, the server will adjust
+		mSharedPreferences.registerOnSharedPreferenceChangeListener(mOnSharedPreferenceChangeListener);
+
+		start();
+	}
+
+	@Override
+	public void onDestroy() {
+		stop();
+		mSharedPreferences.unregisterOnSharedPreferenceChangeListener(mOnSharedPreferenceChangeListener);
+	}
+
+	private OnSharedPreferenceChangeListener mOnSharedPreferenceChangeListener = new OnSharedPreferenceChangeListener() {
+		@Override
+		public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
+
+			if (key.equals(mPortKey)) {
+				int port = Integer.parseInt(sharedPreferences.getString(mPortKey, String.valueOf(mPort)));
+				if (port != mPort) {
+					mPort = port;
+					mRestart = true;
+					start();
+				}
+			}		
+			else if (key.equals(mEnabled)) {
+				mEnabled = sharedPreferences.getBoolean(mEnabledKey, true);
+				start();
+			}
 		}
-		
+	};
+
+	/** The Binder you obtain when a connection with the Service is established. */
+	public class LocalBinder extends Binder {
+		public RtspServer getService() {
+			return RtspServer.this;
+		}
+	}
+
+	@Override
+	public IBinder onBind(Intent intent) {
+		return mBinder;
+	}
+
+	protected void postError(Exception exception, int id) {
+		synchronized (mListeners) {
+			if (mListeners.size() > 0) {
+				for (CallbackListener cl : mListeners) {
+					cl.onError(this, exception, id);
+				}
+			}			
+		}
+	}
+
+	class RequestListener extends Thread implements Runnable {
+
+		private final ServerSocket mServer;
+
+		public RequestListener() throws IOException {
+			try {
+				mServer = new ServerSocket(mPort);
+				start();
+			} catch (BindException e) {
+				Log.e(TAG,"Port already in use !");
+				postError(e, ERROR_BIND_FAILED);
+				throw e;
+			}
+		}
+
 		public void run() {
-			Log.i(TAG,"Listening on port "+mServer.getLocalPort());
+			Log.i(TAG,"RTSP server listening on port "+mServer.getLocalPort());
 			while (!Thread.interrupted()) {
 				try {
-					new WorkerThread(mServer.accept(), mHandler).start();
+					new WorkerThread(mServer.accept()).start();
 				} catch (SocketException e) {
 					break;
 				} catch (IOException e) {
@@ -103,41 +238,48 @@ public class RtspServer {
 					continue;
 				}
 			}
-			Log.i(TAG,"RequestListener stopped !");
+			Log.i(TAG,"RTSP server stopped !");
 		}
-		
+
+		public void kill() {
+			try {
+				mServer.close();
+			} catch (IOException e) {}
+			try {
+				this.join();
+			} catch (InterruptedException ignore) {}
+		}
+
 	}
-	
+
 	// One thread per client
-	static class WorkerThread extends Thread implements Runnable {
-		
+	class WorkerThread extends Thread implements Runnable {
+
 		private final Socket mClient;
 		private final OutputStream mOutput;
 		private final BufferedReader mInput;
-		private final Handler mHandler;
-		
+
 		// Each client has an associated session
 		private Session mSession;
-		
-		public WorkerThread(final Socket client, final Handler handler) throws IOException {
+
+		public WorkerThread(final Socket client) throws IOException {
 			mInput = new BufferedReader(new InputStreamReader(client.getInputStream()));
 			mOutput = client.getOutputStream();
 			mSession = new Session(client.getLocalAddress(),client.getInetAddress());
 			mClient = client;
-			mHandler = handler;
 		}
-		
+
 		public void run() {
 			Request request;
 			Response response;
-			
-			log("Connection from "+mClient.getInetAddress().getHostAddress());
+
+			Log.i(TAG, "Connection from "+mClient.getInetAddress().getHostAddress());
 
 			while (!Thread.interrupted()) {
 
 				request = null;
 				response = null;
-				
+
 				// Parse the request
 				try {
 					request = Request.parseRequest(mInput);
@@ -157,7 +299,7 @@ public class RtspServer {
 					}
 					catch (Exception e) {
 						// This alerts the main thread that something has gone wrong in this thread
-						mHandler.obtainMessage(MESSAGE_ERROR, e).sendToTarget();
+						postError(e, ERROR_START_FAILED);
 						Log.e(TAG,e.getMessage()!=null?e.getMessage():"An error occurred");
 						e.printStackTrace();
 						response = new Response(request);
@@ -172,7 +314,7 @@ public class RtspServer {
 					Log.e(TAG,"Response was not sent properly");
 					break;
 				}
-				
+
 			}
 
 			// Streaming stops when client disconnects
@@ -182,34 +324,34 @@ public class RtspServer {
 			try {
 				mClient.close();
 			} catch (IOException ignore) {}
-			
-			log("Client disconnected");
-			
+
+			Log.i(TAG, "Client disconnected");
+
 		}
-		
+
 		public Response processRequest(Request request) throws IllegalStateException, IOException {
 			Response response = new Response(request);
-			
+
 			/* ********************************************************************************** */
 			/* ********************************* Method DESCRIBE ******************************** */
 			/* ********************************************************************************** */
 			if (request.method.toUpperCase().equals("DESCRIBE")) {
-				
-					// Parse the requested URI and configure the session
-					UriParser.parse(request.uri,mSession);
-					String requestContent = mSession.getSessionDescription();
-					String requestAttributes = 
-							"Content-Base: "+mClient.getLocalAddress().getHostAddress()+":"+mClient.getLocalPort()+"/\r\n" +
-							"Content-Type: application/sdp\r\n";
-					
-					response.attributes = requestAttributes;
-					response.content = requestContent;
-					
-					// If no exception has been thrown, we reply with OK
-					response.status = Response.STATUS_OK;
-				
+
+				// Parse the requested URI and configure the session
+				UriParser.parse(request.uri,mSession);
+				String requestContent = mSession.getSessionDescription();
+				String requestAttributes = 
+						"Content-Base: "+mClient.getLocalAddress().getHostAddress()+":"+mClient.getLocalPort()+"/\r\n" +
+								"Content-Type: application/sdp\r\n";
+
+				response.attributes = requestAttributes;
+				response.content = requestContent;
+
+				// If no exception has been thrown, we reply with OK
+				response.status = Response.STATUS_OK;
+
 			}
-			
+
 			/* ********************************************************************************** */
 			/* ********************************* Method OPTIONS ********************************* */
 			/* ********************************************************************************** */
@@ -225,25 +367,25 @@ public class RtspServer {
 			else if (request.method.toUpperCase().equals("SETUP")) {
 				Pattern p; Matcher m;
 				int p2, p1, ssrc, trackId, src;
-				
+
 				p = Pattern.compile("trackID=(\\w+)",Pattern.CASE_INSENSITIVE);
 				m = p.matcher(request.uri);
-				
+
 				if (!m.find()) {
 					response.status = Response.STATUS_BAD_REQUEST;
 					return response;
 				} 
-				
+
 				trackId = Integer.parseInt(m.group(1));
-				
+
 				if (!mSession.trackExists(trackId)) {
 					response.status = Response.STATUS_NOT_FOUND;
 					return response;
 				}
-				
+
 				p = Pattern.compile("client_port=(\\d+)-(\\d+)",Pattern.CASE_INSENSITIVE);
 				m = p.matcher(request.headers.get("transport"));
-				
+
 				if (!m.find()) {
 					int port = mSession.getTrackDestinationPort(trackId);
 					p1 = port;
@@ -253,7 +395,7 @@ public class RtspServer {
 					p1 = Integer.parseInt(m.group(1)); 
 					p2 = Integer.parseInt(m.group(2));
 				}
-				
+
 				ssrc = mSession.getTrackSSRC(trackId);
 				src = mSession.getTrackLocalPort(trackId);
 				mSession.setTrackDestinationPort(trackId, p1);
@@ -266,7 +408,7 @@ public class RtspServer {
 
 				// If no exception has been thrown, we reply with OK
 				response.status = Response.STATUS_OK;
-				
+
 			}
 
 			/* ********************************************************************************** */
@@ -277,12 +419,12 @@ public class RtspServer {
 				if (mSession.trackExists(0)) requestAttributes += "url=rtsp://"+mClient.getLocalAddress().getHostAddress()+":"+mClient.getLocalPort()+"/trackID="+0+";seq=0,";
 				if (mSession.trackExists(1)) requestAttributes += "url=rtsp://"+mClient.getLocalAddress().getHostAddress()+":"+mClient.getLocalPort()+"/trackID="+1+";seq=0,";
 				requestAttributes = requestAttributes.substring(0, requestAttributes.length()-1) + "\r\nSession: 1185d20035702ca\r\n";
-				
+
 				response.attributes = requestAttributes;
 
 				// If no exception has been thrown, we reply with OK
 				response.status = Response.STATUS_OK;
-			
+
 			}
 
 			/* ********************************************************************************** */
@@ -298,7 +440,7 @@ public class RtspServer {
 			else if (request.method.toUpperCase().equals("TEARDOWN")) {
 				response.status = Response.STATUS_OK;
 			}
-			
+
 			/* ********************************************************************************** */
 			/* ********************************* Unknown method ? ******************************* */
 			/* ********************************************************************************** */
@@ -306,29 +448,24 @@ public class RtspServer {
 				Log.e(TAG,"Command unknown: "+request);
 				response.status = Response.STATUS_BAD_REQUEST;
 			}
-			
+
 			return response;
-			
+
 		}
-		
-		private void log(String message) {
-			mHandler.obtainMessage(MESSAGE_LOG, message).sendToTarget();
-			Log.v(TAG,message);
-		}
-		
+
 	}
-	
+
 	static class Request {
-		
+
 		// Parse method & uri
 		public static final Pattern regexMethod = Pattern.compile("(\\w+) (\\S+) RTSP",Pattern.CASE_INSENSITIVE);
 		// Parse a request header
 		public static final Pattern rexegHeader = Pattern.compile("(\\S+):(.+)",Pattern.CASE_INSENSITIVE);
-		
+
 		public String method;
 		public String uri;
 		public HashMap<String,String> headers = new HashMap<String,String>();
-		
+
 		/** Parse the method, uri & headers of a RTSP request */
 		public static Request parseRequest(BufferedReader input) throws IOException, IllegalStateException, SocketException {
 			Request request = new Request();
@@ -349,60 +486,58 @@ public class RtspServer {
 				request.headers.put(matcher.group(1).toLowerCase(),matcher.group(2));
 			}
 			if (line==null) throw new SocketException("Client disconnected");
-			
+
 			// It's not an error, it's just easier to follow what's happening in logcat with the request in red
 			Log.e(TAG,request.method+" "+request.uri);
-			
+
 			return request;
 		}
 	}
-	
+
 	static class Response {
-		
+
 		// Status code definitions
 		public static final String STATUS_OK = "200 OK";
 		public static final String STATUS_BAD_REQUEST = "400 Bad Request";
 		public static final String STATUS_NOT_FOUND = "404 Not Found";
 		public static final String STATUS_INTERNAL_SERVER_ERROR = "500 Internal Server Error";
-		
+
 		public String status = STATUS_INTERNAL_SERVER_ERROR;
 		public String content = "";
 		public String attributes = "";
-		
+
 		private final Request mRequest;
-		
+
 		public Response(Request request) {
 			this.mRequest = request;
 		}
-		
+
 		public Response() {
 			// Be carefull if you modify the send() method because request might be null !
 			mRequest = null;
 		}
-		
+
 		public void send(OutputStream output) throws IOException {
 			int seqid = -1;
-			
+
 			try {
 				seqid = Integer.parseInt(mRequest.headers.get("cseq").replace(" ",""));
 			} catch (Exception e) {
 				Log.e(TAG,"Error parsing CSeq: "+(e.getMessage()!=null?e.getMessage():""));
 			}
-			
+
 			String response = 	"RTSP/1.0 "+status+"\r\n" +
-					"Server: MajorKernelPanic RTSP Server\r\n" +
+					"Server: "+SERVER_NAME+"\r\n" +
 					(seqid>=0?("Cseq: " + seqid + "\r\n"):"") +
 					"Content-Length: " + content.length() + "\r\n" +
 					attributes +
 					"\r\n" + 
 					content;
-			
+
 			Log.d(TAG,response.replace("\r", ""));
-			
+
 			output.write(response.getBytes());
 		}
 	}
-		
-	
-	
+
 }

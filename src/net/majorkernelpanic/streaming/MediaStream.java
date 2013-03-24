@@ -22,13 +22,13 @@ package net.majorkernelpanic.streaming;
 
 import java.io.IOException;
 import java.net.InetAddress;
+import java.util.Random;
 
 import net.majorkernelpanic.streaming.rtp.AbstractPacketizer;
 import android.media.MediaRecorder;
 import android.net.LocalServerSocket;
 import android.net.LocalSocket;
 import android.net.LocalSocketAddress;
-import android.util.Log;
 
 /**
  *  A MediaRecorder that streams what it records using a packetizer from the rtp package.
@@ -38,12 +38,12 @@ public abstract class MediaStream extends MediaRecorder implements Stream {
 
 	protected static final String TAG = "MediaStream";
 
-	// If you mode==MODE_DEFAULT the MediaStream will just act as a regular MediaRecorder
-	// By default: mode = MODE_STREAMING and MediaStream forwards data to the packetizer
+	/** MediaStream forwards data to a packetizer through a LocalSocket. */
 	public static final int MODE_STREAMING = 0;
+	
+	/** MediaStream will just act as a regular MediaRecorder. */
 	public static final int MODE_DEFAULT = 1;
 
-	private static int sId = 0;
 	private int mSocketId;
 
 	protected AbstractPacketizer mPacketizer = null;
@@ -57,16 +57,13 @@ public abstract class MediaStream extends MediaRecorder implements Stream {
 	public MediaStream() {
 		super();
 
-		for (int i=0;i<5;i++) {
+		for (int i=0;i<10;i++) {
 			try {
-				mLss = new LocalServerSocket("net.majorkernelpanic.librtp-"+sId);
+				mSocketId = new Random().nextInt();
+				mLss = new LocalServerSocket("net.majorkernelpanic.librtp-"+mSocketId);
 				break;
-			} catch (IOException e1) {
-				sId++;
-			}
+			} catch (IOException e1) {}
 		}
-		mSocketId = sId;
-		sId++;
 
 	}
 
@@ -75,8 +72,10 @@ public abstract class MediaStream extends MediaRecorder implements Stream {
 		this.mPacketizer.setDestination(dest, dport);
 	}
 
-	/** Sets the Time To Live of the underlying {@link net.majorkernelpanic.streaming.rtp.RtpSocket}. 
-	 * @throws IOException **/
+	/** 
+	 * Sets the Time To Live of the underlying {@link net.majorkernelpanic.streaming.rtp.RtpSocket}. 
+	 * @throws IOException 
+	 **/
 	public void setTimeToLive(int ttl) throws IOException {
 		this.mPacketizer.setTimeToLive(ttl);
 	}

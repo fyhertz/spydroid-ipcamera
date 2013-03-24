@@ -23,10 +23,10 @@ package net.majorkernelpanic.spydroid.api;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
-import java.lang.reflect.Field;
 import java.nio.charset.Charset;
 
-import net.majorkernelpanic.spydroid.R;
+import net.majorkernelpanic.http.TinyHttpServer;
+import net.majorkernelpanic.spydroid.SpydroidApplication;
 import net.majorkernelpanic.streaming.misc.HttpServer;
 
 import org.apache.http.HttpEntityEnclosingRequest;
@@ -40,15 +40,30 @@ import org.apache.http.protocol.HttpContext;
 import org.apache.http.protocol.HttpRequestHandler;
 import org.apache.http.util.EntityUtils;
 
-import android.content.Intent;
-
 /** 
- * HTTP server of Spydroid
- * Its document root is assets/www, it contains a little user-friendly website to control spydroid from a browser
- * The default behavior of HttpServer is enhanced with a RequestHandler
+ * HTTP server of Spydroid.
+ * Its document root is assets/www, it contains a little user-friendly website to control spydroid from a browser.
+ * The default behavior of HttpServer is enhanced with a RequestHandler.
  **/
 public class CustomHttpServer extends HttpServer {
 
+	public CustomHttpServer() {
+		// The common name that appears in the CA of the HTTPS server of Spydroid
+		mCACommonName = "Spydroid CA";
+		// If at some point a stream cannot start the exception is stored so that
+		// it can be fetched in the HTTP interface to display an appropriate message
+		addCallbackListener(mListener);
+	}
+
+	private CallbackListener mListener = new CallbackListener() {
+		@Override
+		public void onError(TinyHttpServer server, Exception e, int error) {
+			if (error==HttpServer.ERROR_START_FAILED) {
+				SpydroidApplication.getInstance().lastCaughtException = e;
+			}
+		}
+	};
+	
 	@Override
 	public void onCreate() {
 		super.onCreate();
@@ -57,10 +72,7 @@ public class CustomHttpServer extends HttpServer {
 
 	class CustomRequestHandler implements HttpRequestHandler {
 
-		private Field[] mRaws = R.raw.class.getFields();
-
-		public CustomRequestHandler() {
-		}
+		public CustomRequestHandler() {}
 
 		public void handle(HttpRequest request, HttpResponse response, HttpContext arg2) throws HttpException, IOException {
 

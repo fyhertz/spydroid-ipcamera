@@ -43,7 +43,7 @@ import org.apache.http.entity.EntityTemplate;
 import org.apache.http.protocol.HttpContext;
 import org.apache.http.protocol.HttpRequestHandler;
 
-import android.os.Binder;
+import android.content.Intent;
 import android.util.Log;
 
 /**
@@ -87,23 +87,22 @@ public class HttpServer extends TinyHttpServer {
 	}
 	
 	/** 
-	 * Allow user to start streams (a session contains one or more streams) from the HTTP server by requesting 
+	 * Allows to start streams (a session contains one or more streams) from the HTTP server by requesting 
 	 * this URL: http://ip/spydroid.sdp (the RTSP server is not needed here). 
 	 **/
 	class DescriptionRequestHandler implements HttpRequestHandler {
 
 		private final Session[] sSessionList = new Session[MAX_STREAM_NUM];
 		
-		public DescriptionRequestHandler() {
-		}
+		public DescriptionRequestHandler() {}
 		
 		public synchronized void handle(HttpRequest request, HttpResponse response, HttpContext context) throws HttpException {
 			Socket socket = ((TinyHttpServer.MHttpContext)context).getSocket();
 			String uri = request.getRequestLine().getUri();
 			int id = 0;
-			
+
 			try {
-				
+
 				// A stream id can be specified in the URI, this id is associated to a session
 				List<NameValuePair> params = URLEncodedUtils.parse(URI.create(uri),"UTF-8");
 				uri = "";
@@ -120,8 +119,8 @@ public class HttpServer extends TinyHttpServer {
 
 				params.remove("id");
 				uri = "http://c?" + URLEncodedUtils.format(params, "UTF-8");
-				
-				// Stop all streams if a Session already exists
+
+				// Stops all streams if a Session already exists
 				if (sSessionList[id] != null) {
 					if (sSessionList[id].getRoutingScheme()=="unicast") {
 						sSessionList[id].stopAll();
@@ -130,10 +129,10 @@ public class HttpServer extends TinyHttpServer {
 					}
 				}
 
-				// Create new Session
+				// Creates new Session
 				sSessionList[id] = new Session(socket.getLocalAddress(), socket.getInetAddress());
 
-				// Parse URI and configure the Session accordingly 
+				// Parses URI and configure the Session accordingly 
 				UriParser.parse(uri, sSessionList[id]);
 
 				final String sessionDescriptor = sSessionList[id].getSessionDescription().replace("Unnamed", "Stream-"+id);
@@ -156,7 +155,7 @@ public class HttpServer extends TinyHttpServer {
 				response.setStatusCode(HttpStatus.SC_INTERNAL_SERVER_ERROR);
 				Log.e(TAG,e.getMessage()!=null?e.getMessage():"An unknown error occurred");
 				e.printStackTrace();
-				mListener.onError(HttpServer.this, e, ERROR_START_FAILED);
+				postError(e,ERROR_START_FAILED);
 			}
 
 		}

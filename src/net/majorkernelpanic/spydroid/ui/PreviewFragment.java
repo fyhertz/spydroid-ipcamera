@@ -58,7 +58,7 @@ public class PreviewFragment extends Fragment {
 			// We still need this line for backward compatibility reasons with android 2
 			mSurfaceHolder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
 			
-			SessionManager.getManager().setSurfaceHolder(mSurfaceHolder, !mApplication.mHackEnabled);
+			SessionManager.getManager().setSurfaceHolder(mSurfaceHolder, !mApplication.hackEnabled);
 			
 		} 
 		

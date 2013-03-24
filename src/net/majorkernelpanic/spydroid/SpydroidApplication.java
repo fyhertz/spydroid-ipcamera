@@ -53,37 +53,31 @@ import android.view.SurfaceHolder;
 public class SpydroidApplication extends android.app.Application {
 
 	public final static String TAG = "SpydroidApplication";
-
-	/** Default listening port for the RTSP server. */
-	public int mRtspPort = 8086;
-
+	
 	/** Default quality of video streams. */
-	public VideoQuality mVideoQuality = new VideoQuality(640,480,15,500000);
+	public VideoQuality videoQuality = new VideoQuality(640,480,15,500000);
 
 	/** By default AMR is the audio encoder. */
-	public int mAudioEncoder = Session.AUDIO_AMRNB;
+	public int audioEncoder = Session.AUDIO_AMRNB;
 
 	/** By default H.263 is the video encoder. */
-	public int mVideoEncoder = Session.VIDEO_H263;
+	public int videoEncoder = Session.VIDEO_H263;
 
 	/** Set this flag to true to disable the ads. */
 	public final boolean DONATE_VERSION = false;
 
-	/** Default state for the RTSP server. */
-	public boolean mRtspEnabled = true;	
-
 	/** If the notification is enabled in the status bar of the phone. */
-	public boolean mNotificationEnabled = true;
+	public boolean notificationEnabled = true;
 
 	/** The HttpServer will use those variables to send reports about the state of the app to the web interface. */
-	public boolean mApplicationForeground = true;
-	public Exception mLastCaughtException = null;
+	public boolean applicationForeground = true;
+	public Exception lastCaughtException = null;
 
 	/** Prevent garbage collection of the Surface. */
-	public boolean mHackEnabled = false;
+	public boolean hackEnabled = false;
 
 	/** Contains an approximation of the battery level. */
-	public int mBatteryLevel = 0;
+	public int batteryLevel = 0;
 	
 	private static SpydroidApplication sApplication;
 
@@ -100,33 +94,27 @@ public class SpydroidApplication extends android.app.Application {
 
 		SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(this);
 
-		mNotificationEnabled = settings.getBoolean("notification_enabled", true);
-		mHackEnabled = settings.getBoolean("video_hack", false);
-
-		// Sets the ports of the RTSP according to user settings
-		mRtspPort = Integer.parseInt(settings.getString("rtsp_port", String.valueOf(mRtspPort)));
-
-		// Sets the ports of the RTSP and HTTP/S servers according to user settings
-		mRtspEnabled = settings.getBoolean("rtsp_enabled", mRtspEnabled);
+		notificationEnabled = settings.getBoolean("notification_enabled", true);
+		hackEnabled = settings.getBoolean("video_hack", false);
 
 		// On android 3.* AAC ADTS is not supported so we set the default encoder to AMR-NB, on android 4.* AAC is the default encoder
-		mAudioEncoder = (Integer.parseInt(android.os.Build.VERSION.SDK)<14) ? Session.AUDIO_AMRNB : Session.AUDIO_AAC;
-		mAudioEncoder = Integer.parseInt(settings.getString("audio_encoder", String.valueOf(mAudioEncoder)));
-		mVideoEncoder = Integer.parseInt(settings.getString("video_encoder", String.valueOf(mVideoEncoder)));
+		audioEncoder = (Integer.parseInt(android.os.Build.VERSION.SDK)<14) ? Session.AUDIO_AMRNB : Session.AUDIO_AAC;
+		audioEncoder = Integer.parseInt(settings.getString("audio_encoder", String.valueOf(audioEncoder)));
+		videoEncoder = Integer.parseInt(settings.getString("video_encoder", String.valueOf(videoEncoder)));
 
 		// Read video quality settings from the preferences 
-		mVideoQuality = VideoQuality.merge(
+		videoQuality = VideoQuality.merge(
 				new VideoQuality(
 						settings.getInt("video_resX", 0),
 						settings.getInt("video_resY", 0), 
 						Integer.parseInt(settings.getString("video_framerate", "0")), 
 						Integer.parseInt(settings.getString("video_bitrate", "0"))*1000),
-						mVideoQuality);
+						videoQuality);
 
 		SessionManager manager = SessionManager.getManager(); 
-		manager.setDefaultAudioEncoder(!settings.getBoolean("stream_audio", true)?0:mAudioEncoder);
-		manager.setDefaultVideoEncoder(!settings.getBoolean("stream_video", false)?0:mVideoEncoder);
-		manager.setDefaultVideoQuality(mVideoQuality);
+		manager.setDefaultAudioEncoder(!settings.getBoolean("stream_audio", true)?0:audioEncoder);
+		manager.setDefaultVideoEncoder(!settings.getBoolean("stream_video", false)?0:videoEncoder);
+		manager.setDefaultVideoQuality(videoQuality);
 
 		H264Stream.setPreferences(settings);
 
@@ -134,9 +122,6 @@ public class SpydroidApplication extends android.app.Application {
 		settings.registerOnSharedPreferenceChangeListener(mOnSharedPreferenceChangeListener);
 
 		registerReceiver(mBatteryInfoReceiver, new IntentFilter(Intent.ACTION_BATTERY_CHANGED));
-		
-		// Starts the service of the HTTP server
-		this.startService(new Intent(this,CustomHttpServer.class));
 		
 	}
 
@@ -148,40 +133,40 @@ public class SpydroidApplication extends android.app.Application {
 		@Override
 		public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
 			if (key.equals("video_resX") || key.equals("video_resY")) {
-				mVideoQuality.resX = sharedPreferences.getInt("video_resX", 0);
-				mVideoQuality.resY = sharedPreferences.getInt("video_resY", 0);
+				videoQuality.resX = sharedPreferences.getInt("video_resX", 0);
+				videoQuality.resY = sharedPreferences.getInt("video_resY", 0);
 			}
 
 			else if (key.equals("video_framerate")) {
-				mVideoQuality.framerate = Integer.parseInt(sharedPreferences.getString("video_framerate", "0"));
+				videoQuality.framerate = Integer.parseInt(sharedPreferences.getString("video_framerate", "0"));
 			}
 
 			else if (key.equals("video_bitrate")) {
-				mVideoQuality.bitrate = Integer.parseInt(sharedPreferences.getString("video_bitrate", "0"))*1000;
+				videoQuality.bitrate = Integer.parseInt(sharedPreferences.getString("video_bitrate", "0"))*1000;
 			}
 
 			else if (key.equals("audio_encoder") || key.equals("stream_audio")) { 
-				mAudioEncoder = Integer.parseInt(sharedPreferences.getString("audio_encoder", "0"));
-				SessionManager.getManager().setDefaultAudioEncoder( mAudioEncoder );
+				audioEncoder = Integer.parseInt(sharedPreferences.getString("audio_encoder", "0"));
+				SessionManager.getManager().setDefaultAudioEncoder( audioEncoder );
 				if (!sharedPreferences.getBoolean("stream_audio", false)) 
 					SessionManager.getManager().setDefaultAudioEncoder(0);
 			}
 
 			else if (key.equals("stream_video") || key.equals("video_encoder")) {
-				mVideoEncoder = Integer.parseInt(sharedPreferences.getString("video_encoder", "0"));
-				SessionManager.getManager().setDefaultVideoEncoder( mVideoEncoder );
+				videoEncoder = Integer.parseInt(sharedPreferences.getString("video_encoder", "0"));
+				SessionManager.getManager().setDefaultVideoEncoder( videoEncoder );
 				if (!sharedPreferences.getBoolean("stream_video", true)) 
 					SessionManager.getManager().setDefaultVideoEncoder(0);
 			}
 
 			else if (key.equals("notification_enabled")) {
-				mNotificationEnabled  = sharedPreferences.getBoolean("notification_enabled", true);
+				notificationEnabled  = sharedPreferences.getBoolean("notification_enabled", true);
 			}
 
 			else if (key.equals("video_hack")) {
-				mHackEnabled = sharedPreferences.getBoolean("video_hack", false);
+				hackEnabled = sharedPreferences.getBoolean("video_hack", false);
 				SurfaceHolder holder = SessionManager.getManager().getSurfaceHolder();
-				SessionManager.getManager().setSurfaceHolder(holder,!mHackEnabled);
+				SessionManager.getManager().setSurfaceHolder(holder,!hackEnabled);
 			}
 
 		}  
@@ -190,7 +175,7 @@ public class SpydroidApplication extends android.app.Application {
 	private BroadcastReceiver mBatteryInfoReceiver = new BroadcastReceiver() {
 		@Override
 		public void onReceive(Context arg0, Intent intent) {
-			mBatteryLevel = intent.getIntExtra("level", 0);
+			batteryLevel = intent.getIntExtra("level", 0);
 		}
 	};
 

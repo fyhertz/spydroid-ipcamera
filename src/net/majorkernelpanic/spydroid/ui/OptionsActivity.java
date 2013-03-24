@@ -65,11 +65,11 @@ public class OptionsActivity extends PreferenceActivity {
 		videoFramerate.setEnabled(videoState);        
 		audioEncoder.setEnabled(settings.getBoolean("stream_audio", true));
 
-		videoEncoder.setValue(String.valueOf(mApplication.mVideoEncoder));
-		audioEncoder.setValue(String.valueOf(mApplication.mAudioEncoder));
-		videoFramerate.setValue(String.valueOf(mApplication.mVideoQuality.framerate));
-		videoBitrate.setValue(String.valueOf(mApplication.mVideoQuality.bitrate/1000));
-		videoResolution.setValue(mApplication.mVideoQuality.resX+"x"+mApplication.mVideoQuality.resY);
+		videoEncoder.setValue(String.valueOf(mApplication.videoEncoder));
+		audioEncoder.setValue(String.valueOf(mApplication.audioEncoder));
+		videoFramerate.setValue(String.valueOf(mApplication.videoQuality.framerate));
+		videoBitrate.setValue(String.valueOf(mApplication.videoQuality.bitrate/1000));
+		videoResolution.setValue(mApplication.videoQuality.resX+"x"+mApplication.videoQuality.resY);
 
 		videoResolution.setSummary(getString(R.string.settings0)+" "+videoResolution.getValue()+"px");
 		videoFramerate.setSummary(getString(R.string.settings1)+" "+videoFramerate.getValue()+"fps");
@@ -78,9 +78,9 @@ public class OptionsActivity extends PreferenceActivity {
 		httpEnabled.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
 			public boolean onPreferenceChange(Preference preference, Object newValue) {
 				boolean state = (Boolean)newValue;
-				httpsEnabled.setEnabled(state);
+				//httpsEnabled.setEnabled(state);
 				httpPort.setEnabled(state);
-				httpsPort.setEnabled(state);
+				//httpsPort.setEnabled(state);
 				Editor editor = settings.edit();
 				// Updates the HTTP server
 				if (!state) {
@@ -88,13 +88,13 @@ public class OptionsActivity extends PreferenceActivity {
 					editor.putBoolean("https_enabled", false);
 				} else {
 					// HTTP/HTTPS, it's one or the other
-					if (httpsEnabled.isEnabled()) {
+					/*if (httpsEnabled.isEnabled()) {
 						editor.putBoolean("https_enabled", true);
 						editor.putBoolean("http_enabled", false);
 					} else {
 						editor.putBoolean("https_enabled", false);
 						editor.putBoolean("http_enabled", true);
-					}
+					}*/
 				}
 				editor.commit();
 				return true;

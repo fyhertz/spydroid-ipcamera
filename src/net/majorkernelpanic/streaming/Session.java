@@ -115,7 +115,7 @@ public class Session {
 
 	/** 
 	 * The destination address for all the streams of the session.
-	 * You must stop all tracks before calling this method
+	 * You must stop all tracks before calling this method.
 	 * @param destination The destination address
 	 */
 	public void setDestination(InetAddress destination) throws IllegalStateException {

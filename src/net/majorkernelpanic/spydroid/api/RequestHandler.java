@@ -114,7 +114,6 @@ public class RequestHandler {
 	 * -> "set": update Spydroid's configuration
 	 * -> "get": returns Spydroid's configuration (framerate, bitrate...)
 	 * -> "state": returns a JSON containing information about the state of the application
-	 * -> "clear": 
 	 * -> "battery": returns an approximation of the battery level on the phone
 	 * -> "buzz": makes the phone buuz 
 	 * @throws JSONException
@@ -140,7 +139,7 @@ public class RequestHandler {
 
 		// Returns the screen state (whether the app. is on the foreground or not)
 		else if (action.equals("screen")) {
-			response.append(application.mApplicationForeground ? "\"1\"" : "\"0\"");
+			response.append(application.applicationForeground ? "\"1\"" : "\"0\"");
 		}
 
 		// Plays a sound on the phone
@@ -159,12 +158,12 @@ public class RequestHandler {
 			final SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(context);
 
 			response.append("{\"streamAudio\":" + settings.getBoolean("stream_audio", false) + ",");
-			response.append("\"audioEncoder\":\"" + (application.mAudioEncoder==Session.AUDIO_AMRNB?"AMR-NB":"AAC") + "\",");
+			response.append("\"audioEncoder\":\"" + (application.audioEncoder==Session.AUDIO_AMRNB?"AMR-NB":"AAC") + "\",");
 			response.append("\"streamVideo\":" + settings.getBoolean("stream_video", true) + ",");
-			response.append("\"videoEncoder\":\"" + (application.mVideoEncoder==Session.VIDEO_H263?"H.263":"H.264") + "\",");
-			response.append("\"videoResolution\":\"" + application.mVideoQuality.resX + "x" + application.mVideoQuality.resY + "\",");
-			response.append("\"videoFramerate\":\"" + application.mVideoQuality.framerate + " fps\",");
-			response.append("\"videoBitrate\":\"" + application.mVideoQuality.bitrate/1000 + " kbps\"}");
+			response.append("\"videoEncoder\":\"" + (application.videoEncoder==Session.VIDEO_H263?"H.263":"H.264") + "\",");
+			response.append("\"videoResolution\":\"" + application.videoQuality.resX + "x" + application.videoQuality.resY + "\",");
+			response.append("\"videoFramerate\":\"" + application.videoQuality.framerate + " fps\",");
+			response.append("\"videoBitrate\":\"" + application.videoQuality.bitrate/1000 + " kbps\"}");
 
 		}
 
@@ -175,11 +174,11 @@ public class RequestHandler {
 			final Editor editor = prefs.edit();
 
 			editor.putBoolean("stream_video", settings.getBoolean("stream_video"));
-			application.mVideoQuality = VideoQuality.parseQuality(settings.getString("video_quality"));
-			editor.putInt("video_resX", application.mVideoQuality.resX);
-			editor.putInt("video_resY", application.mVideoQuality.resY);
-			editor.putString("video_framerate", String.valueOf(application.mVideoQuality.framerate));
-			editor.putString("video_bitrate", String.valueOf(application.mVideoQuality.bitrate/1000));
+			application.videoQuality = VideoQuality.parseQuality(settings.getString("video_quality"));
+			editor.putInt("video_resX", application.videoQuality.resX);
+			editor.putInt("video_resY", application.videoQuality.resY);
+			editor.putString("video_framerate", String.valueOf(application.videoQuality.framerate));
+			editor.putString("video_bitrate", String.valueOf(application.videoQuality.bitrate/1000));
 			editor.putString("video_encoder", settings.getString("video_encoder").equals("H.263")?"2":"1");
 			editor.putBoolean("stream_audio", settings.getBoolean("stream_audio"));
 			editor.putString("audio_encoder", settings.getString("audio_encoder").equals("AMR-NB")?"3":"5");
@@ -191,7 +190,7 @@ public class RequestHandler {
 		// Returns a JSON containing information about the state of the application
 		else if (action.equals("state")) {
 
-			Exception exception = application.mLastCaughtException;
+			Exception exception = application.lastCaughtException;
 
 			response.append("{");
 
@@ -212,19 +211,19 @@ public class RequestHandler {
 
 			response.append("\"cameraInUse\":\""+SessionManager.getManager().isCameraInUse()+"\",");
 			response.append("\"microphoneInUse\":\""+SessionManager.getManager().isMicrophoneInUse()+"\",");
-			response.append("\"activityPaused\":\""+(application.mApplicationForeground ? "1" : "0")+"\"");
+			response.append("\"activityPaused\":\""+(application.applicationForeground ? "1" : "0")+"\"");
 			response.append("}");
 
 		}
 
 		else if (action.equals("clear")) {
-			application.mLastCaughtException = null;
+			application.lastCaughtException = null;
 			response.append("[]");
 		}
 
 		// Returns an approximation of the battery level
 		else if (action.equals("battery")) {
-			response.append("\""+application.mBatteryLevel+"\"");
+			response.append("\""+application.batteryLevel+"\"");
 		}
 
 		// Makes the phone vibrates for 300ms

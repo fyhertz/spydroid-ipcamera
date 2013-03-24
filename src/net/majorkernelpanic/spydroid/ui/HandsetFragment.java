@@ -28,6 +28,7 @@ import net.majorkernelpanic.spydroid.SpydroidApplication;
 import net.majorkernelpanic.spydroid.Utilities;
 import net.majorkernelpanic.spydroid.api.CustomHttpServer;
 import net.majorkernelpanic.streaming.SessionManager;
+import net.majorkernelpanic.streaming.misc.RtspServer;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
@@ -56,6 +57,7 @@ public class HandsetFragment extends Fragment {
     
     private SpydroidApplication mApplication;
     private CustomHttpServer mHttpServer;
+    private RtspServer mRtspServer;
     
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -94,19 +96,28 @@ public class HandsetFragment extends Fragment {
 	@Override
     public void onPause() {
     	super.onPause();
-    	if (!SessionManager.getManager().isStreaming()) displayIpAddress(); else streamingState(1); 
+    	update();
     	getActivity().unregisterReceiver(mWifiStateReceiver);
-    	getActivity().unbindService(mServiceConnection);
+    	getActivity().unbindService(mHttpServiceConnection);
+    	getActivity().unbindService(mRtspServiceConnection);
     }
 	
 	@Override
     public void onResume() {
     	super.onResume();
-		getActivity().bindService(new Intent(getActivity(),CustomHttpServer.class), mServiceConnection, Context.BIND_AUTO_CREATE);
+		getActivity().bindService(new Intent(getActivity(),CustomHttpServer.class), mHttpServiceConnection, Context.BIND_AUTO_CREATE);
+		getActivity().bindService(new Intent(getActivity(),RtspServer.class), mRtspServiceConnection, Context.BIND_AUTO_CREATE);
     	getActivity().registerReceiver(mWifiStateReceiver,new IntentFilter(WifiManager.NETWORK_STATE_CHANGED_ACTION));
     }
 	
-	public void streamingState(int state) {
+	public void update() {
+		if (mHttpServer != null && mRtspServer != null) {
+			if (!SessionManager.getManager().isStreaming()) displayIpAddress();
+			else streamingState(1);
+		}		
+	}
+	
+	private void streamingState(int state) {
 		if (state==0) {
 			// Not streaming
 			mSignStreaming.clearAnimation();
@@ -131,11 +142,10 @@ public class HandsetFragment extends Fragment {
 		}
 	}
 	
-    public void displayIpAddress() {
+    private void displayIpAddress() {
 		WifiManager wifiManager = (WifiManager) mApplication.getApplicationContext().getSystemService(Context.WIFI_SERVICE);
 		WifiInfo info = wifiManager.getConnectionInfo();
 		String ipaddress = null;
-		Log.d("SpydroidActivity","getNetworkId "+info.getNetworkId());
     	if (info!=null && info.getNetworkId()>-1) {
 	    	int i = info.getIpAddress();
 	        String ip = String.format(Locale.ENGLISH,"%d.%d.%d.%d", i & 0xff, i >> 8 & 0xff,i >> 16 & 0xff,i >> 24 & 0xff);
@@ -144,7 +154,7 @@ public class HandsetFragment extends Fragment {
 	    	mLine1.append(":"+mHttpServer.getHttpPort());
 	    	mLine2.setText("rtsp://");
 	    	mLine2.append(ip);
-	    	mLine2.append(":"+mApplication.mRtspPort);
+	    	mLine2.append(":"+mRtspServer.getPort());
 	    	streamingState(0);
     	} else if((ipaddress = Utilities.getLocalIpAddress(true)) != null) {
     		mLine1.setText("http://");
@@ -152,20 +162,33 @@ public class HandsetFragment extends Fragment {
 	    	mLine1.append(":"+mHttpServer.getHttpPort());
 	    	mLine2.setText("rtsp://");
 	    	mLine2.append(ipaddress);
-	    	mLine2.append(":"+mApplication.mRtspPort);
+	    	mLine2.append(":"+mRtspServer.getPort());
 	    	streamingState(0);
     	} else {
     		streamingState(2);
     	}
     	
     }
+
+    private final ServiceConnection mRtspServiceConnection = new ServiceConnection() {
+
+		@Override
+		public void onServiceConnected(ComponentName name, IBinder service) {
+			mRtspServer = (RtspServer) ((RtspServer.LocalBinder)service).getService();
+			update();
+		}
+
+		@Override
+		public void onServiceDisconnected(ComponentName name) {}
+		
+	};
     
-    private final ServiceConnection mServiceConnection = new ServiceConnection() {
+    private final ServiceConnection mHttpServiceConnection = new ServiceConnection() {
 
 		@Override
 		public void onServiceConnected(ComponentName name, IBinder service) {
 			mHttpServer = (CustomHttpServer) ((TinyHttpServer.LocalBinder)service).getService();
-	    	if (!SessionManager.getManager().isStreaming()) displayIpAddress(); else streamingState(1); 
+			update();
 		}
 
 		@Override
@@ -179,7 +202,7 @@ public class HandsetFragment extends Fragment {
         	String action = intent.getAction();
         	// This intent is also received when app resumes even if wifi state hasn't changed :/
         	if (action.equals(WifiManager.NETWORK_STATE_CHANGED_ACTION)) {
-        		if (!SessionManager.getManager().isStreaming()) displayIpAddress();
+        		update();
         	}
         } 
     };
