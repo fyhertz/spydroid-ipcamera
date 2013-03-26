@@ -85,7 +85,7 @@ public class RequestHandler {
 					exec(object, response);
 					if (i != array.length()-1) response.append(",");
 				}
-				// Only One request
+			// Only One request
 			} else if (token instanceof JSONObject) {
 				JSONObject object = (JSONObject) token;
 				response.append("\"" + object.getString("action") + "\":" );
@@ -97,17 +97,18 @@ public class RequestHandler {
 		} catch (Exception e) {
 			// Pokemon, gotta catch'em all !
 			Log.e(TAG,"Invalid request: " + request);
+			e.printStackTrace();
 			return "INVALID REQUEST";
 		}
 
 		Log.d(TAG,"Request: " + request);
 		Log.d(TAG,"Answer: " + response.toString());
-		
+
 		return response.toString();
 	}
 
 	/** 
-	 * The implementation of all the possible requests are here
+	 * The implementation of all the possible requests is here
 	 * -> "sounds": returns a list of available sounds on the phone
 	 * -> "screen": returns the screen state (whether the app. is on the foreground or not)
 	 * -> "play": plays a sound on the phone

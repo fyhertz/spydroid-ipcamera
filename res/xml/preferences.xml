@@ -52,23 +52,23 @@
             android:key="http_server_enabled"
             android:summary="@string/settings23"
             android:title="@string/settings22" />
-        <!-- <CheckBoxPreference
+        <CheckBoxPreference
             android:defaultValue="false"
             android:key="use_https"
             android:summary="@string/settings25"
-            android:title="@string/settings24" /> -->        
+            android:title="@string/settings24" />        
         <EditTextPreference
             android:defaultValue="8080"
             android:inputType="number"
             android:key="http_port"
             android:summary="@string/settings21"
             android:title="@string/settings20" />
-        <!-- <EditTextPreference
+        <EditTextPreference
             android:defaultValue="8443"
             android:inputType="number"
             android:key="https_port"
             android:summary="@string/settings27"
-            android:title="@string/settings26" /> -->
+            android:title="@string/settings26" />
     </PreferenceCategory>
     
     <PreferenceCategory android:title="@string/settings14" >

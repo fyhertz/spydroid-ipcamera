@@ -47,11 +47,11 @@
     <string name="settings22">Enabled</string>
     <string name="settings23">Enable/Disable the HTTP server. Leave it on if you don\'t know what you are doing !</string>
     <string name="settings24">Use HTTPS</string>
-    <string name="settings25">By far more secure, see the FAQ for further information. Do not forget the S.</string>
+    <string name="settings25">By far more secure. NOT STABLE YET !</string>
     <string name="settings26">HTTPS server port</string>
     <string name="settings27">Port used by the HTTPS server</string>
-    <string name="bind_failed">"You need to choose another port for the %s server !"</string>
-    <string name="port_used">"Port already in use !"</string>    
+    <string name="bind_failed">You need to choose another port for the %s server !</string>
+    <string name="port_used">Port already in use !</string>    
     <string name="page0">Main</string>
     <string name="page1">Preview</string>
     <string name="page2">About</string>

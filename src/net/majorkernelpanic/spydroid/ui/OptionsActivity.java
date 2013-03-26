@@ -78,9 +78,9 @@ public class OptionsActivity extends PreferenceActivity {
 		httpEnabled.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
 			public boolean onPreferenceChange(Preference preference, Object newValue) {
 				boolean state = (Boolean)newValue;
-				//httpsEnabled.setEnabled(state);
+				httpsEnabled.setEnabled(state);
 				httpPort.setEnabled(state);
-				//httpsPort.setEnabled(state);
+				httpsPort.setEnabled(state);
 				Editor editor = settings.edit();
 				// Updates the HTTP server
 				if (!state) {
@@ -88,20 +88,20 @@ public class OptionsActivity extends PreferenceActivity {
 					editor.putBoolean("https_enabled", false);
 				} else {
 					// HTTP/HTTPS, it's one or the other
-					/*if (httpsEnabled.isEnabled()) {
+					if (httpsEnabled.isEnabled()) {
 						editor.putBoolean("https_enabled", true);
 						editor.putBoolean("http_enabled", false);
 					} else {
 						editor.putBoolean("https_enabled", false);
 						editor.putBoolean("http_enabled", true);
-					}*/
+					}
 				}
 				editor.commit();
 				return true;
 			}
 		});
 
-		/*httpsEnabled.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
+		httpsEnabled.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
 			public boolean onPreferenceChange(Preference preference, Object newValue) {
 				boolean state = (Boolean)newValue;
 				Editor editor = settings.edit();
@@ -122,7 +122,7 @@ public class OptionsActivity extends PreferenceActivity {
 				editor.commit();
 				return true;
 			}
-		});*/
+		});
 
 		videoResolution.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
 			public boolean onPreferenceChange(Preference preference, Object newValue) {
