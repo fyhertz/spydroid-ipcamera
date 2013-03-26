@@ -23,6 +23,7 @@
 
 package net.majorkernelpanic.http;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InterruptedIOException;
@@ -437,7 +438,7 @@ public class TinyHttpServer extends Service {
 
 	protected class HttpsRequestListener extends RequestListener {
 
-		private X509KeyManager mKeyManager;
+		private X509KeyManager mKeyManager = null;
 		private char[] mPassword;
 		private boolean mNotSupported = false;
 
@@ -468,11 +469,17 @@ public class TinyHttpServer extends Service {
 				try {
 					InputStream is = mContext.openFileInput(mKeystoreName);
 					mKeyManager = (X509KeyManager) loadFromKeyStore.invoke(null, is, mPassword);
+				} catch (FileNotFoundException e) {
 				} catch (Exception e) {
-					Constructor<?> constructor = X509KeyManager.getConstructor(new Class[]{char[].class, String.class});
-					mKeyManager = (javax.net.ssl.X509KeyManager) constructor.newInstance(mPassword, mCACommonName);
+					Log.e(TAG,"Could not open keystore, a new one will be created...");
+					e.printStackTrace();
 				}
 
+				if (mKeyManager == null) {
+					Constructor<?> constructor = X509KeyManager.getConstructor(new Class[]{char[].class, String.class});
+					mKeyManager = (javax.net.ssl.X509KeyManager) constructor.newInstance(mPassword, mCACommonName);					
+				}
+				
 				SSLContext sslContext = SSLContext.getInstance("TLS");
 				sslContext.init(new KeyManager[] {mKeyManager}, null, null);
 				ServerSocket serverSocket = sslContext.getServerSocketFactory().createServerSocket(port);
