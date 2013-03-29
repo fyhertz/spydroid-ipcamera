@@ -1,111 +1,81 @@
 (function () {
 
-    //var host = "192.168.0.100",
-    var host = window.location.hostname,
+    var host = window.location.hostname;
+    var port = window.location.port;
+    var videoPlugin;
+    var videoStream;
+	 var audioPlugin;
+    var audioStream;
+    var error;
 
-    // Encapsulation of the vlc plugin
-    Stream = function (object,type,callbacks) {
-	     var restarting = false, starting = false, error = false, restartTimer, startTimer,
+    function stream(object,type,done) {
 
-	     // Register an event listener
-	     registerEvent = function (object, event, handler) {
-	         if (object.attachEvent) {
-		          object.attachEvent (event, handler);
-	         } else if (object.addEventListener) {
-		          object.addEventListener (event, handler, false);
-	         } else {
-		          object["on" + event] = handler;
-	         }
-	     },
-	     
-	     // Indicates if the camera/microphone is currently being used
-	     inUse = function (callback) {
-	         $.post('request.json',JSON.stringify({'action':'state'}),function (json) {
-		          if (type==='audio') callback(json.state.microphoneInUse==='true');
-		          else callback(json.state.cameraInUse==='true');
-	         });
-	     };
-
-	     registerEvent(object,'MediaPlayerEncounteredError',function (event) {
-	         error = true;
-	         if (restarting) {
-		          clearInterval(restartTimer);
-		          restarting = false;
-	         }
-	         if (starting) {
-		          clearInterval(startTimer);
-		          starting = false;
-	         }	    
-	         callbacks.onError(type);
-	     });
-
+	     var state = "idle";
+        
 	     return {
 
 	         restart: function () {
-		          if (!restarting) {
-		              object.playlist.stop();
-		              object.playlist.clear();
-		              object.playlist.items.clear();
-		              // We wait 2 secs and restart the stream
-		              restarting = true;
-		              restartTimer = setInterval(function () {
-			               inUse(function (b) {
-			                   if (!b) {
-				                    this.start();
-				                    clearInterval(restartTimer);
-			                   }
-			               }.bind(this));
-		              }.bind(this),1000);
-		          }
-	         },
-
-	         start: function () {
-		          if (!object.playlist.isPlaying) {
-		              starting = true;
-		              error = false;
-		              startTimer = setInterval(function () {
-			               if (object.playlist.isPlaying) {
-			                   restarting = false;
-			                   starting = false;
-			                   clearInterval(startTimer);
-			               }
-		              },300);
-		              object.playlist.stop();
-		              object.playlist.clear();
-		              object.playlist.items.clear(); 
-		              var item = generateUriParams(type);
-                    //object.playlist.add('http://'+host+':8080/spydroid.sdp?'+item.uri);
-		              //object.playlist.playItem(0);                  
-		              object.playlist.add(
-                        'rtsp://'+host+':8086?'+item.uri,'',item.params
-                    );
-		              object.playlist.playItem(0);
-		          }
-	         },
-
-	         stop: function () {
-		          error = false;
-		          if (restarting) {
-		              clearInterval(restartTimer);
-		              restarting = false;
-		          }
-		          if (starting) {
-		              clearInterval(startTimer);
-		              starting = false;
-		          }
+                state = "restarting";
+                done();
 		          if (object.playlist.isPlaying) {
 		              object.playlist.stop();
 		              object.playlist.clear();
-		              object.playlist.items.clear(); 
+		              object.playlist.items.clear();
+                    setTimeout(function () {
+                        this.start(false);
+                    }.bind(this),2000);
+		          } else {
+                    this.start(false);
+                }
+	         },
+
+	         start: function (e) {
+                var req = generateUriParams(type);
+                state = "starting";
+                if (e!==false) done();
+                $.ajax({
+                    type: 'GET', 
+                    url: 'spydroid.sdp?id='+(type==='video'?0:1)+'&'+req.uri, 
+                    success: function (e) {
+                        setTimeout(function () {
+                            state = "streaming";
+                            object.playlist.add('http://'+host+':'+port+'/spydroid.sdp?id='+(type==='video'?0:1)+'&'+req.uri,'',req.params);
+		                      object.playlist.playItem(0);
+                            setTimeout(function () {
+                                done();
+                            },600);
+                        },1000);
+                    }, 
+                    error: function () {
+                        state = "error";
+                        getError();
+                    }
+                });
+		      },
+
+	         stop: function () {
+                $.ajax({
+                    type: 'GET', 
+                    url: 'spydroid.sdp?id='+(type==='video'?0:1)+'&stop', 
+                    success: function (e) {
+                        //done(); ??
+                    }, 
+                    error: function () {
+                        state = "error";
+                        getError();
+                    }
+                });
+		          if (object.playlist.isPlaying) {
+		              object.playlist.stop();
+		              object.playlist.clear();
+		              object.playlist.items.clear();               
 		          }
+                state = "idle";
+                done();
 	         },
 
 	         getState: function() {
-		          if (restarting) return 'restarting';
-		          else if (starting) return 'starting'
-		          else if (object.playlist.isPlaying) return 'streaming';
-		          else if (error) return 'error';
-		          else return 'idle';
+                return state;
 	         },
 
 	         isStreaming: function () {
@@ -114,9 +84,82 @@
 
 	     }
 	     
-    },
+    }
 
-    generateUriParams = function (type) {
+    function sendRequest(request,success,error) {
+        var data;
+        if (typeof request === "string") data = {'action':request}; else data = request;
+        $.ajax({type: 'POST', url: 'request.json', data: JSON.stringify(data), success:success, error:error});
+    }
+
+    function updateBatteryLevel(level) {
+        $('#battery>#level').text(level);
+        setTimeout(function () {
+	         sendRequest(
+                "battery",
+                function (e) {
+                    updateBatteryLevel(e.battery);
+                },
+                function () {
+                    updateBatteryLevel('??');
+                }
+            );
+        },100000);
+    }
+
+    function updateTooltip(title) {
+	     $('#tooltip>div').hide();
+	     $('#tooltip #'+title).show();
+    }
+    
+    function loadSettings(config) {
+	     $('#resolution,#framerate,#bitrate,#audioEncoder,#videoEncoder').children().each(function (c) {
+		      if ($(this).val()===config.videoResolution || 
+		          $(this).val()===config.videoFramerate || 
+		          $(this).val()===config.videoBitrate || 
+		          $(this).val()===config.audioEncoder ||
+		          $(this).val()===config.videoEncoder ) {
+		          $(this).parent().children().prop('selected',false);
+		          $(this).prop('selected',true);
+		      }
+	     });	    
+	     if (config.streamAudio===false) $('#audioEnabled').prop('checked',false);
+	     if (config.streamVideo===false) $('#videoEnabled').prop('checked',false);
+    }
+
+    function saveSettings() {
+        var res = /([0-9]+)x([0-9]+)/.exec($('#resolution').val());
+        var videoQuality = /[0-9]+/.exec($('#bitrate').val())[0]+'-'+/[0-9]+/.exec($('#framerate').val())[0]+'-'+res[1]+'-'+res[2];		          
+        var settings = {
+            'stream_video': $('#videoEnabled').prop('checked')===true,
+            'stream_audio': $('#audioEnabled').prop('checked')===true,
+            'video_encoder': $('#videoEncoder').val(),
+            'audio_encoder': $('#audioEncoder').val(),
+            'video_quality': videoQuality
+        };
+        sendRequest({'action':'set','settings':settings});
+    }
+
+    function loadSoundsList(sounds) {
+	     var list = $('#soundslist'), category, name;
+	     sounds.forEach(function (e) {
+	         category = e.match(/([a-z0-9]+)_/)[1];
+	         name = e.match(/[a-z0-9]+_([a-z0-9_]+)/)[1];
+	         if ($('.category.'+category).length==0) list.append(
+                '<div class="category '+category+'"><span class="category-name">'+category+'</span><div class="category-separator"></div></div>'
+            );
+	         $('.category.'+category).append('<div class="sound" id="'+e+'"><a>'+name.replace(/_/g,' ')+'</a></div>');
+	     });
+    }
+
+    function testScreenState(state) {
+	     if (state===0) {
+	         $('#error-screenoff').fadeIn(1000);
+	         $('#glass').fadeIn(1000);
+	     }
+    }
+
+    function generateUriParams(type) {
 	     var audioEncoder, videoEncoder, cache, rotation, flash, camera, res;
 
 	     // Audio conf
@@ -152,62 +195,24 @@
 	         uri:type==='audio'?audioEncoder:(videoEncoder+'&flash='+flash+'&camera='+camera),
 	         params:[':network-caching='+cache]
 	     }
-    },
+    }
 
-    testActivxAndMozillaPlugin = function () {
+    function getError() {
+        sendRequest(
+            'state',
+            function (e) {
+                error = e.state.lastError;
+                updateStatus();
+            },
+            function () {
+                error = 'Phone unreachable !';
+                updateStatus();
+            }         
+        );
+    }
 
-	     // TODO: console.log(object.VersionInfo);
-
-	     // Test if the activx plugin is installed 
-	     if (typeof $('#xvlcv')[0].playlist != "undefined") {
-	         return 1;
-	     } else {
-	         $('#xvlcv').css('display','none');
-	         $('#vlcv').css('display','block');
-	     }
-
-	     // Test if the mozilla plugin is installed
-	     if (typeof $('#vlca')[0].playlist == "undefined") {
-	         // Plugin not detected, alert user !
-	         $('#glass').fadeIn(1000);
-	         $('#error-noplugin').fadeIn(1000);
-	         return 0;
-	     } else {
-	         return 2;
-	     }
-
-    },
-
-    loadSoundsList = function (sounds) {
-	     var list = $('#soundslist'), category, name;
-	     sounds.forEach(function (e) {
-	         category = e.match(/([a-z0-9]+)_/)[1];
-	         name = e.match(/[a-z0-9]+_([a-z0-9_]+)/)[1];
-	         if ($('.category.'+category).length==0) list.append(
-                '<div class="category '+category+'"><span class="category-name">'+category+'</span><div class="category-separator"></div></div>'
-            );
-	         $('.category.'+category).append('<div class="sound" id="'+e+'"><a>'+name.replace(/_/g,' ')+'</a></div>');
-	     });
-    },
-
-    testScreenState = function (screenState) {
-	     if (screenState==0) {
-	         $('#error-screenoff').fadeIn(1000);
-	         $('#glass').fadeIn(1000);
-	     }
-    },
-
-    updateTooltip = function (title) {
-	     $('#tooltip>div').hide();
-	     $('#tooltip #'+title).show();
-    },
-
-    videoStream, videoPlugin, audioStream, oldVideoState = 'idle',oldAudioState = 'idle', lastError = 0,
-
-    updateStatus = function () {
-	     var status = $('#status'), button = $('#connect>div>h1'), cover = $('#vlc-container #upper-layer'), error;
-
-	     if (videoStream.getState()===oldVideoState && audioStream.getState()===oldAudioState && lastError===0) return;
+     function updateStatus() {
+	     var status = $('#status'), button = $('#connect>div>h1'), cover = $('#vlc-container #upper-layer');
 
 	     // STATUS
 	     if (videoStream.getState()==='starting' || videoStream.getState()==='restarting' || 
@@ -227,17 +232,15 @@
 	     } else button.text(__('Disconnect ?!'));
 
 	     // WINDOW
-	     if (lastError!==0) {
-	         videoPlugin.css('visibility','hidden'); 
-	         if (lastError===1) error =  __('Retrieving error message...');
-	         else if (lastError===2) error =  __('Connection timed out !');
-	         else if (lastError===0 || lastError===undefined) error = "";
-	         else error = lastError;
-	         lastError = 0;
+	     if (videoStream.getState()==='error' || audioStream.getState()==='error') {
+	         videoPlugin.css('visibility','hidden');
 	         cover.html('<div id="wrapper"><h1>'+__('An error occurred')+' :(</h1><p>'+error+'</p></div>');
 	     } else if (videoStream.getState()==='restarting' || audioStream.getState()==='restarting') {
 	         videoPlugin.css('visibility','hidden'); 
 	         cover.css('background','black').html('<div id="mask"></div><div id="wrapper"><h1>'+__('UPDATING SETTINGS')+'</h1></div>').show();
+        } else if (videoStream.getState()==='starting' || audioStream.getState()==='starting') {
+		      videoPlugin.css('visibility','hidden'); 
+            cover.css('background','black').html('<div id="mask"></div><div id="wrapper"><h1>'+__('CONNECTION')+'</h1></div>').show();
 	     } else if (videoStream.getState()==='streaming') {
 	         videoPlugin.css('visibility','inherit');
 	         cover.hide();
@@ -253,129 +256,26 @@
 	         }
 	     }
 
-	     oldVideoState = videoStream.getState();
-	     oldAudioState = audioStream.getState();
+    }
 
-    },
-
-    // Called when an error occurs in spydroid
-    onError = function (type) {
-	     lastError = 1;
-	     $.ajax({type: 'POST', url: 'request.json',data: "[{'action':'state'},{'action':'clear'}]",
-		          success: function (json) {
-		              lastError = json.state.lastError;
-		              try {
-			               if (json.lastStackTrace.match("RuntimeException.+MediaStream.start")) {
-			                   // If a start failed happened we display additional information
-			                   lastError += "<br /><br />"+__("This generally happens when you are trying to use settings that are not supported by your phone.");
-			                   $("#quality").click();
-			               }
-		              } catch (ignore) {}
-		              if (json.activityPaused==='0' && type==='video') {
-			               testScreenState(0);
-		              }
-		          },
-		          error: function () {
-		              lastError = 2;
-		          },
-		          timeout: 1500
-	            });
-	     if (videoStream.getState()!=='error') videoStream.stop();
-	     if (audioStream.getState()!=='error') audioStream.stop();
-    },
-
-    refreshBatteryLevel = function (level) {
-        $('#battery>#level').text(level);
-        setTimeout(function () {
-	         $.ajax({type: 'POST', url: 'request.json',data: "[{'action':'battery'}]",
-		              success: function (json) {
-                        refreshBatteryLevel(json.battery);
-                    },
-                    error: function () {
-                        refreshBatteryLevel('?');
-                    }
-                   });
-        },50000);
-    },
-
-    fetchSettings = function (config) {
-	     $('#resolution,#framerate,#bitrate,#audioEncoder,#videoEncoder').children().each(function (c) {
-		      if ($(this).val()===config.videoResolution || 
-		          $(this).val()===config.videoFramerate || 
-		          $(this).val()===config.videoBitrate || 
-		          $(this).val()===config.audioEncoder ||
-		          $(this).val()===config.videoEncoder ) {
-		          $(this).parent().children().prop('selected',false);
-		          $(this).prop('selected',true);
-		      }
-	     });	    
-	     if (config.streamAudio===false) $('#audioEnabled').prop('checked',false);
-	     if (config.streamVideo===false) $('#videoEnabled').prop('checked',false);
-    },
-
-    saveSettings = function () {
-        var res = /([0-9]+)x([0-9]+)/.exec($('#resolution').val());
-        var videoQuality = /[0-9]+/.exec($('#bitrate').val())[0]+'-'+/[0-9]+/.exec($('#framerate').val())[0]+'-'+res[1]+'-'+res[2];		          
-        var settings = {
-            'stream_video': $('#videoEnabled').prop('checked')===true,
-            'stream_audio': $('#audioEnabled').prop('checked')===true,
-            'video_encoder': $('#videoEncoder').val(),
-            'audio_encoder': $('#audioEncoder').val(),
-            'video_quality': videoQuality
-        };
-        $.post('request.json',JSON.stringify({'action':'set','settings':settings}));
-    },
-
-    // Disable input for one sec to prevent user from flooding the RTSP server by clicking around too quickly
-    disableAndEnable = function (input) {
+    function disableAndEnable(input) {
 	     input.prop('disabled',true);
 	     setTimeout(function () {
 	         input.prop('disabled',false);
 	     },1000);
-    },
+    }
 
-    setupEvents = function () {
-	     var audioPlugin, test,
-	     cover = $('#vlc-container #upper-layer'),
-	     status = $('#status'),
-	     button = $('#connect>div>h1');	
+    function setupEvents() {
 
-	     $('.popup').each(function () {
-	         $(this).css({'top':($(window).height()-$(this).height())/2,'left':($(window).width()-$(this).width())/2});
-	     });
+	     var cover = $('#vlc-container #upper-layer');
+	     var status = $('#status');
+	     var button = $('#connect>div>h1');	
 
 	     $('.popup #close').click(function (){
 	         $('#glass').fadeOut();
 	         $('.popup').fadeOut();
 	     });
-	     
-	     test = testActivxAndMozillaPlugin();
-
-	     if (test===1) {
-	         // Activx plugin detected
-	         videoPlugin = $('#xvlcv');
-	         audioPlugin = $('#xvlca');
-	     } else if (test===2) {
-	         // Mozilla plugin detected
-	         videoPlugin = $('#vlcv');
-	         audioPlugin = $('#vlca');
-	     } else {
-	         // No plugin installed, spydroid probably won't work
-	         // We assume the Mozilla plugin is installed, just in case :/
-	         videoPlugin = $('#vlcv');
-	         audioPlugin = $('#vlca');
-	     }
-
-	     videoStream = Stream(videoPlugin[0],'video',{onError:function (type) {
-	         onError(type);
-	     }});	
-
-	     audioStream = Stream(audioPlugin[0],'audio',{onError:function (type) {
-	         onError(type);
-	     }});
-
-	     setInterval(function () {updateStatus();},400);
-
+	    
 	     $('#connect').click(function () {
 	         if ($(this).prop('disabled')===true) return;
 	         disableAndEnable($(this));
@@ -385,11 +285,8 @@
 		          audioStream.stop();
 	         } else {
 		          if (!$('#videoEnabled').prop('checked') && !$('#audioEnabled').prop('checked')) return;
-		          videoPlugin.css('visibility','hidden'); 
-		          cover.css('background','black').html('<div id="mask"></div><div id="wrapper"><h1>'+__('CONNECTION')+'</h1></div>').show();
-		          if ($('#videoEnabled').prop('checked')) videoStream.start(); else videoStream.stop();
+		          if ($('#videoEnabled').prop('checked')) videoStream.start();
 		          if ($('#audioEnabled').prop('checked')) audioStream.start();
-		          updateStatus();
 	         }
 	     });
 	     
@@ -410,11 +307,11 @@
             $(this).animate({'padding-left':'+=10'}, 40, 'linear')
                 .animate({'padding-left':'-=20'}, 80, 'linear')
                 .animate({'padding-left':'+=10'}, 40, 'linear');
-            $.post('request.json',"[{'action':'buzz'}]");
+            sendRequest('buzz');
         });
 
 	     $(document).on('click', '.camera-not-selected', function () {
-	         if ($(this).prop('disabled')!==true || videoStream.getState()==='starting') return;
+	         if ($(this).prop('disabled')===true || videoStream.getState()==='starting') return;
 	         $('#cameras span').addClass('camera-not-selected');
 	         $(this).removeClass('camera-not-selected');
 	         disableAndEnable($('.camera-not-selected'));
@@ -468,17 +365,11 @@
 	     });
 
 	     $(document).on('click', '.sound', function () {
-	         $.post('request.json',JSON.stringify({'action':'play','name':$(this).attr('id')}));
+            sendRequest([{'action':'play','name':$(this).attr('id')}]);
 	     });
 
 	     $('#fullscreen').click(function () {
 	         videoPlugin[0].video.toggleFullscreen();
-	     });
-
-	     $(document).keyup(function(e) { 
-	         if (e.keyCode == 27) { 
-		          videoPlugin[0].video.toggleFullscreen();
-	         }
 	     });
 
 	     $('#hide-tooltip').click(function () {
@@ -487,20 +378,28 @@
 	         $('#need-help').show();
 	     });
 
-	     $('#tooltip').hide();
-	     $('#need-help').show();
-
 	     $('#need-help').click(function () {
 	         $('body').width($('body').width() + $('#tooltip').width());
 	         $('#tooltip').show();
 	         $('#need-help').hide();
 	     });
 
+        window.onbeforeunload = function (e) {
+            videoStream.stop();
+            audioStream.stop();
+        }
+
 	 };
 
+    
     $(document).ready(function () {
+     
+        videoPlugin = $('#vlcv');
+        videoStream = stream(videoPlugin[0],'video',updateStatus);
+        audioPlugin = $('#vlca');
+        audioStream = stream(audioPlugin[0],'audio',updateStatus);
 
-        $.post('request.json',"[{'action':'sounds'},{'action':'screen'},{'action':'get'},{'action':'battery'}]", function (data) {
+        sendRequest([{'action':'sounds'},{'action':'screen'},{'action':'get'},{'action':'battery'}], function (data) {
 
 	         // Verify that the screen is not turned off
 	         testScreenState(data.screen);
@@ -509,19 +408,27 @@
 	         loadSoundsList(data.sounds);
 
 	         // Retrieve the configuration of Spydroid on the phone
-	         fetchSettings(data.get);
+	         loadSettings(data.get);
 
-            // Retrieve battery level
-            refreshBatteryLevel(data.battery);
+            // Retrieve the battery level
+            updateBatteryLevel(data.battery);
             
         });
 
 	     // Translate the interface in the appropriate language
 	     $('h1,h2,h3,span,p,a,em').translate();
 
-	     // Bind DOM events to the js API
+	     $('.popup').each(function () {
+	         $(this).css({'top':($(window).height()-$(this).height())/2,'left':($(window).width()-$(this).width())/2});
+	     });
+
+	     $('#tooltip').hide();
+	     $('#need-help').show();
+
+	     // Bind DOM events
 	     setupEvents();
 
     });
+
 
 }());
