@@ -48,11 +48,18 @@ import org.apache.http.util.EntityUtils;
 public class CustomHttpServer extends HttpServer {
 
 	public CustomHttpServer() {
+		
 		// The common name that appears in the CA of the HTTPS server of Spydroid
 		mCACommonName = "Spydroid CA";
+		
 		// If at some point a stream cannot start the exception is stored so that
 		// it can be fetched in the HTTP interface to display an appropriate message
 		addCallbackListener(mListener);
+		
+		// HTTP is used by default for now
+		mHttpEnabled = true;
+		mHttpsEnabled = false;
+		
 	}
 
 	private CallbackListener mListener = new CallbackListener() {

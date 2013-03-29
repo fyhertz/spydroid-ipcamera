@@ -24,11 +24,11 @@ import net.majorkernelpanic.http.TinyHttpServer;
 import net.majorkernelpanic.spydroid.R;
 import net.majorkernelpanic.spydroid.SpydroidApplication;
 import net.majorkernelpanic.spydroid.api.CustomHttpServer;
+import net.majorkernelpanic.spydroid.api.CustomRtspServer;
 import net.majorkernelpanic.streaming.SessionManager;
 import net.majorkernelpanic.streaming.misc.HttpServer;
 import net.majorkernelpanic.streaming.misc.RtspServer;
 import android.app.AlertDialog;
-import android.app.AlertDialog.Builder;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
@@ -130,7 +130,7 @@ public class SpydroidActivity extends FragmentActivity {
 		this.startService(new Intent(this,CustomHttpServer.class));
 		
 		// Starts the service of the RTSP server
-		this.startService(new Intent(this,RtspServer.class));
+		this.startService(new Intent(this,CustomRtspServer.class));
 
 	}
 
@@ -159,7 +159,7 @@ public class SpydroidActivity extends FragmentActivity {
 		}
 
 		bindService(new Intent(this,CustomHttpServer.class), mHttpServiceConnection, Context.BIND_AUTO_CREATE);
-		bindService(new Intent(this,RtspServer.class), mRtspServiceConnection, Context.BIND_AUTO_CREATE);
+		bindService(new Intent(this,CustomRtspServer.class), mRtspServiceConnection, Context.BIND_AUTO_CREATE);
 		
 	}
 
@@ -233,7 +233,7 @@ public class SpydroidActivity extends FragmentActivity {
 		// Kills HTTP server
 		this.stopService(new Intent(this,CustomHttpServer.class));
 		// Kills RTSP server
-		this.stopService(new Intent(this,RtspServer.class));
+		this.stopService(new Intent(this,CustomRtspServer.class));
 		// Returns to home menu
 		finish();
 	}
@@ -242,7 +242,7 @@ public class SpydroidActivity extends FragmentActivity {
 
 		@Override
 		public void onServiceConnected(ComponentName name, IBinder service) {
-			mRtspServer = (RtspServer) ((RtspServer.LocalBinder)service).getService();
+			mRtspServer = (CustomRtspServer) ((RtspServer.LocalBinder)service).getService();
 			mRtspServer.addCallbackListener(mRtspCallbackListener);
 			mRtspServer.start();
 		}

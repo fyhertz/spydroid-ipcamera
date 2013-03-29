@@ -136,16 +136,17 @@ public class TinyHttpServer extends Service {
 		"ModInternationalization"
 		};
 	
+	protected int mHttpPort = DEFAULT_HTTP_PORT;
+	protected int mHttpsPort = DEFAULT_HTTPS_PORT;
+	protected boolean mHttpEnabled = true, mHttpsEnabled = false;
+	
 	private BasicHttpProcessor mHttpProcessor;
 	private HttpParams mParams; 
 	private HttpRequestListener mHttpRequestListener = null;
 	private HttpsRequestListener mHttpsRequestListener = null;
-	private int mHttpPort = DEFAULT_HTTP_PORT;
-	private int mHttpsPort = DEFAULT_HTTPS_PORT;
-	private boolean mHttpEnabled = true, mHttpUpdate = false;
-	private boolean mHttpsEnabled = false, mHttpsUpdate = false;
 	private SharedPreferences mSharedPreferences;
 	private LinkedList<CallbackListener> mListeners = new LinkedList<CallbackListener>();
+	private boolean mHttpsUpdate = false, mHttpUpdate = false;
 
 	Date mLastModified;
 	MHttpRequestHandlerRegistry mRegistry;

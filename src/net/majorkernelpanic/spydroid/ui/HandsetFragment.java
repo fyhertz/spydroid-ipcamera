@@ -27,6 +27,7 @@ import net.majorkernelpanic.spydroid.R;
 import net.majorkernelpanic.spydroid.SpydroidApplication;
 import net.majorkernelpanic.spydroid.Utilities;
 import net.majorkernelpanic.spydroid.api.CustomHttpServer;
+import net.majorkernelpanic.spydroid.api.CustomRtspServer;
 import net.majorkernelpanic.streaming.SessionManager;
 import net.majorkernelpanic.streaming.misc.RtspServer;
 import android.content.BroadcastReceiver;
@@ -40,7 +41,6 @@ import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.support.v4.app.Fragment;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -106,7 +106,7 @@ public class HandsetFragment extends Fragment {
     public void onResume() {
     	super.onResume();
 		getActivity().bindService(new Intent(getActivity(),CustomHttpServer.class), mHttpServiceConnection, Context.BIND_AUTO_CREATE);
-		getActivity().bindService(new Intent(getActivity(),RtspServer.class), mRtspServiceConnection, Context.BIND_AUTO_CREATE);
+		getActivity().bindService(new Intent(getActivity(),CustomRtspServer.class), mRtspServiceConnection, Context.BIND_AUTO_CREATE);
     	getActivity().registerReceiver(mWifiStateReceiver,new IntentFilter(WifiManager.NETWORK_STATE_CHANGED_ACTION));
     }
 	

@@ -47,9 +47,14 @@
     <string name="settings22">Enabled</string>
     <string name="settings23">Enable/Disable the HTTP server. Leave it on if you don\'t know what you are doing !</string>
     <string name="settings24">Use HTTPS</string>
-    <string name="settings25">By far more secure. NOT STABLE YET !</string>
+    <string name="settings25">NOT STABLE YET !</string>
     <string name="settings26">HTTPS server port</string>
     <string name="settings27">Port used by the HTTPS server</string>
+    <string name="settings28">RTSP server</string>
+    <string name="settings29">Enabled</string>
+    <string name="settings30">Useful to use Spydroid directly with VLC</string>    
+    <string name="settings31">RTSP server port</string>
+    <string name="settings32">Port used by the RTSP server</string>    
     <string name="bind_failed">You need to choose another port for the %s server !</string>
     <string name="port_used">Port already in use !</string>    
     <string name="page0">Main</string>

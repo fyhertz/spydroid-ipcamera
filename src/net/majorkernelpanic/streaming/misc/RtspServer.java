@@ -54,7 +54,7 @@ import android.util.Log;
  */
 public class RtspServer extends Service {
 
-	private final static String TAG = "RtspServer";
+	public final static String TAG = "RtspServer";
 
 	/** The server name that will appear in responses. */
 	public static String SERVER_NAME = "MajorKernelPanic RTSP Server";
@@ -74,11 +74,13 @@ public class RtspServer extends Service {
 	/** Key used in the SharedPreferences for the port used by the RTSP server. */
 	protected String mPortKey = "rtsp_port";
 
-	private int mPort = DEFAULT_RTSP_PORT;
+	protected SharedPreferences mSharedPreferences;
+	protected boolean mEnabled = true;	
+	protected int mPort = DEFAULT_RTSP_PORT;
+	
 	private RequestListener mListenerThread;
-	private SharedPreferences mSharedPreferences;
 	private final IBinder mBinder = new LocalBinder();
-	private boolean mEnabled = true, mRestart = false;
+	private boolean mRestart = false;
 	private final LinkedList<CallbackListener> mListeners = new LinkedList<CallbackListener>();
 
 	public RtspServer() {
@@ -119,7 +121,7 @@ public class RtspServer extends Service {
 
 	/** Starts (or restart if needed) the RTSP server. */
 	public void start() {
-		if (mRestart) stop();
+		if (!mEnabled || mRestart) stop();
 		if (mEnabled && mListenerThread == null) {
 			try {
 				mListenerThread = new RequestListener();
@@ -179,7 +181,7 @@ public class RtspServer extends Service {
 					start();
 				}
 			}		
-			else if (key.equals(mEnabled)) {
+			else if (key.equals(mEnabledKey)) {
 				mEnabled = sharedPreferences.getBoolean(mEnabledKey, true);
 				start();
 			}

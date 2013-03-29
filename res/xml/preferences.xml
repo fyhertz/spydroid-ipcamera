@@ -16,7 +16,7 @@
             android:title="@string/settings5" />
     </PreferenceCategory>
     
-    <PreferenceCategory android:title="@string/settings7" >
+    <PreferenceCategory android:title="@string/settings7">
         <CheckBoxPreference
             android:defaultValue="true"
             android:key="stream_video"
@@ -70,6 +70,20 @@
             android:summary="@string/settings27"
             android:title="@string/settings26" />
     </PreferenceCategory>
+    
+    <PreferenceCategory android:title="@string/settings28" >
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="rtsp_enabled"
+            android:summary="@string/settings30"
+            android:title="@string/settings29" />              
+        <EditTextPreference
+            android:defaultValue="8086"
+            android:inputType="number"
+            android:key="rtsp_port"
+            android:summary="@string/settings32"
+            android:title="@string/settings31" />      
+    </PreferenceCategory>    
     
     <PreferenceCategory android:title="@string/settings14" >
         <CheckBoxPreference
