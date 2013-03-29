@@ -21,7 +21,7 @@
 	         17:"Those buttons will trigger sounds on your phone...",
 	         18:"Use them to surprise your victim.",
 	         19:"Or you could use this to surprise your victim !",
-	         20:"This will simply toggle the led in front of you're phone, so that even in the deepest darkness, you will not be blind...",
+	         20:"This will simply toggle the led in front of you're phone, so that even in the deepest darkness, you shall not be blind...",
 	         21:"If the stream is choppy, try reducing the bitrate or increasing the cache size.",
 	         22:"Try it instead of H.263 if video streaming is not working at all !",
 	         23:"The H.264 compression algorithm is more efficient but may not work on your phone...",

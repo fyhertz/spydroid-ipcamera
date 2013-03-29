@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+
+<html>
+
+  <script>
+
+   function lol() {
+
+    var client = new XMLHttpRequest();
+    client.open("GET", "/spydroid.sdp?h264");
+    client.send();
+
+    client.onreadystatechange = function () {
+       if(this.readyState == this.DONE) {
+          console.log('DONE !');
+          console.log(this.responseText);
+          document.getElementById('vid').src='data:application/sdp;charset=utf-8,' + encodeURIComponent(this.responseText);
+       }
+    };
+   }
+
+   function lol2() {
+
+      document.getElementById('vid').src="/spydroid.sdp";
+
+   }
+
+  </script>
+
+  <body>
+
+    <video id="vid" width="640px" height="480px" autoplay>
+      Problemo !
+    </video>
+    <button onclick="lol()">START1</button>
+    <button onclick="lol2()">START2</button>
+
+  </body>
+
+</html>

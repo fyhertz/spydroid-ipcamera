@@ -118,14 +118,14 @@ public final class ModSSL {
 
 		/** This method will not be called. Client authentication has not been implemented. */
 		@Override
-		public String chooseClientAlias(String[] arg0, Principal[] arg1, Socket arg2) {
+		public synchronized String chooseClientAlias(String[] arg0, Principal[] arg1, Socket arg2) {
 			// Will not be used in our case
 			Log.d(TAG, "chooseClientAlias");
 			return null;
 		}
 
 		@Override
-		public String chooseServerAlias(String keyType, Principal[] issuers, Socket socket) {
+		public synchronized String chooseServerAlias(String keyType, Principal[] issuers, Socket socket) {
 			String localAddress = socket!=null ? socket.getLocalAddress().getHostAddress() : "0.0.0.0";
 
 			if (keyType.equals("RSA")) {
@@ -163,7 +163,7 @@ public final class ModSSL {
 		}
 
 		@Override
-		public X509Certificate[] getCertificateChain(String alias) {
+		public synchronized X509Certificate[] getCertificateChain(String alias) {
 			Certificate caCertificate = mKeyStore.engineGetCertificate("root");
 			Certificate leafCertificate = mKeyStore.engineGetCertificate(alias); 		
 			return new X509Certificate[] {(X509Certificate) leafCertificate, (X509Certificate) caCertificate};
@@ -183,7 +183,7 @@ public final class ModSSL {
 		 * @return The private key 
 		 */
 		@Override
-		public PrivateKey getPrivateKey(String alias) {
+		public synchronized PrivateKey getPrivateKey(String alias) {
 			try {
 				return (PrivateKey) mKeyStore.engineGetKey(alias, mPassword);
 			} catch (Exception e) {
@@ -193,7 +193,7 @@ public final class ModSSL {
 		}
 
 		@Override
-		public String[] getServerAliases(String keyType, Principal[] issuers) {
+		public synchronized String[] getServerAliases(String keyType, Principal[] issuers) {
 			Log.d(TAG, "getServersAliases");
 			if (keyType.equals("RSA")) {
 				int i = 0;

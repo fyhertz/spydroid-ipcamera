@@ -66,7 +66,7 @@ public class H263Packetizer extends AbstractPacketizer implements Runnable {
 	}
 
 	public void run() {
-		long time, duration = 0, ts = 0;
+		long time, duration = 0;
 		int i = 0, j = 0, tr;
 		boolean firstFragment = true;
 

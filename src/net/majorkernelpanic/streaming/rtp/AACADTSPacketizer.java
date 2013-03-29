@@ -84,7 +84,7 @@ public class AACADTSPacketizer extends AbstractPacketizer implements Runnable {
 		// Adts header fields that we need to parse
 		boolean protection;
 		int frameLength, sum, length, nbau, nbpk;
-		long ts=0, oldtime = SystemClock.elapsedRealtime(), now = oldtime;
+		long oldtime = SystemClock.elapsedRealtime(), now = oldtime;
 
 		try {
 			while (running) {

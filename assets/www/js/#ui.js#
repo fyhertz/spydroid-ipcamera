@@ -241,7 +241,7 @@
 	     } else if (videoStream.getState()==='streaming') {
 	         videoPlugin.css('visibility','inherit');
 	         cover.hide();
-	     }
+	     }ByteBuffer
 
 	     if (videoStream.getState()==='idle') {
 	         if (audioStream.getState()==='streaming') {

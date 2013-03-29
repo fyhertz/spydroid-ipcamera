@@ -43,7 +43,7 @@ public class H264Packetizer extends AbstractPacketizer implements Runnable{
 
 	private Thread t = null;
 	private int naluLength = 0;
-	private long ts = 0, delay = 0;
+	private long delay = 0;
 	private Statistics stats = new Statistics();
 
 	public H264Packetizer() throws IOException {
@@ -161,7 +161,6 @@ public class H264Packetizer extends AbstractPacketizer implements Runnable{
 	}
 
 	private int fill(int offset,int length) throws IOException {
-
 		int sum = 0, len;
 
 		while (sum<length) {

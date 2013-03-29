@@ -23,6 +23,7 @@ package net.majorkernelpanic.streaming.rtp;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.InetAddress;
+import java.util.Random;
 
 /**
  * 
@@ -37,6 +38,7 @@ abstract public class AbstractPacketizer {
 	protected InputStream is = null;
 	protected boolean running = false;
 	protected byte[] buffer;
+	protected long ts = 0;
 
 	public AbstractPacketizer() throws IOException {
 		socket = new RtpSocket();

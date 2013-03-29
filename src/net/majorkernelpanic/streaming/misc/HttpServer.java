@@ -77,10 +77,11 @@ public class HttpServer extends TinyHttpServer {
 	public void stop() {
 		super.stop();
 		// If user has started a session with the HTTP Server, we need to stop it
-		for (int i=0;i<mDescriptionRequestHandler.sSessionList.length;i++) {
-			if (mDescriptionRequestHandler.sSessionList[i] != null) {
-				mDescriptionRequestHandler.sSessionList[i].stopAll();
-				mDescriptionRequestHandler.sSessionList[i].flush();
+		for (int i=0;i<mDescriptionRequestHandler.mSessionList.length;i++) {
+			if (mDescriptionRequestHandler.mSessionList[i].session != null) {
+				mDescriptionRequestHandler.mSessionList[i].session.stopAll();
+				mDescriptionRequestHandler.mSessionList[i].session.flush();
+				mDescriptionRequestHandler.mSessionList[i].session = null;
 			}
 		}
 		
@@ -92,9 +93,19 @@ public class HttpServer extends TinyHttpServer {
 	 **/
 	class DescriptionRequestHandler implements HttpRequestHandler {
 
-		private final Session[] sSessionList = new Session[MAX_STREAM_NUM];
+		private final SessionInfo[] mSessionList = new SessionInfo[MAX_STREAM_NUM];
 		
-		public DescriptionRequestHandler() {}
+		private class SessionInfo {
+			public Session session;
+			public String uri;
+			public String description;
+		}
+		
+		public DescriptionRequestHandler() {
+			for (int i=0;i<MAX_STREAM_NUM;i++) {
+				mSessionList[i] = new SessionInfo();
+			}
+		}
 		
 		public synchronized void handle(HttpRequest request, HttpResponse response, HttpContext context) throws HttpException {
 			Socket socket = ((TinyHttpServer.MHttpContext)context).getSocket();
@@ -115,43 +126,51 @@ public class HttpServer extends TinyHttpServer {
 							} catch (Exception ignore) {}
 						}
 					}	
-				}	
+				}
 
 				params.remove("id");
 				uri = "http://c?" + URLEncodedUtils.format(params, "UTF-8");
 
-				// Stops all streams if a Session already exists
-				if (sSessionList[id] != null) {
-					if (sSessionList[id].getRoutingScheme()=="unicast") {
-						sSessionList[id].stopAll();
-						sSessionList[id].flush();
-						sSessionList[id] = null;
+				if (!uri.equals(mSessionList[id].uri)) {
+
+					mSessionList[id].uri = uri;
+
+					// Stops all streams if a Session already exists
+					if (mSessionList[id].session != null) {
+						if (mSessionList[id].session.getRoutingScheme()=="unicast") {
+							mSessionList[id].session.stopAll();
+							mSessionList[id].session.flush();
+							mSessionList[id].session = null;
+						}
 					}
+
+					// Creates new Session
+					mSessionList[id].session = new Session(socket.getLocalAddress(), socket.getInetAddress());
+
+					// Parses URI and configure the Session accordingly 
+					UriParser.parse(uri, mSessionList[id].session);
+
+					mSessionList[id].description = mSessionList[id].session.getSessionDescription().replace("Unnamed", "Stream-"+id);
+					
 				}
 
-				// Creates new Session
-				sSessionList[id] = new Session(socket.getLocalAddress(), socket.getInetAddress());
-
-				// Parses URI and configure the Session accordingly 
-				UriParser.parse(uri, sSessionList[id]);
-
-				final String sessionDescriptor = sSessionList[id].getSessionDescription().replace("Unnamed", "Stream-"+id);
-
+				final int fid = id;
 				response.setStatusCode(HttpStatus.SC_OK);
 				EntityTemplate body = new EntityTemplate(new ContentProducer() {
 					public void writeTo(final OutputStream outstream) throws IOException {
 						OutputStreamWriter writer = new OutputStreamWriter(outstream, "UTF-8"); 
-						writer.write(sessionDescriptor);
+						writer.write(mSessionList[fid].description);
 						writer.flush();
 					}
 				});
-				body.setContentType("text/plain; charset=UTF-8");
+				body.setContentType("application/sdp; charset=UTF-8");
 				response.setEntity(body);
 
 				// Starts all streams associated to the Session
-				sSessionList[id].startAll();
+				mSessionList[id].session.startAll();
 
 			} catch (Exception e) {
+				mSessionList[id].uri = "";
 				response.setStatusCode(HttpStatus.SC_INTERNAL_SERVER_ERROR);
 				Log.e(TAG,e.getMessage()!=null?e.getMessage():"An unknown error occurred");
 				e.printStackTrace();

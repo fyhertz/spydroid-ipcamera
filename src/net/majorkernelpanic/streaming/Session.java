@@ -272,7 +272,7 @@ public class Session {
 			sessionDescription.append("v=0\r\n");
 			// The RFC 4566 (5.2) suggest to use an NTP timestamp here but we will simply use a UNIX timestamp
 			// TODO: Add IPV6 support
-			sessionDescription.append("o=-"+mTimestamp+" "+mTimestamp+" IN IP4 "+mOrigin.getHostAddress()+"\r\n");
+			sessionDescription.append("o=- "+mTimestamp+" "+mTimestamp+" IN IP4 "+mOrigin.getHostAddress()+"\r\n");
 			sessionDescription.append("s=Unnamed\r\n");
 			sessionDescription.append("i=N/A\r\n");
 			sessionDescription.append("c=IN IP4 "+mDestination.getHostAddress()+"\r\n");

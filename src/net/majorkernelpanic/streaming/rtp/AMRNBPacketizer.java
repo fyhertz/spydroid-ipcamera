@@ -79,7 +79,7 @@ public class AMRNBPacketizer extends AbstractPacketizer implements Runnable {
 	public void run() {
 
 		int frameLength, frameType;
-		long ts=0, oldtime = SystemClock.elapsedRealtime(), now = oldtime;
+		long oldtime = SystemClock.elapsedRealtime(), now = oldtime;
 
 		try {
 

@@ -41,6 +41,7 @@ import java.util.Map;
 
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.X509KeyManager;
 
 import org.apache.http.ConnectionClosedException;
@@ -482,7 +483,22 @@ public class TinyHttpServer extends Service {
 				
 				SSLContext sslContext = SSLContext.getInstance("TLS");
 				sslContext.init(new KeyManager[] {mKeyManager}, null, null);
-				ServerSocket serverSocket = sslContext.getServerSocketFactory().createServerSocket(port);
+				SSLServerSocket serverSocket = (SSLServerSocket) sslContext.getServerSocketFactory().createServerSocket(port);
+				
+				serverSocket.setUseClientMode(false);
+				serverSocket.setEnableSessionCreation(true);
+				serverSocket.setWantClientAuth(false);
+				
+				Log.d(TAG, "Protocol: "+sslContext.getProtocol());
+				Log.d(TAG, "Provider: "+sslContext.getProvider());
+				Log.d(TAG, "Cipher suites: "+arrToString(serverSocket.getEnabledCipherSuites()));
+				Log.d(TAG, "Protocols enabled: "+arrToString(serverSocket.getEnabledProtocols()));
+				
+				serverSocket.setEnabledProtocols(new String[]{"TLSv1"});
+				serverSocket.setEnabledCipherSuites(new String[]{"TLS_RSA_WITH_AES_128_CBC_SHA"});
+				Log.d(TAG, "Cipher suites: "+arrToString(serverSocket.getEnabledCipherSuites()));
+				Log.d(TAG, "Protocols enabled: "+arrToString(serverSocket.getEnabledProtocols()));
+				
 				construct(serverSocket);
 				Log.i(TAG,"HTTPS server listening on port " + serverSocket.getLocalPort());
 
@@ -503,6 +519,14 @@ public class TinyHttpServer extends Service {
 
 		}
 
+		private String arrToString(String[] list) {
+			String str="";
+			for (int i=0;i<list.length;i++) {
+				str+=list[i]+";";
+			}
+			return str;
+		}
+		
 		/** Stops the {@link TinyHttpServer.RequestListener} */
 		protected void kill() {
 			if (!mNotSupported) {

@@ -62,26 +62,23 @@ public class RtspServer extends Service {
 	/** Port used by default. */
 	public static final int DEFAULT_RTSP_PORT = 8086;
 
-	/** Key used in the SharedPreferences for the port used by the HTTP server. */
-	public static final String PREF_HTTP_PORT = "http_port";
-
 	/** Port already in use. */
 	public final static int ERROR_BIND_FAILED = 0x00;
 
 	/** A stream could not be started. */
 	public final static int ERROR_START_FAILED = 0x01;
 
-	/** Key used in the SharedPreferences to store whether the HTTPS server is enabled or not. */
+	/** Key used in the SharedPreferences to store whether the RTSP server is enabled or not. */
 	protected String mEnabledKey = "rtsp_enabled";
 
-	/** Key used in the SharedPreferences for the port used by the HTTP server. */
+	/** Key used in the SharedPreferences for the port used by the RTSP server. */
 	protected String mPortKey = "rtsp_port";
 
 	private int mPort = DEFAULT_RTSP_PORT;
-	private boolean mEnabled = true, mRestart = false;
 	private RequestListener mListenerThread;
 	private SharedPreferences mSharedPreferences;
 	private final IBinder mBinder = new LocalBinder();
+	private boolean mEnabled = true, mRestart = false;
 	private final LinkedList<CallbackListener> mListeners = new LinkedList<CallbackListener>();
 
 	public RtspServer() {
