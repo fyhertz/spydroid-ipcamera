@@ -68,9 +68,6 @@ public class SpydroidApplication extends android.app.Application {
 	public boolean applicationForeground = true;
 	public Exception lastCaughtException = null;
 
-	/** Prevent garbage collection of the Surface. */
-	public boolean hackEnabled = false;
-
 	/** Contains an approximation of the battery level. */
 	public int batteryLevel = 0;
 	
@@ -90,7 +87,6 @@ public class SpydroidApplication extends android.app.Application {
 		SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(this);
 
 		notificationEnabled = settings.getBoolean("notification_enabled", true);
-		hackEnabled = settings.getBoolean("video_hack", false);
 
 		// On android 3.* AAC ADTS is not supported so we set the default encoder to AMR-NB, on android 4.* AAC is the default encoder
 		audioEncoder = (Integer.parseInt(android.os.Build.VERSION.SDK)<14) ? SessionBuilder.AUDIO_AMRNB : SessionBuilder.AUDIO_AAC;

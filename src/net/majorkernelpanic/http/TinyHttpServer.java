@@ -197,7 +197,7 @@ public class TinyHttpServer extends Service {
 	 */
 	public void setHttpPort(int port) {
 		Editor editor = mSharedPreferences.edit();
-		editor.putString("http_port", String.valueOf(port));
+		editor.putString(mHttpPortKey, String.valueOf(port));
 		editor.commit();
 	}
 
@@ -207,7 +207,7 @@ public class TinyHttpServer extends Service {
 	 */
 	public void setHttpsPort(int port) {
 		Editor editor = mSharedPreferences.edit();
-		editor.putString("https_port", String.valueOf(port));
+		editor.putString(mHttpsPortKey, String.valueOf(port));
 		editor.commit();
 	}
 

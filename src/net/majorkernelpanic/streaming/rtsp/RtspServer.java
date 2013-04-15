@@ -180,6 +180,10 @@ public class RtspServer extends Service {
 		return false;
 	}
 	
+	public boolean isEnabled() {
+		return mEnabled;
+	}
+	
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
 		return START_STICKY;
@@ -218,7 +222,7 @@ public class RtspServer extends Service {
 				}
 			}		
 			else if (key.equals(mEnabledKey)) {
-				mEnabled = sharedPreferences.getBoolean(mEnabledKey, true);
+				mEnabled = sharedPreferences.getBoolean(mEnabledKey, mEnabled);
 				start();
 			}
 		}

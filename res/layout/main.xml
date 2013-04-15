@@ -85,6 +85,7 @@
             android:orientation="vertical" >
 
             <TextView
+                android:id="@+id/line1_description"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="@string/line1"
@@ -99,6 +100,7 @@
                 android:textSize="15sp" />
 
             <TextView
+                android:id="@+id/line2_description"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="@string/line2"

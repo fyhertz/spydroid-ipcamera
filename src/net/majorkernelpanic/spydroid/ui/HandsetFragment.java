@@ -28,7 +28,6 @@ import net.majorkernelpanic.spydroid.SpydroidApplication;
 import net.majorkernelpanic.spydroid.Utilities;
 import net.majorkernelpanic.spydroid.api.CustomHttpServer;
 import net.majorkernelpanic.spydroid.api.CustomRtspServer;
-import net.majorkernelpanic.streaming.SessionBuilder;
 import net.majorkernelpanic.streaming.rtsp.RtspServer;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
@@ -36,10 +35,12 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
+import android.content.SharedPreferences;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.preference.PreferenceManager;
 import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -51,7 +52,7 @@ import android.widget.TextView;
 
 public class HandsetFragment extends Fragment {
 
-    private TextView mLine1, mLine2, mVersion, mSignWifi, mSignStreaming;
+    private TextView mDescription1, mDescription2, mLine1, mLine2, mVersion, mSignWifi, mSignStreaming;
     private LinearLayout mSignInformation;
     private Animation mPulseAnimation;
     
@@ -71,6 +72,8 @@ public class HandsetFragment extends Fragment {
     	View rootView = inflater.inflate(R.layout.main,container,false);
         mLine1 = (TextView)rootView.findViewById(R.id.line1);
         mLine2 = (TextView)rootView.findViewById(R.id.line2);
+        mDescription1 = (TextView)rootView.findViewById(R.id.line1_description);
+        mDescription2 = (TextView)rootView.findViewById(R.id.line2_description);
         mVersion = (TextView)rootView.findViewById(R.id.version);
         mSignWifi = (TextView)rootView.findViewById(R.id.advice);
         mSignStreaming = (TextView)rootView.findViewById(R.id.streaming);
@@ -115,6 +118,20 @@ public class HandsetFragment extends Fragment {
 			@Override
 			public void run() {
 				if (mHttpServer != null && mRtspServer != null) {
+					if (!mHttpServer.isHttpEnabled() && !mHttpServer.isHttpsEnabled()) {
+						mDescription1.setVisibility(View.INVISIBLE);
+						mLine1.setVisibility(View.INVISIBLE);
+					} else {
+						mDescription1.setVisibility(View.VISIBLE);
+						mLine1.setVisibility(View.VISIBLE);
+					}
+					if (!mRtspServer.isEnabled()) {
+						mDescription2.setVisibility(View.INVISIBLE);
+						mLine2.setVisibility(View.INVISIBLE);
+					} else {
+						mDescription2.setVisibility(View.VISIBLE);
+						mLine2.setVisibility(View.VISIBLE);
+					}
 					if (!mHttpServer.isStreaming() && !mRtspServer.isStreaming()) displayIpAddress();
 					else streamingState(1);
 				}		
@@ -154,7 +171,7 @@ public class HandsetFragment extends Fragment {
     	if (info!=null && info.getNetworkId()>-1) {
 	    	int i = info.getIpAddress();
 	        String ip = String.format(Locale.ENGLISH,"%d.%d.%d.%d", i & 0xff, i >> 8 & 0xff,i >> 16 & 0xff,i >> 24 & 0xff);
-	    	mLine1.setText("http://");
+	    	mLine1.setText(mHttpServer.isHttpsEnabled()?"https://":"http://");
 	    	mLine1.append(ip);
 	    	mLine1.append(":"+mHttpServer.getHttpPort());
 	    	mLine2.setText("rtsp://");
@@ -162,7 +179,7 @@ public class HandsetFragment extends Fragment {
 	    	mLine2.append(":"+mRtspServer.getPort());
 	    	streamingState(0);
     	} else if((ipaddress = Utilities.getLocalIpAddress(true)) != null) {
-    		mLine1.setText("http://");
+    		mLine1.setText(mHttpServer.isHttpsEnabled()?"https://":"http://");
 	    	mLine1.append(ipaddress);
 	    	mLine1.append(":"+mHttpServer.getHttpPort());
 	    	mLine2.setText("rtsp://");
