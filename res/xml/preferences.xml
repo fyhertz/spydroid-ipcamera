@@ -91,11 +91,6 @@
             android:key="notification_enabled"
             android:summary="@string/settings16"
             android:title="@string/settings15" />
-        <CheckBoxPreference
-            android:defaultValue="false"
-            android:key="video_hack"
-            android:summary="@string/settings18"
-            android:title="@string/settings17" />
     </PreferenceCategory>
 
 </PreferenceScreen>

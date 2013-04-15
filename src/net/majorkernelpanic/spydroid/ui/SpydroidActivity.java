@@ -25,9 +25,8 @@ import net.majorkernelpanic.spydroid.R;
 import net.majorkernelpanic.spydroid.SpydroidApplication;
 import net.majorkernelpanic.spydroid.api.CustomHttpServer;
 import net.majorkernelpanic.spydroid.api.CustomRtspServer;
-import net.majorkernelpanic.streaming.SessionManager;
-import net.majorkernelpanic.streaming.misc.HttpServer;
-import net.majorkernelpanic.streaming.misc.RtspServer;
+import net.majorkernelpanic.streaming.SessionBuilder;
+import net.majorkernelpanic.streaming.rtsp.RtspServer;
 import android.app.AlertDialog;
 import android.app.Notification;
 import android.app.NotificationManager;
@@ -77,8 +76,8 @@ public class SpydroidActivity extends FragmentActivity {
 	private SurfaceView mSurfaceView;
 	private SurfaceHolder mSurfaceHolder;
 	private SpydroidApplication mApplication;
-    private CustomHttpServer mHttpServer;
-    private RtspServer mRtspServer;
+	private CustomHttpServer mHttpServer;
+	private RtspServer mRtspServer;
 
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -98,7 +97,7 @@ public class SpydroidActivity extends FragmentActivity {
 			mSurfaceHolder = mSurfaceView.getHolder();
 			// We still need this line for backward compatibility reasons with android 2
 			mSurfaceHolder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
-			SessionManager.getManager().setSurfaceHolder(mSurfaceHolder, !mApplication.hackEnabled);
+			SessionBuilder.getInstance().setSurfaceHolder(mSurfaceHolder);
 
 		} else {
 
@@ -114,9 +113,6 @@ public class SpydroidActivity extends FragmentActivity {
 
 		mViewPager.setAdapter(mAdapter);
 
-		// Those callbacks will be called when streaming starts/stops
-		SessionManager.getManager().setCallbackListener(mSessionManagerCallbacks);
-
 		// Remove the ads if this is the donate version of the app.
 		if (mApplication.DONATE_VERSION) {
 			((LinearLayout)findViewById(R.id.adcontainer)).removeAllViews();
@@ -128,7 +124,7 @@ public class SpydroidActivity extends FragmentActivity {
 
 		// Starts the service of the HTTP server
 		this.startService(new Intent(this,CustomHttpServer.class));
-		
+
 		// Starts the service of the RTSP server
 		this.startService(new Intent(this,CustomRtspServer.class));
 
@@ -160,7 +156,7 @@ public class SpydroidActivity extends FragmentActivity {
 
 		bindService(new Intent(this,CustomHttpServer.class), mHttpServiceConnection, Context.BIND_AUTO_CREATE);
 		bindService(new Intent(this,CustomRtspServer.class), mRtspServiceConnection, Context.BIND_AUTO_CREATE);
-		
+
 	}
 
 	@Override
@@ -238,6 +234,20 @@ public class SpydroidActivity extends FragmentActivity {
 		finish();
 	}
 
+	private SurfaceHolder.Callback mHolderCallback = new SurfaceHolder.Callback() {
+		
+		@Override
+		public void surfaceDestroyed(SurfaceHolder holder) {
+			
+		}
+		
+		@Override
+		public void surfaceCreated(SurfaceHolder holder) {}
+		@Override
+		public void surfaceChanged(SurfaceHolder holder, int format, int width,int height) {}
+		
+	};
+	
 	private ServiceConnection mRtspServiceConnection = new ServiceConnection() {
 
 		@Override
@@ -251,7 +261,7 @@ public class SpydroidActivity extends FragmentActivity {
 		public void onServiceDisconnected(ComponentName name) {}
 
 	};
-	
+
 	private RtspServer.CallbackListener mRtspCallbackListener = new RtspServer.CallbackListener() {
 
 		@Override
@@ -262,16 +272,27 @@ public class SpydroidActivity extends FragmentActivity {
 				.setTitle(R.string.port_used)
 				.setMessage(getString(R.string.bind_failed, "RTSP"))
 				.setPositiveButton("OK", new DialogInterface.OnClickListener() {
-                   public void onClick(final DialogInterface dialog, final int id) {
-                	   startActivityForResult(new Intent(SpydroidActivity.this, OptionsActivity.class),0);
-                   }
-               })
+					public void onClick(final DialogInterface dialog, final int id) {
+						startActivityForResult(new Intent(SpydroidActivity.this, OptionsActivity.class),0);
+					}
+				})
 				.show();
 			}
 		}
 
+		@Override
+		public void onMessage(RtspServer server, int message) {
+			if (message==RtspServer.MESSAGE_STREAMING_STARTED) {
+				if (mAdapter != null && mAdapter.getHandsetFragment() != null) 
+					mAdapter.getHandsetFragment().update();
+			} else if (message==RtspServer.MESSAGE_STREAMING_STOPPED) {
+				if (mAdapter != null && mAdapter.getHandsetFragment() != null) 
+					mAdapter.getHandsetFragment().update();
+			}
+		}
+
 	};	
-	
+
 	private ServiceConnection mHttpServiceConnection = new ServiceConnection() {
 
 		@Override
@@ -285,8 +306,8 @@ public class SpydroidActivity extends FragmentActivity {
 		public void onServiceDisconnected(ComponentName name) {}
 
 	};
-	
-	private HttpServer.CallbackListener mHttpCallbackListener = new HttpServer.CallbackListener() {
+
+	private TinyHttpServer.CallbackListener mHttpCallbackListener = new TinyHttpServer.CallbackListener() {
 
 		@Override
 		public void onError(TinyHttpServer server, Exception e, int error) {
@@ -298,38 +319,29 @@ public class SpydroidActivity extends FragmentActivity {
 				.setTitle(R.string.port_used)
 				.setMessage(getString(R.string.bind_failed, str))
 				.setPositiveButton("OK", new DialogInterface.OnClickListener() {
-                   public void onClick(final DialogInterface dialog, final int id) {
-                	   startActivityForResult(new Intent(SpydroidActivity.this, OptionsActivity.class),0);
-                   }
-               })
+					public void onClick(final DialogInterface dialog, final int id) {
+						startActivityForResult(new Intent(SpydroidActivity.this, OptionsActivity.class),0);
+					}
+				})
 				.show();
 			}
 		}
 
-	};
+		@Override
+		public void onMessage(TinyHttpServer server, int message) {
+			if (message==CustomHttpServer.MESSAGE_STREAMING_STARTED) {
+				if (mAdapter != null && mAdapter.getHandsetFragment() != null) 
+					mAdapter.getHandsetFragment().update();
+				if (mAdapter != null && mAdapter.getPreviewFragment() != null)	
+					mAdapter.getPreviewFragment().update();
+			} else if (message==CustomHttpServer.MESSAGE_STREAMING_STOPPED) {
+				if (mAdapter != null && mAdapter.getHandsetFragment() != null) 
+					mAdapter.getHandsetFragment().update();
+				if (mAdapter != null && mAdapter.getPreviewFragment() != null)	
+					mAdapter.getPreviewFragment().update();
+			}
+		}
 
-	// Listens to callbacks called by the SessionManager
-	private SessionManager.CallbackListener mSessionManagerCallbacks = new SessionManager.CallbackListener() {
-		@Override
-		public void onStreamingStarted(SessionManager manager) {
-			runOnUiThread(new Runnable () {
-				public void run() {
-					// The activity may not exist when this is called, we need to be carefull !
-					if (mAdapter != null && mAdapter.getHandsetFragment() != null) 
-						mAdapter.getHandsetFragment().update();
-				}
-			});
-		}
-		@Override
-		public void onStreamingStopped(SessionManager manager) {
-			runOnUiThread(new Runnable () {
-				public void run() {
-					// The activity may not exist when this is called, we need to be carefull !
-					if (mAdapter != null && mAdapter.getHandsetFragment() != null) 
-						mAdapter.getHandsetFragment().update();
-				}
-			});				
-		}
 	};
 
 	private void removeNotification() {
@@ -402,5 +414,5 @@ public class SpydroidActivity extends FragmentActivity {
 		}
 
 	}
-	
+
 }

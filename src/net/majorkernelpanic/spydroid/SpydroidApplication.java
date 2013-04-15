@@ -31,10 +31,7 @@ import static org.acra.ReportField.SHARED_PREFERENCES;
 import static org.acra.ReportField.STACK_TRACE;
 import static org.acra.ReportField.USER_APP_START_DATE;
 import static org.acra.ReportField.USER_CRASH_DATE;
-import net.majorkernelpanic.spydroid.api.CustomHttpServer;
-import net.majorkernelpanic.streaming.Session;
-import net.majorkernelpanic.streaming.SessionManager;
-import net.majorkernelpanic.streaming.video.H264Stream;
+import net.majorkernelpanic.streaming.SessionBuilder;
 import net.majorkernelpanic.streaming.video.VideoQuality;
 
 import org.acra.annotation.ReportsCrashes;
@@ -44,10 +41,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
-import android.content.SharedPreferences.Editor;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.preference.PreferenceManager;
-import android.view.SurfaceHolder;
 
 @ReportsCrashes(formKey = "dGhWbUlacEV6X0hlS2xqcmhyYzNrWlE6MQ", customReportContent = { APP_VERSION_NAME, PHONE_MODEL, BRAND, PRODUCT, ANDROID_VERSION, STACK_TRACE, USER_APP_START_DATE, USER_CRASH_DATE, LOGCAT, DEVICE_FEATURES, SHARED_PREFERENCES })
 public class SpydroidApplication extends android.app.Application {
@@ -58,10 +53,10 @@ public class SpydroidApplication extends android.app.Application {
 	public VideoQuality videoQuality = new VideoQuality(640,480,15,500000);
 
 	/** By default AMR is the audio encoder. */
-	public int audioEncoder = Session.AUDIO_AMRNB;
+	public int audioEncoder = SessionBuilder.AUDIO_AMRNB;
 
 	/** By default H.263 is the video encoder. */
-	public int videoEncoder = Session.VIDEO_H263;
+	public int videoEncoder = SessionBuilder.VIDEO_H263;
 
 	/** Set this flag to true to disable the ads. */
 	public final boolean DONATE_VERSION = false;
@@ -98,7 +93,7 @@ public class SpydroidApplication extends android.app.Application {
 		hackEnabled = settings.getBoolean("video_hack", false);
 
 		// On android 3.* AAC ADTS is not supported so we set the default encoder to AMR-NB, on android 4.* AAC is the default encoder
-		audioEncoder = (Integer.parseInt(android.os.Build.VERSION.SDK)<14) ? Session.AUDIO_AMRNB : Session.AUDIO_AAC;
+		audioEncoder = (Integer.parseInt(android.os.Build.VERSION.SDK)<14) ? SessionBuilder.AUDIO_AMRNB : SessionBuilder.AUDIO_AAC;
 		audioEncoder = Integer.parseInt(settings.getString("audio_encoder", String.valueOf(audioEncoder)));
 		videoEncoder = Integer.parseInt(settings.getString("video_encoder", String.valueOf(videoEncoder)));
 
@@ -111,12 +106,11 @@ public class SpydroidApplication extends android.app.Application {
 						Integer.parseInt(settings.getString("video_bitrate", "0"))*1000),
 						videoQuality);
 
-		SessionManager manager = SessionManager.getManager(); 
-		manager.setDefaultAudioEncoder(!settings.getBoolean("stream_audio", true)?0:audioEncoder);
-		manager.setDefaultVideoEncoder(!settings.getBoolean("stream_video", false)?0:videoEncoder);
-		manager.setDefaultVideoQuality(videoQuality);
-
-		H264Stream.setPreferences(settings);
+		SessionBuilder.getInstance() 
+		.setContext(getApplicationContext())
+		.setAudioEncoder(!settings.getBoolean("stream_audio", true)?0:audioEncoder)
+		.setVideoEncoder(!settings.getBoolean("stream_video", false)?0:videoEncoder)
+		.setVideoQuality(videoQuality);
 
 		// Listens to changes of preferences
 		settings.registerOnSharedPreferenceChangeListener(mOnSharedPreferenceChangeListener);
@@ -147,26 +141,20 @@ public class SpydroidApplication extends android.app.Application {
 
 			else if (key.equals("audio_encoder") || key.equals("stream_audio")) { 
 				audioEncoder = Integer.parseInt(sharedPreferences.getString("audio_encoder", "0"));
-				SessionManager.getManager().setDefaultAudioEncoder( audioEncoder );
+				SessionBuilder.getInstance().setAudioEncoder( audioEncoder );
 				if (!sharedPreferences.getBoolean("stream_audio", false)) 
-					SessionManager.getManager().setDefaultAudioEncoder(0);
+					SessionBuilder.getInstance().setAudioEncoder(0);
 			}
 
 			else if (key.equals("stream_video") || key.equals("video_encoder")) {
 				videoEncoder = Integer.parseInt(sharedPreferences.getString("video_encoder", "0"));
-				SessionManager.getManager().setDefaultVideoEncoder( videoEncoder );
+				SessionBuilder.getInstance().setVideoEncoder( videoEncoder );
 				if (!sharedPreferences.getBoolean("stream_video", true)) 
-					SessionManager.getManager().setDefaultVideoEncoder(0);
+					SessionBuilder.getInstance().setVideoEncoder(0);
 			}
 
 			else if (key.equals("notification_enabled")) {
 				notificationEnabled  = sharedPreferences.getBoolean("notification_enabled", true);
-			}
-
-			else if (key.equals("video_hack")) {
-				hackEnabled = sharedPreferences.getBoolean("video_hack", false);
-				SurfaceHolder holder = SessionManager.getManager().getSurfaceHolder();
-				SessionManager.getManager().setSurfaceHolder(holder,!hackEnabled);
 			}
 
 		}  

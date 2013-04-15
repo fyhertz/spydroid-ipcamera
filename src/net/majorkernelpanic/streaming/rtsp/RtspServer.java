@@ -18,26 +18,31 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-package net.majorkernelpanic.streaming.misc;
+package net.majorkernelpanic.streaming.rtsp;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.BindException;
+import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.Locale;
+import java.util.WeakHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import net.majorkernelpanic.http.TinyHttpServer;
-import net.majorkernelpanic.streaming.Session;
+import net.majorkernelpanic.streaming.SessionBuilder;
+import net.majorkernelpanic.streaming.sdp.Session;
 import android.app.Service;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.SharedPreferences.Editor;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.os.Binder;
 import android.os.IBinder;
@@ -68,20 +73,29 @@ public class RtspServer extends Service {
 	/** A stream could not be started. */
 	public final static int ERROR_START_FAILED = 0x01;
 
+	/** Streaming started. */
+	public final static int MESSAGE_STREAMING_STARTED = 0X00;
+	
+	/** Streaming stopped. */
+	public final static int MESSAGE_STREAMING_STOPPED = 0X01;
+	
 	/** Key used in the SharedPreferences to store whether the RTSP server is enabled or not. */
 	protected String mEnabledKey = "rtsp_enabled";
 
 	/** Key used in the SharedPreferences for the port used by the RTSP server. */
 	protected String mPortKey = "rtsp_port";
 
+	protected SessionBuilder mSessionBuilder;
 	protected SharedPreferences mSharedPreferences;
 	protected boolean mEnabled = true;	
 	protected int mPort = DEFAULT_RTSP_PORT;
+	private WeakHashMap<Session,Object> mSessions = new WeakHashMap<Session,Object>(2);
 	
 	private RequestListener mListenerThread;
 	private final IBinder mBinder = new LocalBinder();
 	private boolean mRestart = false;
 	private final LinkedList<CallbackListener> mListeners = new LinkedList<CallbackListener>();
+	
 
 	public RtspServer() {
 	}
@@ -92,6 +106,9 @@ public class RtspServer extends Service {
 		/** Called when an error occurs. */
 		void onError(RtspServer server, Exception e, int error);
 
+		/** Called when streaming starts/stops. */
+		void onMessage(RtspServer server, int message);
+		
 	}
 
 	/**
@@ -119,6 +136,16 @@ public class RtspServer extends Service {
 		return mPort;
 	}
 
+	/**
+	 * Sets the port for the RTSP server to use.
+	 * @param port The port
+	 */
+	public void setPort(int port) {
+		Editor editor = mSharedPreferences.edit();
+		editor.putString(mPortKey, String.valueOf(port));
+		editor.commit();
+	}	
+
 	/** Starts (or restart if needed) the RTSP server. */
 	public void start() {
 		if (!mEnabled || mRestart) stop();
@@ -144,6 +171,15 @@ public class RtspServer extends Service {
 		}
 	}
 
+	public boolean isStreaming() {
+		for ( Session session : mSessions.keySet() ) {
+		    if ( session != null ) {
+		    	if (session.isStreaming()) return true;
+		    } 
+		}
+		return false;
+	}
+	
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
 		return START_STICKY;
@@ -200,6 +236,16 @@ public class RtspServer extends Service {
 		return mBinder;
 	}
 
+	protected void postMessage(int id) {
+		synchronized (mListeners) {
+			if (mListeners.size() > 0) {
+				for (CallbackListener cl : mListeners) {
+					cl.onMessage(this, id);
+				}
+			}			
+		}
+	}	
+	
 	protected void postError(Exception exception, int id) {
 		synchronized (mListeners) {
 			if (mListeners.size() > 0) {
@@ -264,8 +310,8 @@ public class RtspServer extends Service {
 		public WorkerThread(final Socket client) throws IOException {
 			mInput = new BufferedReader(new InputStreamReader(client.getInputStream()));
 			mOutput = client.getOutputStream();
-			mSession = new Session(client.getLocalAddress(),client.getInetAddress());
 			mClient = client;
+			mSession = new Session();
 		}
 
 		public void run() {
@@ -317,7 +363,11 @@ public class RtspServer extends Service {
 			}
 
 			// Streaming stops when client disconnects
-			mSession.stopAll();
+			boolean streaming = isStreaming();
+			mSession.stop();
+			if (streaming && !isStreaming()) {
+				postMessage(MESSAGE_STREAMING_STOPPED);
+			}
 			mSession.flush();
 
 			try {
@@ -334,10 +384,15 @@ public class RtspServer extends Service {
 			/* ********************************************************************************** */
 			/* ********************************* Method DESCRIBE ******************************** */
 			/* ********************************************************************************** */
-			if (request.method.toUpperCase().equals("DESCRIBE")) {
+			if (request.method.equalsIgnoreCase("DESCRIBE")) {
 
 				// Parse the requested URI and configure the session
-				UriParser.parse(request.uri,mSession);
+				mSession = UriParser.parse(request.uri);
+				mSessions.put(mSession, null);
+				mSession.setOrigin(mClient.getLocalAddress());
+				if (mSession.getDestination()==null) {
+					mSession.setDestination(mClient.getInetAddress());
+				}
 				String requestContent = mSession.getSessionDescription();
 				String requestAttributes = 
 						"Content-Base: "+mClient.getLocalAddress().getHostAddress()+":"+mClient.getLocalPort()+"/\r\n" +
@@ -354,7 +409,7 @@ public class RtspServer extends Service {
 			/* ********************************************************************************** */
 			/* ********************************* Method OPTIONS ********************************* */
 			/* ********************************************************************************** */
-			else if (request.method.toUpperCase().equals("OPTIONS")) {
+			else if (request.method.equalsIgnoreCase("OPTIONS")) {
 				response.status = Response.STATUS_OK;
 				response.attributes = "Public: DESCRIBE,SETUP,TEARDOWN,PLAY,PAUSE\r\n";
 				response.status = Response.STATUS_OK;
@@ -363,9 +418,10 @@ public class RtspServer extends Service {
 			/* ********************************************************************************** */
 			/* ********************************** Method SETUP ********************************** */
 			/* ********************************************************************************** */
-			else if (request.method.toUpperCase().equals("SETUP")) {
+			else if (request.method.equalsIgnoreCase("SETUP")) {
 				Pattern p; Matcher m;
-				int p2, p1, ssrc, trackId, src;
+				int p2, p1, ssrc, trackId, src[];
+				InetAddress destination;
 
 				p = Pattern.compile("trackID=(\\w+)",Pattern.CASE_INSENSITIVE);
 				m = p.matcher(request.uri);
@@ -386,21 +442,33 @@ public class RtspServer extends Service {
 				m = p.matcher(request.headers.get("transport"));
 
 				if (!m.find()) {
-					int port = mSession.getTrackDestinationPort(trackId);
-					p1 = port;
-					p2 = port+1;
+					int[] ports = mSession.getTrack(trackId).getDestinationPorts();
+					p1 = ports[0];
+					p2 = ports[1];
 				}
 				else {
 					p1 = Integer.parseInt(m.group(1)); 
 					p2 = Integer.parseInt(m.group(2));
 				}
 
-				ssrc = mSession.getTrackSSRC(trackId);
-				src = mSession.getTrackLocalPort(trackId);
-				mSession.setTrackDestinationPort(trackId, p1);
+				ssrc = mSession.getTrack(trackId).getSSRC();
+				src = mSession.getTrack(trackId).getLocalPorts();
+				destination = mSession.getDestination();
 
+				mSession.getTrack(trackId).setDestinationPorts(p1, p2);
+				
+				boolean streaming = isStreaming();
 				mSession.start(trackId);
-				response.attributes = "Transport: RTP/AVP/UDP;"+mSession.getRoutingScheme()+";destination="+mSession.getDestination().getHostAddress()+";client_port="+p1+"-"+p2+";server_port="+src+"-"+(src+1)+";ssrc="+Integer.toHexString(ssrc)+";mode=play\r\n" +
+				if (!streaming && isStreaming()) {
+					postMessage(MESSAGE_STREAMING_STARTED);
+				}
+
+				response.attributes = "Transport: RTP/AVP/UDP;"+(destination.isMulticastAddress()?"multicast":"unicast")+
+						";destination="+mSession.getDestination().getHostAddress()+
+						";client_port="+p1+"-"+p2+
+						";server_port="+src[0]+"-"+src[1]+
+						";ssrc="+Integer.toHexString(ssrc)+
+						";mode=play\r\n" +
 						"Session: "+ "1185d20035702ca" + "\r\n" +
 						"Cache-Control: no-cache\r\n";
 				response.status = Response.STATUS_OK;
@@ -413,7 +481,7 @@ public class RtspServer extends Service {
 			/* ********************************************************************************** */
 			/* ********************************** Method PLAY *********************************** */
 			/* ********************************************************************************** */
-			else if (request.method.toUpperCase().equals("PLAY")) {
+			else if (request.method.equalsIgnoreCase("PLAY")) {
 				String requestAttributes = "RTP-Info: ";
 				if (mSession.trackExists(0)) requestAttributes += "url=rtsp://"+mClient.getLocalAddress().getHostAddress()+":"+mClient.getLocalPort()+"/trackID="+0+";seq=0,";
 				if (mSession.trackExists(1)) requestAttributes += "url=rtsp://"+mClient.getLocalAddress().getHostAddress()+":"+mClient.getLocalPort()+"/trackID="+1+";seq=0,";
@@ -429,14 +497,14 @@ public class RtspServer extends Service {
 			/* ********************************************************************************** */
 			/* ********************************** Method PAUSE ********************************** */
 			/* ********************************************************************************** */
-			else if (request.method.toUpperCase().equals("PAUSE")) {
+			else if (request.method.equalsIgnoreCase("PAUSE")) {
 				response.status = Response.STATUS_OK;
 			}
 
 			/* ********************************************************************************** */
 			/* ********************************* Method TEARDOWN ******************************** */
 			/* ********************************************************************************** */
-			else if (request.method.toUpperCase().equals("TEARDOWN")) {
+			else if (request.method.equalsIgnoreCase("TEARDOWN")) {
 				response.status = Response.STATUS_OK;
 			}
 
@@ -482,7 +550,7 @@ public class RtspServer extends Service {
 			while ( (line = input.readLine()) != null && line.length()>3 ) {
 				matcher = rexegHeader.matcher(line);
 				matcher.find();
-				request.headers.put(matcher.group(1).toLowerCase(),matcher.group(2));
+				request.headers.put(matcher.group(1).toLowerCase(Locale.US),matcher.group(2));
 			}
 			if (line==null) throw new SocketException("Client disconnected");
 

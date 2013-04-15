@@ -25,6 +25,8 @@ import java.io.InputStream;
 import java.net.InetAddress;
 import java.util.Random;
 
+import net.majorkernelpanic.streaming.rtcp.SenderReport;
+
 /**
  * 
  * Each packetizer inherits from this one and therefore uses RTP and UDP.
@@ -35,23 +37,37 @@ abstract public class AbstractPacketizer {
 	protected static final int rtphl = RtpSocket.RTP_HEADER_LENGTH;
 
 	protected RtpSocket socket = null;
+	protected SenderReport report = null;
 	protected InputStream is = null;
-	protected boolean running = false;
 	protected byte[] buffer;
 	protected long ts = 0;
 
 	public AbstractPacketizer() throws IOException {
+		int ssrc = new Random().nextInt();
+		ts = new Random().nextInt();
 		socket = new RtpSocket();
+		report = new SenderReport();
+		socket.setSSRC(ssrc);
+		report.setSSRC(ssrc);
 		buffer = socket.getBuffer();
-	}	
-
-	public AbstractPacketizer(InputStream is) {
-		super();
-		this.is = is;
 	}
 
 	public RtpSocket getRtpSocket() {
 		return socket;
+	}
+
+	public SenderReport getRtcpSocket() {
+		return report;
+	}
+
+
+	public void setSSRC(int ssrc) {
+		socket.setSSRC(ssrc);
+		report.setSSRC(ssrc);
+	}
+
+	public int getSSRC() {
+		return socket.getSSRC();
 	}
 
 	public void setInputStream(InputStream is) {
@@ -62,13 +78,25 @@ abstract public class AbstractPacketizer {
 		socket.setTimeToLive(ttl);
 	}
 
-	public void setDestination(InetAddress dest, int dport) {
-		socket.setDestination(dest, dport);
+	/**
+	 * Sets the destination of the stream.
+	 * @param dest The destination address of the stream
+	 * @param rtpPort Destination port that will be used for RTP
+	 * @param rtcpPort Destination port that will be used for RTCP
+	 */
+	public void setDestination(InetAddress dest, int rtpPort, int rtcpPort) {
+		socket.setDestination(dest, rtpPort);
+		report.setDestination(dest, rtcpPort);		
 	}
 
 	public abstract void start() throws IOException;
 
 	public abstract void stop();
+
+	protected void send(int length) throws IOException {
+		socket.send(length);
+		report.update(length);
+	}
 
 	// Useful for debug
 	protected static String printBuffer(byte[] buffer, int start,int end) {

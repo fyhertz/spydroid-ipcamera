@@ -15,8 +15,7 @@
     <string name="streaming">Streaming !</string>
     <string name="notification_title">Spydroid</string>
     <string name="notification_content">Attention ! Spydroid est lancé ;)</string>
-    <string name="client0">Ici tu peux afficher le stream d\'un autre smartphone sur lequel spydroid est lancé. Les deux smartphones doivent être sur un même réseau wifi !</string>
-    <string name="client1">Connecter</string>
+    <string name="preview">Lance un stream pour voir l\'aperçu !</string>
     <string name="about0">Spydroid est une application amusante et open-source !</string>
     <string name="about1">Si tu ne comprends pas comment t\'en servir visite la page de l\'appli. Elle contient par exemple des informations utiles sur comment récupérer le stream dans VLC</string>
     <string name="about2">N\'oublie pas de noter l\'appli ! C\'est super important, ta vie en dépend !</string>
@@ -40,8 +39,6 @@
     <string name="settings14">Plus d\'options</string>
     <string name="settings15">Notification</string>
     <string name="settings16">Activer/Désactiver la notification</string>
-    <string name="settings17">Hack pour la vidéo</string>
-    <string name="settings18">Permet au streaming de la vidéo de continuer quand l\'app passe en arrière plan. Peut mal fonctionner :/</string>
     <string name="settings19">Serveur HTTP</string>
     <string name="settings20">Port</string>
     <string name="settings21">Configuration de port utilisé par le serveur HTTP</string>

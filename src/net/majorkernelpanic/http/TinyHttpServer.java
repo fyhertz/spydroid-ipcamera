@@ -139,13 +139,13 @@ public class TinyHttpServer extends Service {
 	protected int mHttpPort = DEFAULT_HTTP_PORT;
 	protected int mHttpsPort = DEFAULT_HTTPS_PORT;
 	protected boolean mHttpEnabled = true, mHttpsEnabled = false;
+	protected LinkedList<CallbackListener> mListeners = new LinkedList<CallbackListener>();
 	
 	private BasicHttpProcessor mHttpProcessor;
 	private HttpParams mParams; 
 	private HttpRequestListener mHttpRequestListener = null;
 	private HttpsRequestListener mHttpsRequestListener = null;
 	private SharedPreferences mSharedPreferences;
-	private LinkedList<CallbackListener> mListeners = new LinkedList<CallbackListener>();
 	private boolean mHttpsUpdate = false, mHttpUpdate = false;
 
 	Date mLastModified;
@@ -157,6 +157,8 @@ public class TinyHttpServer extends Service {
 
 		/** Called when an error occurs. */
 		void onError(TinyHttpServer server, Exception e, int error);
+		
+		void onMessage(TinyHttpServer server, int message);		
 
 	}
 
@@ -417,6 +419,16 @@ public class TinyHttpServer extends Service {
 			}			
 		}
 	}
+	
+	protected void postMessage(int id) {
+		synchronized (mListeners) {
+			if (mListeners.size() > 0) {
+				for (CallbackListener cl : mListeners) {
+					cl.onMessage(this, id);
+				}
+			}			
+		}
+	}	
 	
 	protected class HttpRequestListener extends RequestListener {
 
@@ -695,7 +707,7 @@ public class TinyHttpServer extends Service {
 			matcher.unregister(pattern);
 		}
 
-		public synchronized void setHandlers(final Map map) {
+		public synchronized void setHandlers(@SuppressWarnings("rawtypes") final Map map) {
 			matcher.setHandlers(map);
 		}
 

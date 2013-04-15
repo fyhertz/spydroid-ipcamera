@@ -24,8 +24,7 @@ import java.lang.reflect.Field;
 
 import net.majorkernelpanic.spydroid.R;
 import net.majorkernelpanic.spydroid.SpydroidApplication;
-import net.majorkernelpanic.streaming.Session;
-import net.majorkernelpanic.streaming.SessionManager;
+import net.majorkernelpanic.streaming.SessionBuilder;
 import net.majorkernelpanic.streaming.video.VideoQuality;
 
 import org.json.JSONArray;
@@ -159,9 +158,9 @@ public class RequestHandler {
 			final SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(context);
 
 			response.append("{\"streamAudio\":" + settings.getBoolean("stream_audio", false) + ",");
-			response.append("\"audioEncoder\":\"" + (application.audioEncoder==Session.AUDIO_AMRNB?"AMR-NB":"AAC") + "\",");
+			response.append("\"audioEncoder\":\"" + (application.audioEncoder==SessionBuilder.AUDIO_AMRNB?"AMR-NB":"AAC") + "\",");
 			response.append("\"streamVideo\":" + settings.getBoolean("stream_video", true) + ",");
-			response.append("\"videoEncoder\":\"" + (application.videoEncoder==Session.VIDEO_H263?"H.263":"H.264") + "\",");
+			response.append("\"videoEncoder\":\"" + (application.videoEncoder==SessionBuilder.VIDEO_H263?"H.263":"H.264") + "\",");
 			response.append("\"videoResolution\":\"" + application.videoQuality.resX + "x" + application.videoQuality.resY + "\",");
 			response.append("\"videoFramerate\":\"" + application.videoQuality.framerate + " fps\",");
 			response.append("\"videoBitrate\":\"" + application.videoQuality.bitrate/1000 + " kbps\"}");
@@ -210,8 +209,6 @@ public class RequestHandler {
 
 			}
 
-			response.append("\"cameraInUse\":\""+SessionManager.getManager().isCameraInUse()+"\",");
-			response.append("\"microphoneInUse\":\""+SessionManager.getManager().isMicrophoneInUse()+"\",");
 			response.append("\"activityPaused\":\""+(application.applicationForeground ? "1" : "0")+"\"");
 			response.append("}");
 

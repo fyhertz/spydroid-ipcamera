@@ -20,16 +20,27 @@
 
 package net.majorkernelpanic.spydroid.ui;
 
+import net.majorkernelpanic.http.TinyHttpServer;
 import net.majorkernelpanic.spydroid.R;
-import net.majorkernelpanic.spydroid.SpydroidApplication;
-import net.majorkernelpanic.streaming.SessionManager;
+import net.majorkernelpanic.spydroid.api.CustomHttpServer;
+import net.majorkernelpanic.spydroid.api.CustomRtspServer;
+import net.majorkernelpanic.streaming.SessionBuilder;
+import net.majorkernelpanic.streaming.rtsp.RtspServer;
+import android.content.ComponentName;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.content.ServiceConnection;
+import android.net.wifi.WifiManager;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.TextView;
 
 public class PreviewFragment extends Fragment {
 
@@ -37,32 +48,80 @@ public class PreviewFragment extends Fragment {
 
 	private SurfaceView mSurfaceView;
 	private SurfaceHolder mSurfaceHolder;
+	private TextView mTextView;
+    private CustomHttpServer mHttpServer;
+    private RtspServer mRtspServer;
 	
-	private SpydroidApplication mApplication;
-
 	@Override
-    public void onCreate(Bundle savedInstanceState) {
-    	super.onCreate(savedInstanceState);
-    	mApplication  = (SpydroidApplication) getActivity().getApplication();
-    }
+	public void onCreate(Bundle savedInstanceState) {
+		super.onCreate(savedInstanceState);
+	}
 	
+	@Override
+	public void onPause() {
+		super.onPause();
+    	getActivity().unbindService(mHttpServiceConnection);
+    	getActivity().unbindService(mRtspServiceConnection);
+	}
+	
+	@Override
+    public void onResume() {
+    	super.onResume();
+		getActivity().bindService(new Intent(getActivity(),CustomHttpServer.class), mHttpServiceConnection, Context.BIND_AUTO_CREATE);
+		getActivity().bindService(new Intent(getActivity(),CustomRtspServer.class), mRtspServiceConnection, Context.BIND_AUTO_CREATE);
+    }
+
 	@Override
 	public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
 		View rootView = inflater.inflate(R.layout.preview,container,false);
 
+		mTextView = (TextView)rootView.findViewById(R.id.tooltip);
+		
 		if (((SpydroidActivity)getActivity()).device == ((SpydroidActivity)getActivity()).TABLET) {
-			
+
 			mSurfaceView = (SurfaceView)rootView.findViewById(R.id.tablet_camera_view);
 			mSurfaceHolder = mSurfaceView.getHolder();
-			
+
 			// We still need this line for backward compatibility reasons with android 2
 			mSurfaceHolder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
-			
-			SessionManager.getManager().setSurfaceHolder(mSurfaceHolder, !mApplication.hackEnabled);
-			
+
+			SessionBuilder.getInstance().setSurfaceHolder(mSurfaceHolder);
+
 		} 
-		
+
 		return rootView;
 	}
-
+	
+	public void update() {
+		getActivity().runOnUiThread(new Runnable() {
+			@Override
+			public void run() {
+				if ((mRtspServer != null && mRtspServer.isStreaming()) || (mHttpServer != null && mHttpServer.isStreaming()))
+					mTextView.setVisibility(View.INVISIBLE);
+				else 
+					mTextView.setVisibility(View.VISIBLE);
+			}
+		});
+	}
+	
+    private final ServiceConnection mRtspServiceConnection = new ServiceConnection() {
+		@Override
+		public void onServiceConnected(ComponentName name, IBinder service) {
+			mRtspServer = (RtspServer) ((RtspServer.LocalBinder)service).getService();
+			update();
+		}
+		@Override
+		public void onServiceDisconnected(ComponentName name) {}
+	};
+    
+    private final ServiceConnection mHttpServiceConnection = new ServiceConnection() {
+		@Override
+		public void onServiceConnected(ComponentName name, IBinder service) {
+			mHttpServer = (CustomHttpServer) ((TinyHttpServer.LocalBinder)service).getService();
+			update();
+		}
+		@Override
+		public void onServiceDisconnected(ComponentName name) {}
+	};
+	
 }

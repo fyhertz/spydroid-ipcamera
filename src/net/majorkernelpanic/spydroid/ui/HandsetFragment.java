@@ -28,8 +28,8 @@ import net.majorkernelpanic.spydroid.SpydroidApplication;
 import net.majorkernelpanic.spydroid.Utilities;
 import net.majorkernelpanic.spydroid.api.CustomHttpServer;
 import net.majorkernelpanic.spydroid.api.CustomRtspServer;
-import net.majorkernelpanic.streaming.SessionManager;
-import net.majorkernelpanic.streaming.misc.RtspServer;
+import net.majorkernelpanic.streaming.SessionBuilder;
+import net.majorkernelpanic.streaming.rtsp.RtspServer;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
@@ -111,10 +111,15 @@ public class HandsetFragment extends Fragment {
     }
 	
 	public void update() {
-		if (mHttpServer != null && mRtspServer != null) {
-			if (!SessionManager.getManager().isStreaming()) displayIpAddress();
-			else streamingState(1);
-		}		
+		getActivity().runOnUiThread(new Runnable () {
+			@Override
+			public void run() {
+				if (mHttpServer != null && mRtspServer != null) {
+					if (!mHttpServer.isStreaming() && !mRtspServer.isStreaming()) displayIpAddress();
+					else streamingState(1);
+				}		
+			}
+		});
 	}
 	
 	private void streamingState(int state) {
