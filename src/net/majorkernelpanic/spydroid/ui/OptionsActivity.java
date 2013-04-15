@@ -20,6 +20,11 @@
 
 package net.majorkernelpanic.spydroid.ui;
 
+import static net.majorkernelpanic.http.TinyHttpServer.KEY_HTTPS_ENABLED;
+import static net.majorkernelpanic.http.TinyHttpServer.KEY_HTTPS_PORT;
+import static net.majorkernelpanic.http.TinyHttpServer.KEY_HTTP_ENABLED;
+import static net.majorkernelpanic.http.TinyHttpServer.KEY_HTTP_PORT;
+
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -28,10 +33,12 @@ import net.majorkernelpanic.spydroid.SpydroidApplication;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
 import android.os.Bundle;
+import android.preference.CheckBoxPreference;
 import android.preference.ListPreference;
 import android.preference.Preference;
 import android.preference.PreferenceActivity;
 import android.preference.PreferenceManager;
+import android.util.Log;
 
 @SuppressWarnings("deprecation")
 public class OptionsActivity extends PreferenceActivity {
@@ -53,10 +60,10 @@ public class OptionsActivity extends PreferenceActivity {
 		final ListPreference videoResolution = (ListPreference) findPreference("video_resolution");
 		final ListPreference videoBitrate = (ListPreference) findPreference("video_bitrate");
 		final ListPreference videoFramerate = (ListPreference) findPreference("video_framerate");
-		final Preference httpEnabled = findPreference("http_server_enabled");
-		final Preference httpsEnabled = findPreference("use_https");
-		final Preference httpPort = findPreference("http_port");
-		final Preference httpsPort = findPreference("https_port");
+		final CheckBoxPreference httpEnabled = (CheckBoxPreference) findPreference("http_server_enabled");
+		final CheckBoxPreference  httpsEnabled = (CheckBoxPreference) findPreference("use_https");
+		final Preference httpPort = findPreference(KEY_HTTP_PORT);
+		final Preference httpsPort = findPreference(KEY_HTTPS_PORT);
 
 		boolean videoState = settings.getBoolean("stream_video", true);
 		videoEncoder.setEnabled(videoState);
@@ -84,16 +91,16 @@ public class OptionsActivity extends PreferenceActivity {
 				Editor editor = settings.edit();
 				// Updates the HTTP server
 				if (!state) {
-					editor.putBoolean("http_enabled", false);
-					editor.putBoolean("https_enabled", false);
+					editor.putBoolean(KEY_HTTP_ENABLED, false);
+					editor.putBoolean(KEY_HTTPS_ENABLED, false);
 				} else {
 					// HTTP/HTTPS, it's one or the other
-					if (httpsEnabled.isEnabled()) {
-						editor.putBoolean("https_enabled", true);
-						editor.putBoolean("http_enabled", false);
+					if (httpsEnabled.isChecked()) {
+						editor.putBoolean(KEY_HTTPS_ENABLED, true);
+						editor.putBoolean(KEY_HTTP_ENABLED, false);
 					} else {
-						editor.putBoolean("https_enabled", false);
-						editor.putBoolean("http_enabled", true);
+						editor.putBoolean(KEY_HTTPS_ENABLED, false);
+						editor.putBoolean(KEY_HTTP_ENABLED, true);
 					}
 				}
 				editor.commit();
@@ -106,17 +113,17 @@ public class OptionsActivity extends PreferenceActivity {
 				boolean state = (Boolean)newValue;
 				Editor editor = settings.edit();
 				// Updates the HTTP server
-				if (!httpEnabled.isEnabled()) {
-					editor.putBoolean("http_enabled", false);
-					editor.putBoolean("https_enabled", false);
+				if (!httpEnabled.isChecked()) {
+					editor.putBoolean(KEY_HTTP_ENABLED, false);
+					editor.putBoolean(KEY_HTTPS_ENABLED, false);
 				} else {
 					// HTTP/HTTPS, it's one or the other
 					if (state) {
-						editor.putBoolean("https_enabled", true);
-						editor.putBoolean("http_enabled", false);
+						editor.putBoolean(KEY_HTTPS_ENABLED, true);
+						editor.putBoolean(KEY_HTTP_ENABLED, false);
 					} else {
-						editor.putBoolean("https_enabled", false);
-						editor.putBoolean("http_enabled", true);
+						editor.putBoolean(KEY_HTTPS_ENABLED, false);
+						editor.putBoolean(KEY_HTTP_ENABLED, true);
 					}
 				}
 				editor.commit();

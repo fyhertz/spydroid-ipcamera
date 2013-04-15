@@ -164,9 +164,9 @@ public class SpydroidActivity extends FragmentActivity {
 		super.onStop();
 		// A WakeLock should only be released when isHeld() is true !
 		if (mWakeLock.isHeld()) mWakeLock.release();
-		mHttpServer.removeCallbackListener(mHttpCallbackListener);
+		if (mHttpServer != null) mHttpServer.removeCallbackListener(mHttpCallbackListener);
 		unbindService(mHttpServiceConnection);
-		mRtspServer.removeCallbackListener(mRtspCallbackListener);
+		if (mRtspServer != null) mRtspServer.removeCallbackListener(mRtspCallbackListener);
 		unbindService(mRtspServiceConnection);
 	}
 

@@ -109,28 +109,31 @@ public class TinyHttpServer extends Service {
 
 	/** An error occured with the HTTPS server :( */
 	public final static int ERROR_HTTPS_SERVER_CRASHED = 0x03;
-	
-	/** Common name that will appear in the root certificate. */
-	protected String mCACommonName = "TinyHttpServer CA";
 
 	/** Key used in the SharedPreferences to store whether the HTTP server is enabled or not. */
-	protected String mHttpEnabledKey = "http_enabled";
+	public final static String KEY_HTTP_ENABLED = "http_enabled";
 	
 	/** Key used in the SharedPreferences to store whether the HTTPS server is enabled or not. */
-	protected String mHttpsEnabledKey = "https_enabled";
+	public final static String KEY_HTTPS_ENABLED = "https_enabled";
 	
 	/** Key used in the SharedPreferences for the port used by the HTTP server. */
-	protected String mHttpPortKey = "http_port";
+	public final static String KEY_HTTP_PORT = "http_port";
 	
 	/** Key used in the SharedPreferences for the port used by the HTTPS server. */
-	protected String mHttpsPortKey = "https_port";
+	public final static String KEY_HTTPS_PORT = "https_port";
 
 	/** Key used in the SharedPreferences for storing the password of the keystore. */
-	protected String mPasswordKey = "https_password";
+	public final static String KEY_PASSWORD = "https_password";
 	
 	/** Name of the file used to store the keystore containing the certificates for HTTPS. */
-	protected String mKeystoreName = "keystore.jks";
+	public final static String KEYSTORE_FILE_NAME = "keystore.jks";	
 	
+	/** 
+	 * Common name that will appear in the root certificate. 
+	 * You might want to extend {@link TinyHttpServer} to change that. 
+	 **/
+	protected String mCACommonName = "TinyHttpServer CA";
+
 	protected String[] MODULES = new String[] {
 		"ModAssetServer",
 		"ModInternationalization"
@@ -197,7 +200,7 @@ public class TinyHttpServer extends Service {
 	 */
 	public void setHttpPort(int port) {
 		Editor editor = mSharedPreferences.edit();
-		editor.putString(mHttpPortKey, String.valueOf(port));
+		editor.putString(KEY_HTTP_PORT, String.valueOf(port));
 		editor.commit();
 	}
 
@@ -207,18 +210,22 @@ public class TinyHttpServer extends Service {
 	 */
 	public void setHttpsPort(int port) {
 		Editor editor = mSharedPreferences.edit();
-		editor.putString(mHttpsPortKey, String.valueOf(port));
+		editor.putString(KEY_HTTPS_PORT, String.valueOf(port));
 		editor.commit();
 	}
 
-	/** Enables the HTTP server, you then need to call {@link start()} to actually start it. */
+	/** Enables the HTTP server. */
 	public void setHttpEnabled(boolean enable) {
-		mHttpEnabled = enable;
+		Editor editor = mSharedPreferences.edit();
+		editor.putBoolean(KEY_HTTP_ENABLED, enable);
+		editor.commit();
 	}
 
-	/** Enables the HTTPS server, you then need to call {@link start()} to actually start it. */	
+	/** Enables the HTTPS server. */	
 	public void setHttpsEnabled(boolean enable) {
-		mHttpsEnabled = enable;
+		Editor editor = mSharedPreferences.edit();
+		editor.putBoolean(KEY_HTTPS_ENABLED, enable);
+		editor.commit();
 	}
 
 	/** Returns the port used by the HTTP server. */	
@@ -322,11 +329,11 @@ public class TinyHttpServer extends Service {
 			mLastModified = new Date(0);
 		}
 
-		// Let's restore the state of the service 
-		mHttpPort = Integer.parseInt(mSharedPreferences.getString(mHttpPortKey, String.valueOf(mHttpPort)));
-		mHttpsPort = Integer.parseInt(mSharedPreferences.getString(mHttpsPortKey, String.valueOf(mHttpsPort)));
-		mHttpEnabled = mSharedPreferences.getBoolean(mHttpEnabledKey, mHttpEnabled);
-		mHttpsEnabled = mSharedPreferences.getBoolean(mHttpsEnabledKey, mHttpsEnabled);
+		// Restores the state of the service 
+		mHttpPort = Integer.parseInt(mSharedPreferences.getString(KEY_HTTP_PORT, String.valueOf(mHttpPort)));
+		mHttpsPort = Integer.parseInt(mSharedPreferences.getString(KEY_HTTPS_PORT, String.valueOf(mHttpsPort)));
+		mHttpEnabled = mSharedPreferences.getBoolean(KEY_HTTP_ENABLED, mHttpEnabled);
+		mHttpsEnabled = mSharedPreferences.getBoolean(KEY_HTTPS_ENABLED, mHttpsEnabled);
 
 		// If the configuration is modified, the server will adjust
 		mSharedPreferences.registerOnSharedPreferenceChangeListener(mOnSharedPreferenceChangeListener);
@@ -365,8 +372,8 @@ public class TinyHttpServer extends Service {
 		@Override
 		public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
 
-			if (key.equals(mHttpPortKey)) {
-				int port = Integer.parseInt(sharedPreferences.getString(mHttpPortKey, String.valueOf(mHttpPort)));
+			if (key.equals(KEY_HTTP_PORT)) {
+				int port = Integer.parseInt(sharedPreferences.getString(KEY_HTTP_PORT, String.valueOf(mHttpPort)));
 				if (port != mHttpPort) {
 					mHttpPort = port;
 					mHttpUpdate = true;
@@ -374,22 +381,22 @@ public class TinyHttpServer extends Service {
 				}
 			}
 
-			else if (key.equals(mHttpsPortKey)) {
-				int port = Integer.parseInt(sharedPreferences.getString(mHttpsPortKey, String.valueOf(mHttpsPort)));
+			else if (key.equals(KEY_HTTPS_PORT)) {
+				int port = Integer.parseInt(sharedPreferences.getString(KEY_HTTPS_PORT, String.valueOf(mHttpsPort)));
 				if (port != mHttpsPort) {
 					mHttpsPort = port;
-					mHttpUpdate = true;
+					mHttpsUpdate = true;
 					start();
 				}
 			}
 
-			else if (key.equals(mHttpsEnabledKey)) {
-				mHttpsEnabled = sharedPreferences.getBoolean(mHttpsEnabledKey, true);
+			else if (key.equals(KEY_HTTPS_ENABLED)) {
+				mHttpsEnabled = sharedPreferences.getBoolean(KEY_HTTPS_ENABLED, true);
 				start();
 			}			
 
-			else if (key.equals(mHttpEnabledKey)) {
-				mHttpEnabled = sharedPreferences.getBoolean(mHttpEnabledKey, true);
+			else if (key.equals(KEY_HTTP_ENABLED)) {
+				mHttpEnabled = sharedPreferences.getBoolean(KEY_HTTP_ENABLED, true);
 				start();
 			}
 		}
@@ -462,17 +469,17 @@ public class TinyHttpServer extends Service {
 
 			SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(TinyHttpServer.this);
 			
-			if (!settings.contains(mPasswordKey)) {
+			if (!settings.contains(KEY_PASSWORD)) {
 				// Generates a password for the keystore
 				// TODO: entropy of Math.random() ?
 				String password = Integer.toString((int) (Math.random() * Integer.MAX_VALUE), 36);
 				Editor editor = settings.edit();
-				editor.putString(mPasswordKey, password);
+				editor.putString(KEY_PASSWORD, password);
 				editor.commit();
 				mPassword = password.toCharArray();
-				mContext.deleteFile(mKeystoreName);
+				mContext.deleteFile(KEYSTORE_FILE_NAME);
 			} else {
-				mPassword = settings.getString(mPasswordKey, "XX").toCharArray();
+				mPassword = settings.getString(KEY_PASSWORD, "XX").toCharArray();
 			}
 
 			// We create the X509KeyManager through reflexion so that SSL support can easily be removed if not needed
@@ -481,7 +488,7 @@ public class TinyHttpServer extends Service {
 				Method loadFromKeyStore = X509KeyManager.getDeclaredMethod("loadFromKeyStore", InputStream.class, char[].class);
 
 				try {
-					InputStream is = mContext.openFileInput(mKeystoreName);
+					InputStream is = mContext.openFileInput(KEYSTORE_FILE_NAME);
 					mKeyManager = (X509KeyManager) loadFromKeyStore.invoke(null, is, mPassword);
 				} catch (FileNotFoundException e) {
 				} catch (Exception e) {
@@ -548,7 +555,7 @@ public class TinyHttpServer extends Service {
 				try {
 					Method saveToKeyStore = Class.forName(mClasspath).getDeclaredMethod("saveToKeyStore", OutputStream.class, char[].class);
 					// Prevents concurrent write operation in the keystore  
-					OutputStream os = mContext.openFileOutput(mKeystoreName, Context.MODE_PRIVATE); 
+					OutputStream os = mContext.openFileOutput(KEYSTORE_FILE_NAME, Context.MODE_PRIVATE); 
 					saveToKeyStore.invoke(mKeyManager, os, mPassword);
 				} catch (NoSuchMethodException e) {
 					// HTTPS support disabled !
