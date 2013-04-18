@@ -93,7 +93,7 @@ public class H264Stream extends VideoStream {
 
 		if (mSettings != null) {
 			if (mSettings.contains("h264"+mQuality.framerate+","+mQuality.resX+","+mQuality.resY)) {
-				String[] s = mSettings.getString(mQuality.framerate+","+mQuality.resX+","+mQuality.resY, "").split(",");
+				String[] s = mSettings.getString("h264"+mQuality.framerate+","+mQuality.resX+","+mQuality.resY, "").split(",");
 				return new MP4Config(s[0],s[1],s[2]);
 			}
 		}
