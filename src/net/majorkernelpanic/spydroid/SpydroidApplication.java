@@ -34,6 +34,7 @@ import static org.acra.ReportField.USER_CRASH_DATE;
 import net.majorkernelpanic.streaming.SessionBuilder;
 import net.majorkernelpanic.streaming.video.VideoQuality;
 
+import org.acra.ACRA;
 import org.acra.annotation.ReportsCrashes;
 
 import android.content.BroadcastReceiver;
@@ -78,7 +79,7 @@ public class SpydroidApplication extends android.app.Application {
 
 		// The following line triggers the initialization of ACRA
 		// Please do not uncomment this line unless you change the form id or I will receive your crash reports !
-		//ACRA.init(this);
+		ACRA.init(this);
 
 		sApplication = this;
 
