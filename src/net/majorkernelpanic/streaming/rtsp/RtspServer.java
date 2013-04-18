@@ -89,7 +89,7 @@ public class RtspServer extends Service {
 	protected SharedPreferences mSharedPreferences;
 	protected boolean mEnabled = true;	
 	protected int mPort = DEFAULT_RTSP_PORT;
-	private WeakHashMap<Session,Object> mSessions = new WeakHashMap<Session,Object>(2);
+	protected WeakHashMap<Session,Object> mSessions = new WeakHashMap<Session,Object>(2);
 	
 	private RequestListener mListenerThread;
 	private final IBinder mBinder = new LocalBinder();
