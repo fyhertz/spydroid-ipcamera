@@ -21,7 +21,6 @@
 package net.majorkernelpanic.spydroid.ui;
 
 import static net.majorkernelpanic.http.TinyHttpServer.KEY_HTTPS_ENABLED;
-import static net.majorkernelpanic.http.TinyHttpServer.KEY_HTTPS_PORT;
 import static net.majorkernelpanic.http.TinyHttpServer.KEY_HTTP_ENABLED;
 import static net.majorkernelpanic.http.TinyHttpServer.KEY_HTTP_PORT;
 
@@ -38,7 +37,6 @@ import android.preference.ListPreference;
 import android.preference.Preference;
 import android.preference.PreferenceActivity;
 import android.preference.PreferenceManager;
-import android.util.Log;
 
 @SuppressWarnings("deprecation")
 public class OptionsActivity extends PreferenceActivity {
@@ -61,9 +59,9 @@ public class OptionsActivity extends PreferenceActivity {
 		final ListPreference videoBitrate = (ListPreference) findPreference("video_bitrate");
 		final ListPreference videoFramerate = (ListPreference) findPreference("video_framerate");
 		final CheckBoxPreference httpEnabled = (CheckBoxPreference) findPreference("http_server_enabled");
-		final CheckBoxPreference  httpsEnabled = (CheckBoxPreference) findPreference("use_https");
+		//final CheckBoxPreference  httpsEnabled = (CheckBoxPreference) findPreference("use_https");
 		final Preference httpPort = findPreference(KEY_HTTP_PORT);
-		final Preference httpsPort = findPreference(KEY_HTTPS_PORT);
+		//final Preference httpsPort = findPreference(KEY_HTTPS_PORT);
 
 		boolean videoState = settings.getBoolean("stream_video", true);
 		videoEncoder.setEnabled(videoState);
@@ -85,9 +83,9 @@ public class OptionsActivity extends PreferenceActivity {
 		httpEnabled.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
 			public boolean onPreferenceChange(Preference preference, Object newValue) {
 				boolean state = (Boolean)newValue;
-				httpsEnabled.setEnabled(state);
+				//httpsEnabled.setEnabled(state);
 				httpPort.setEnabled(state);
-				httpsPort.setEnabled(state);
+				//httpsPort.setEnabled(state);
 				Editor editor = settings.edit();
 				// Updates the HTTP server
 				if (!state) {
@@ -95,20 +93,20 @@ public class OptionsActivity extends PreferenceActivity {
 					editor.putBoolean(KEY_HTTPS_ENABLED, false);
 				} else {
 					// HTTP/HTTPS, it's one or the other
-					if (httpsEnabled.isChecked()) {
+					/**if (httpsEnabled.isChecked()) {
 						editor.putBoolean(KEY_HTTPS_ENABLED, true);
 						editor.putBoolean(KEY_HTTP_ENABLED, false);
-					} else {
+					} else {*/
 						editor.putBoolean(KEY_HTTPS_ENABLED, false);
 						editor.putBoolean(KEY_HTTP_ENABLED, true);
-					}
+					//}
 				}
 				editor.commit();
 				return true;
 			}
 		});
 
-		httpsEnabled.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
+		/*httpsEnabled.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
 			public boolean onPreferenceChange(Preference preference, Object newValue) {
 				boolean state = (Boolean)newValue;
 				Editor editor = settings.edit();
@@ -129,7 +127,7 @@ public class OptionsActivity extends PreferenceActivity {
 				editor.commit();
 				return true;
 			}
-		});
+		});*/
 
 		videoResolution.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
 			public boolean onPreferenceChange(Preference preference, Object newValue) {
