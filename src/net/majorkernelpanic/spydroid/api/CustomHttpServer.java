@@ -35,8 +35,8 @@ import java.util.WeakHashMap;
 
 import net.majorkernelpanic.http.TinyHttpServer;
 import net.majorkernelpanic.spydroid.SpydroidApplication;
+import net.majorkernelpanic.streaming.Session;
 import net.majorkernelpanic.streaming.rtsp.UriParser;
-import net.majorkernelpanic.streaming.sdp.Session;
 
 import org.apache.http.HttpEntityEnclosingRequest;
 import org.apache.http.HttpException;

@@ -18,12 +18,11 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-package net.majorkernelpanic.streaming.sdp;
+package net.majorkernelpanic.streaming;
 
 import java.io.IOException;
 import java.net.InetAddress;
 
-import net.majorkernelpanic.streaming.Stream;
 import net.majorkernelpanic.streaming.audio.AudioStream;
 import net.majorkernelpanic.streaming.video.VideoStream;
 import android.content.Context;
