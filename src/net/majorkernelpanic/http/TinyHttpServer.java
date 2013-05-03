@@ -299,7 +299,6 @@ public class TinyHttpServer extends Service {
 	
 	@Override
 	public void onCreate() {
-
 		super.onCreate();
 
 		mContext = getApplicationContext();

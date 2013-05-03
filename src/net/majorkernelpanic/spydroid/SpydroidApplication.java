@@ -159,7 +159,7 @@ public class SpydroidApplication extends android.app.Application {
 
 	private BroadcastReceiver mBatteryInfoReceiver = new BroadcastReceiver() {
 		@Override
-		public void onReceive(Context arg0, Intent intent) {
+		public void onReceive(Context context, Intent intent) {
 			batteryLevel = intent.getIntExtra("level", 0);
 		}
 	};

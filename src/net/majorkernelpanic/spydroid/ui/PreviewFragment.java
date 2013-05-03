@@ -96,10 +96,12 @@ public class PreviewFragment extends Fragment {
 		getActivity().runOnUiThread(new Runnable() {
 			@Override
 			public void run() {
-				if ((mRtspServer != null && mRtspServer.isStreaming()) || (mHttpServer != null && mHttpServer.isStreaming()))
-					mTextView.setVisibility(View.INVISIBLE);
-				else 
-					mTextView.setVisibility(View.VISIBLE);
+				if (mTextView != null) {
+					if ((mRtspServer != null && mRtspServer.isStreaming()) || (mHttpServer != null && mHttpServer.isStreaming()))
+						mTextView.setVisibility(View.INVISIBLE);
+					else 
+						mTextView.setVisibility(View.VISIBLE);
+				}
 			}
 		});
 	}

@@ -55,7 +55,7 @@ public abstract class VideoStream extends MediaStream {
 	
 	/** 
 	 * Don't use this class directly
-	 * @param cameraId Can be either CameraInfo.CAMERA_FACING_BACK or CameraInfo.CAMERA_FACING_FRONT
+	 * @param camera Can be either CameraInfo.CAMERA_FACING_BACK or CameraInfo.CAMERA_FACING_FRONT
 	 */
 	public VideoStream(int camera) {
 		super();
@@ -65,7 +65,7 @@ public abstract class VideoStream extends MediaStream {
 	/**
 	 * Sets the camera that will be used to capture video.
 	 * You can call this method at any time and changes will take effect next time you call {@link #prepare()}.
-	 * @param cameraId Can be either CameraInfo.CAMERA_FACING_BACK or CameraInfo.CAMERA_FACING_FRONT
+	 * @param camera Can be either CameraInfo.CAMERA_FACING_BACK or CameraInfo.CAMERA_FACING_FRONT
 	 */	
 	public void setCamera(int camera) {
 		CameraInfo cameraInfo = new CameraInfo();
@@ -196,7 +196,7 @@ public abstract class VideoStream extends MediaStream {
 
 	/**
 	 * Prepare the VideoStream, you can then call {@link #start()}.
-	 * The underlying Camera will be opened and configured whaen you call this method so don't forget to deal with the RuntimeExceptions !
+	 * The underlying Camera will be opened and configured when you call this method so don't forget to deal with the RuntimeExceptions !
 	 * Camera.open, Camera.setParameter, Camera.unlock may throw one !
 	 */
 	public void prepare() throws IllegalStateException, IOException {

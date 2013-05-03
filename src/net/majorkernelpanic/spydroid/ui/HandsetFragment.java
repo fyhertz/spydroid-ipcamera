@@ -117,24 +117,26 @@ public class HandsetFragment extends Fragment {
 		getActivity().runOnUiThread(new Runnable () {
 			@Override
 			public void run() {
-				if (mHttpServer != null && mRtspServer != null) {
-					if (!mHttpServer.isHttpEnabled() && !mHttpServer.isHttpsEnabled()) {
-						mDescription1.setVisibility(View.INVISIBLE);
-						mLine1.setVisibility(View.INVISIBLE);
-					} else {
-						mDescription1.setVisibility(View.VISIBLE);
-						mLine1.setVisibility(View.VISIBLE);
-					}
-					if (!mRtspServer.isEnabled()) {
-						mDescription2.setVisibility(View.INVISIBLE);
-						mLine2.setVisibility(View.INVISIBLE);
-					} else {
-						mDescription2.setVisibility(View.VISIBLE);
-						mLine2.setVisibility(View.VISIBLE);
-					}
-					if (!mHttpServer.isStreaming() && !mRtspServer.isStreaming()) displayIpAddress();
-					else streamingState(1);
-				}		
+				if (mDescription1 != null) {
+					if (mHttpServer != null && mRtspServer != null) {
+						if (!mHttpServer.isHttpEnabled() && !mHttpServer.isHttpsEnabled()) {
+							mDescription1.setVisibility(View.INVISIBLE);
+							mLine1.setVisibility(View.INVISIBLE);
+						} else {
+							mDescription1.setVisibility(View.VISIBLE);
+							mLine1.setVisibility(View.VISIBLE);
+						}
+						if (!mRtspServer.isEnabled()) {
+							mDescription2.setVisibility(View.INVISIBLE);
+							mLine2.setVisibility(View.INVISIBLE);
+						} else {
+							mDescription2.setVisibility(View.VISIBLE);
+							mLine2.setVisibility(View.VISIBLE);
+						}
+						if (!mHttpServer.isStreaming() && !mRtspServer.isStreaming()) displayIpAddress();
+						else streamingState(1);
+					}		
+				}
 			}
 		});
 	}
