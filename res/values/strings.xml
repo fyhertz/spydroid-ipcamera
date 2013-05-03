@@ -2,13 +2,10 @@
 <resources>
     <string name="options">Options</string>
     <string name="quit">Quit</string>
-    <string name="client">Client</string>
     <string name="app_name">Spydroid</string>
     <string name="description">Capture live video and audio streaming from your smartphone with Spydroid</string>
     <string name="line1">In chrome or firefox type</string>
     <string name="line2">In VLC open</string>
-    <string name="about_activity_title">About</string>
-    <string name="client_activity_title">Client</string>
     <string name="options_activity_title">Settings</string>
     <string name="warning">Turn on wifi or tethering !</string>
     <string name="streaming">Streaming !</string>

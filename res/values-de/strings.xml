@@ -2,18 +2,16 @@
 <resources>
     <string name="options">Optionen</string>
     <string name="quit">Beenden</string>
-    <string name="client">Kunde</string>
     <string name="app_name">Spydroid</string>
     <string name="description">Fäng live Video- und Audiostreams aus deinem smartphone mit Spydroid an</string>
     <string name="line1">Mit Chrome oder Firefox schreib:</string>
     <string name="line2">Oder öffne mit VLC:</string>
-    <string name="about_activity_title">Apropos</string>
-    <string name="client_activity_title">Kunde</string>
     <string name="options_activity_title">Einstellungen</string>
     <string name="warning">Schält WLAN ein und verbinde dich mit einem Netz !</string>
     <string name="streaming">Streaming !</string>
     <string name="notification_title">Spydroid</string>
     <string name="notification_content">Achtung ! Spydroid ablaufend ;)</string>
+    <string name="preview">Start a stream to enable the preview !</string>
     <string name="about0">Spydroid ist eine lustige und open source App!</string>
     <string name="about1">Wenn du nicht verstehst, wie sie zu benutzen, dann ist die Google Projektseite hier, um dir zu helfen. zB gibt es darauf wertvolle Informationen, um das Stream direkt mit VLC anzufangen.</string>
     <string name="about2">Vergiss nicht, die App zu bewerten, es ist wirklich folgenreich, dein Leben hängt davon ab!</string>
@@ -37,6 +35,23 @@
     <string name="settings14">Mehr Optionen</string>
     <string name="settings15">Mitteilung</string>
     <string name="settings16">Mitteilung anschalten/ abschalten</string>
-    <string name="settings17">Hack for video streaming</string>
-    <string name="settings18">Allow video streaming to continue when the app is sent to the background. May not work well :/</string>
+    <string name="settings19">HTTP server</string>
+    <string name="settings20">HTTP server port</string>
+    <string name="settings21">Port used by the HTTP server</string>
+    <string name="settings22">Enabled</string>
+    <string name="settings23">Enable/Disable the HTTP server. Leave it on if you don\'t know what you are doing !</string>
+    <string name="settings24">Use HTTPS</string>
+    <string name="settings25">NOT STABLE YET !</string>
+    <string name="settings26">HTTPS server port</string>
+    <string name="settings27">Port used by the HTTPS server</string>
+    <string name="settings28">RTSP server</string>
+    <string name="settings29">Enabled</string>
+    <string name="settings30">Useful to use Spydroid directly with VLC</string>    
+    <string name="settings31">RTSP server port</string>
+    <string name="settings32">Port used by the RTSP server</string>    
+    <string name="bind_failed">You need to choose another port for the %s server !</string>
+    <string name="port_used">Port already in use !</string>    
+    <string name="page0">Main</string>
+    <string name="page1">Preview</string>
+    <string name="page2">About</string>
 </resources>

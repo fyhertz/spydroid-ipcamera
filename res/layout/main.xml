@@ -60,7 +60,7 @@
             android:layout_height="wrap_content"
             android:layout_gravity="center"
             android:gravity="center"
-            android:text="STREAMING !"
+            android:text="@string/streaming"
             android:textColor="#11FF11"
             android:textSize="20sp"
             android:visibility="gone" />
