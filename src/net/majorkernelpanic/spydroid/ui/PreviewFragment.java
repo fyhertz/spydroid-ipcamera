@@ -86,7 +86,7 @@ public class PreviewFragment extends Fragment {
 			SessionBuilder.getInstance().setSurfaceHolder(mSurfaceHolder);
 
 		} 
-
+		
 		return rootView;
 	}
 	

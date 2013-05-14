@@ -4,7 +4,7 @@
     var port = window.location.port;
     var videoPlugin;
     var videoStream;
-	 var audioPlugin;
+    var audioPlugin;
     var audioStream;
     var error;
 
