@@ -665,9 +665,13 @@ public class TinyHttpServer extends Service {
 			} catch (HttpException e) {
 				Log.e(TAG,"Unrecoverable HTTP protocol violation: " + e.getMessage());
 			} finally {
-				/*try {
+				try {
+					OutputStream sockOutOStream = socket.getOutputStream();
+					sockOutOStream.write(new byte[0]);
+					sockOutOStream.flush();
 					socket.close();
-				} catch (IOException e) {}*/
+				} catch (IOException e) {
+				}
 				try {
 					this.conn.shutdown();
 				} catch (Exception ignore) {}

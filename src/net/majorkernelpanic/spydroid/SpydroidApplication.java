@@ -34,7 +34,6 @@ import static org.acra.ReportField.USER_CRASH_DATE;
 import net.majorkernelpanic.streaming.SessionBuilder;
 import net.majorkernelpanic.streaming.video.VideoQuality;
 
-import org.acra.ACRA;
 import org.acra.annotation.ReportsCrashes;
 
 import android.content.BroadcastReceiver;
@@ -88,7 +87,7 @@ public class SpydroidApplication extends android.app.Application {
 		SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(this);
 
 		notificationEnabled = settings.getBoolean("notification_enabled", true);
-
+		
 		// On android 3.* AAC ADTS is not supported so we set the default encoder to AMR-NB, on android 4.* AAC is the default encoder
 		audioEncoder = (Integer.parseInt(android.os.Build.VERSION.SDK)<14) ? SessionBuilder.AUDIO_AMRNB : SessionBuilder.AUDIO_AAC;
 		audioEncoder = Integer.parseInt(settings.getString("audio_encoder", String.valueOf(audioEncoder)));
@@ -137,14 +136,14 @@ public class SpydroidApplication extends android.app.Application {
 			}
 
 			else if (key.equals("audio_encoder") || key.equals("stream_audio")) { 
-				audioEncoder = Integer.parseInt(sharedPreferences.getString("audio_encoder", "0"));
+				audioEncoder = Integer.parseInt(sharedPreferences.getString("audio_encoder", String.valueOf(audioEncoder)));
 				SessionBuilder.getInstance().setAudioEncoder( audioEncoder );
 				if (!sharedPreferences.getBoolean("stream_audio", false)) 
 					SessionBuilder.getInstance().setAudioEncoder(0);
 			}
 
 			else if (key.equals("stream_video") || key.equals("video_encoder")) {
-				videoEncoder = Integer.parseInt(sharedPreferences.getString("video_encoder", "0"));
+				videoEncoder = Integer.parseInt(sharedPreferences.getString("video_encoder", String.valueOf(videoEncoder)));
 				SessionBuilder.getInstance().setVideoEncoder( videoEncoder );
 				if (!sharedPreferences.getBoolean("stream_video", true)) 
 					SessionBuilder.getInstance().setVideoEncoder(0);

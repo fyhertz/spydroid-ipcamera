@@ -21,6 +21,7 @@
 package net.majorkernelpanic.spydroid.ui;
 
 import static net.majorkernelpanic.http.TinyHttpServer.KEY_HTTPS_ENABLED;
+import static net.majorkernelpanic.http.TinyHttpServer.KEY_HTTPS_PORT;
 import static net.majorkernelpanic.http.TinyHttpServer.KEY_HTTP_ENABLED;
 import static net.majorkernelpanic.http.TinyHttpServer.KEY_HTTP_PORT;
 
@@ -37,6 +38,7 @@ import android.preference.ListPreference;
 import android.preference.Preference;
 import android.preference.PreferenceActivity;
 import android.preference.PreferenceManager;
+import android.util.Log;
 
 @SuppressWarnings("deprecation")
 public class OptionsActivity extends PreferenceActivity {
@@ -59,16 +61,15 @@ public class OptionsActivity extends PreferenceActivity {
 		final ListPreference videoBitrate = (ListPreference) findPreference("video_bitrate");
 		final ListPreference videoFramerate = (ListPreference) findPreference("video_framerate");
 		final CheckBoxPreference httpEnabled = (CheckBoxPreference) findPreference("http_server_enabled");
-		//final CheckBoxPreference  httpsEnabled = (CheckBoxPreference) findPreference("use_https");
+		final CheckBoxPreference  httpsEnabled = (CheckBoxPreference) findPreference("use_https");
 		final Preference httpPort = findPreference(KEY_HTTP_PORT);
-		//final Preference httpsPort = findPreference(KEY_HTTPS_PORT);
+		final Preference httpsPort = findPreference(KEY_HTTPS_PORT);
 
 		boolean videoState = settings.getBoolean("stream_video", true);
 		videoEncoder.setEnabled(videoState);
 		videoResolution.setEnabled(videoState);
 		videoBitrate.setEnabled(videoState);
 		videoFramerate.setEnabled(videoState);        
-		audioEncoder.setEnabled(settings.getBoolean("stream_audio", true));
 
 		videoEncoder.setValue(String.valueOf(mApplication.videoEncoder));
 		audioEncoder.setValue(String.valueOf(mApplication.audioEncoder));
@@ -80,6 +81,8 @@ public class OptionsActivity extends PreferenceActivity {
 		videoFramerate.setSummary(getString(R.string.settings1)+" "+videoFramerate.getValue()+"fps");
 		videoBitrate.setSummary(getString(R.string.settings2)+" "+videoBitrate.getValue()+"kbps");
 
+		audioEncoder.setEnabled(settings.getBoolean("stream_audio", false));
+		
 		httpEnabled.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
 			public boolean onPreferenceChange(Preference preference, Object newValue) {
 				boolean state = (Boolean)newValue;
@@ -93,20 +96,20 @@ public class OptionsActivity extends PreferenceActivity {
 					editor.putBoolean(KEY_HTTPS_ENABLED, false);
 				} else {
 					// HTTP/HTTPS, it's one or the other
-					/**if (httpsEnabled.isChecked()) {
+					if (httpsEnabled.isChecked()) {
 						editor.putBoolean(KEY_HTTPS_ENABLED, true);
 						editor.putBoolean(KEY_HTTP_ENABLED, false);
-					} else {*/
+					} else {
 						editor.putBoolean(KEY_HTTPS_ENABLED, false);
 						editor.putBoolean(KEY_HTTP_ENABLED, true);
-					//}
+					}
 				}
 				editor.commit();
 				return true;
 			}
 		});
 
-		/*httpsEnabled.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
+		httpsEnabled.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
 			public boolean onPreferenceChange(Preference preference, Object newValue) {
 				boolean state = (Boolean)newValue;
 				Editor editor = settings.edit();
@@ -127,7 +130,7 @@ public class OptionsActivity extends PreferenceActivity {
 				editor.commit();
 				return true;
 			}
-		});*/
+		});
 
 		videoResolution.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
 			public boolean onPreferenceChange(Preference preference, Object newValue) {

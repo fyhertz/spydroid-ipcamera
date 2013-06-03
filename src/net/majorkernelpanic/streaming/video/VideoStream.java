@@ -204,7 +204,7 @@ public abstract class VideoStream extends MediaStream {
 		// Resets the recorder in case it is in a bad state
 		mMediaRecorder.reset();
 		
-		if (mSurfaceHolder == null) 
+		if (mSurfaceHolder == null || mSurfaceHolder.getSurface() == null || !mSurfaceHolder.getSurface().isValid()) 
 			throw new IllegalStateException("Invalid surface holder !");
 		
 		if (mCamera == null) {

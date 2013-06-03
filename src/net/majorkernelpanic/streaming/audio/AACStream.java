@@ -27,6 +27,7 @@ import java.lang.reflect.Field;
 
 import net.majorkernelpanic.streaming.exceptions.AACNotSupportedException;
 import net.majorkernelpanic.streaming.rtp.AACADTSPacketizer;
+import android.annotation.SuppressLint;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
 import android.media.MediaRecorder;
@@ -76,6 +77,7 @@ public class AACStream extends AudioStream {
 	private int mProfile, mSamplingRateIndex, mChannel, mConfig;
 	private SharedPreferences mSettings = null;
 
+	@SuppressLint("InlinedApi")
 	public AACStream() throws IOException {
 		super();
 
@@ -83,18 +85,30 @@ public class AACStream extends AudioStream {
 
 		setAudioSource(MediaRecorder.AudioSource.CAMCORDER);
 
-		try {
-			Field name = MediaRecorder.OutputFormat.class.getField("AAC_ADTS");
-			Log.d(TAG,"AAC ADTS seems to be supported: AAC_ADTS="+name.getInt(null));
-			setOutputFormat(name.getInt(null));
-		} catch (Exception e) {
+		if (!AACStreamingSupported()) {
 			Log.e(TAG,"AAC ADTS not supported on this phone");
 			throw new AACNotSupportedException();
 		}
 
+		try {
+			Field name = MediaRecorder.OutputFormat.class.getField("AAC_ADTS");
+			setOutputFormat(name.getInt(null));
+		}
+		catch (Exception ignore) {}	
+
 		setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
 		setAudioSamplingRate(16000);
 
+	}
+
+	private static boolean AACStreamingSupported() {
+		if (Integer.parseInt(android.os.Build.VERSION.SDK)<14) return false;
+		try {
+			MediaRecorder.OutputFormat.class.getField("AAC_ADTS");
+			return true;
+		} catch (Exception e) {
+			return false;
+		}		
 	}
 
 	/**

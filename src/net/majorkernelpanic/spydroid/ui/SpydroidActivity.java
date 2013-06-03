@@ -118,7 +118,7 @@ public class SpydroidActivity extends FragmentActivity {
 			((LinearLayout)findViewById(R.id.adcontainer)).removeAllViews();
 		}
 
-		// Prevents the phone to go to sleep mode
+		// Prevents the phone from going to sleep mode
 		PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
 		mWakeLock = pm.newWakeLock(PowerManager.FULL_WAKE_LOCK, "net.majorkernelpanic.spydroid.wakelock");
 
@@ -233,20 +233,6 @@ public class SpydroidActivity extends FragmentActivity {
 		// Returns to home menu
 		finish();
 	}
-
-	private SurfaceHolder.Callback mHolderCallback = new SurfaceHolder.Callback() {
-		
-		@Override
-		public void surfaceDestroyed(SurfaceHolder holder) {
-			
-		}
-		
-		@Override
-		public void surfaceCreated(SurfaceHolder holder) {}
-		@Override
-		public void surfaceChanged(SurfaceHolder holder, int format, int width,int height) {}
-		
-	};
 	
 	private ServiceConnection mRtspServiceConnection = new ServiceConnection() {
 
