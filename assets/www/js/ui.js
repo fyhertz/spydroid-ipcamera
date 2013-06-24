@@ -7,6 +7,7 @@
     var audioPlugin;
     var audioStream;
     var error;
+    var volume;
 
     function stream(object,type,done) {
 
@@ -92,16 +93,22 @@
         $.ajax({type: 'POST', url: 'request.json', data: JSON.stringify(data), success:success, error:error});
     }
 
-    function updateBatteryLevel(level) {
-        $('#battery>#level').text(level);
+    function updatePhoneStatus(data) {
+
+        if (data.volume !== undefined) {
+            volume = data.volume;
+            $('#sound>#volume').text(volume.current);
+        }
+        $('#battery>#level').text(data.battery);
+        
         setTimeout(function () {
 	         sendRequest(
-                "battery",
+                [{"action":"battery"},{"action":"volume"}],
                 function (e) {
-                    updateBatteryLevel(e.battery);
+                    updatePhoneStatus(e);
                 },
                 function () {
-                    updateBatteryLevel('??');
+                    updatePhoneStatus({battery:'??'});
                 }
             );
         },100000);
@@ -157,6 +164,13 @@
 	         $('#error-screenoff').fadeIn(1000);
 	         $('#glass').fadeIn(1000);
 	     }
+    }
+
+    function testVlcPlugin() {
+        if (videoPlugin[0].VersionInfo === undefined || videoPlugin[0].VersionInfo.indexOf('2.0') === -1) {
+            $('#error-noplugin').fadeIn();
+	         $('#glass').fadeIn();
+        }
     }
 
     function generateUriParams(type) {
@@ -384,6 +398,20 @@
 	         $('#need-help').hide();
 	     });
 
+        $('#sound #plus').click(function () {
+            volume.current += 1;
+            if (volume.current > volume.max) volume.current = volume.max;
+            else sendRequest([{'action':'volume','set':volume.current}]);            
+            $('#sound>#volume').text(volume.current);
+        });
+
+        $('#sound #minus').click(function () {
+            volume.current -= 1;
+            if (volume.current < 0) volume.current = 0;
+            else sendRequest([{'action':'volume','set':volume.current}]);
+            $('#sound>#volume').text(volume.current);
+        });
+
         window.onbeforeunload = function (e) {
             videoStream.stop();
             audioStream.stop();
@@ -399,19 +427,21 @@
         audioPlugin = $('#vlca');
         audioStream = stream(audioPlugin[0],'audio',updateStatus);
 
-        sendRequest([{'action':'sounds'},{'action':'screen'},{'action':'get'},{'action':'battery'}], function (data) {
+        testVlcPlugin();
 
-	         // Verify that the screen is not turned off
+        sendRequest([{'action':'sounds'},{'action':'screen'},{'action':'get'},{'action':'battery'},{'action':'volume'}], function (data) {
+
+	         // Verifies that the screen is not turned off
 	         testScreenState(data.screen);
             
-	         // Fetch the list of sounds available on the phone
+	         // Fetches the list of sounds available on the phone
 	         loadSoundsList(data.sounds);
 
-	         // Retrieve the configuration of Spydroid on the phone
+	         // Retrieves the configuration of Spydroid on the phone
 	         loadSettings(data.get);
 
-            // Retrieve the battery level
-            updateBatteryLevel(data.battery);
+            // Retrieves volume and battery level
+            updatePhoneStatus(data);
             
         });
 

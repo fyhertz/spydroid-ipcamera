@@ -118,7 +118,7 @@ abstract public class AbstractPacketizer {
 
 	protected static class Statistics {
 
-		public final static int COUNT=50;
+		public final static int COUNT=500000;
 		private float m = 0, q = 0;
 
 		public void init(long value) {

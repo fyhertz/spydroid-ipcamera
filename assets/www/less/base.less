@@ -112,6 +112,7 @@ a {
 }
 a:hover {
     color: lighten(red,20%);
+	 cursor: pointer;
 }
 
 
@@ -331,7 +332,7 @@ section {
 
 #error-noplugin {
     width: 600px;
-    height: 420px;
+    height: 460px;
     h3 {
 	     margin-top: 15px;
     }
@@ -453,6 +454,20 @@ footer {
 	     cursor: pointer;
     }
 
+}
+
+#sound {
+    #plus,#minus {font-size: 24px;}
+    #volume {font-size: 14px;}
+    >div {
+        text-align: center;
+        width: 28px;
+    }
+	 position: absolute;
+	 z-index: -1;
+	 bottom: 25px;
+	 left: -28px;
+	 background: rgba(7, 63, 131, 0.2);
 }
 
 #battery {

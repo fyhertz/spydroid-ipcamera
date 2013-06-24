@@ -116,6 +116,7 @@ public class RequestHandler {
 	 * -> "state": returns a JSON containing information about the state of the application
 	 * -> "battery": returns an approximation of the battery level on the phone
 	 * -> "buzz": makes the phone buuz 
+	 * -> "volume": sets or gets the volume 
 	 * @throws JSONException
 	 * @throws IllegalAccessException 
 	 * @throws IllegalArgumentException 
@@ -229,6 +230,19 @@ public class RequestHandler {
 			Vibrator vibrator = (Vibrator) context.getSystemService(Context.VIBRATOR_SERVICE);
 			vibrator.vibrate(300);
 			response.append("[]");
+		}
+		
+		// Sets or gets the system's volume
+		else if (action.equals("volume")) {
+			AudioManager audio = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
+			if (object.has("set")) {
+				audio.setStreamVolume(AudioManager.STREAM_MUSIC, object.getInt("set"), AudioManager.FLAG_REMOVE_SOUND_AND_VIBRATE);
+				response.append("[]");
+			} else {
+				int max = audio.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
+				int current = audio.getStreamVolume(AudioManager.STREAM_MUSIC);
+				response.append("{\"max\":"+max+",\"current\":"+current+"}");
+			}
 		}
 
 	}
