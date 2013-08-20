@@ -9,6 +9,7 @@
     <string name="options_activity_title">Settings</string>
     <string name="warning">Turn on wifi or tethering !</string>
     <string name="streaming">Streaming !</string>
+    <string name="bitrate">0 kbps</string>
     <string name="notification_title">Spydroid</string>
     <string name="notification_content">Beware ! Spydroid is running ;)</string>
     <string name="preview">Start a stream to enable the preview !</string>

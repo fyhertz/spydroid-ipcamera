@@ -38,6 +38,7 @@ import android.content.ServiceConnection;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.IBinder;
 import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
@@ -50,8 +51,10 @@ import android.widget.TextView;
 
 public class HandsetFragment extends Fragment {
 
-    private TextView mDescription1, mDescription2, mLine1, mLine2, mVersion, mSignWifi, mSignStreaming;
-    private LinearLayout mSignInformation;
+	public final static String TAG = "HandsetFragment";
+	
+    private TextView mDescription1, mDescription2, mLine1, mLine2, mVersion, mSignWifi, mTextBitrate;
+    private LinearLayout mSignInformation, mSignStreaming;
     private Animation mPulseAnimation;
     
     private SpydroidApplication mApplication;
@@ -74,9 +77,10 @@ public class HandsetFragment extends Fragment {
         mDescription2 = (TextView)rootView.findViewById(R.id.line2_description);
         mVersion = (TextView)rootView.findViewById(R.id.version);
         mSignWifi = (TextView)rootView.findViewById(R.id.advice);
-        mSignStreaming = (TextView)rootView.findViewById(R.id.streaming);
+        mSignStreaming = (LinearLayout)rootView.findViewById(R.id.streaming);
         mSignInformation = (LinearLayout)rootView.findViewById(R.id.information);
         mPulseAnimation = AnimationUtils.loadAnimation(mApplication.getApplicationContext(), R.anim.pulse);
+        mTextBitrate = (TextView)rootView.findViewById(R.id.bitrate);
         return rootView ;
     }
 	
@@ -152,6 +156,7 @@ public class HandsetFragment extends Fragment {
 			mSignWifi.clearAnimation();
 			mSignStreaming.setVisibility(View.VISIBLE);
 			mSignStreaming.startAnimation(mPulseAnimation);
+			mHandler.post(mUpdateBitrate);
 			mSignInformation.setVisibility(View.INVISIBLE);
 			mSignWifi.setVisibility(View.GONE);
 		} else if (state==2) {
@@ -228,5 +233,22 @@ public class HandsetFragment extends Fragment {
         	}
         } 
     };
+    
+	private final Handler mHandler = new Handler();
+    
+	private Runnable mUpdateBitrate = new Runnable() {
+		@Override
+		public void run() {
+			if ((mRtspServer != null && mRtspServer.isStreaming()) || (mHttpServer != null && mHttpServer.isStreaming())) {
+				long bitrate = 0;
+				bitrate += mRtspServer!=null?mRtspServer.getBitrate():0;
+				bitrate += mHttpServer!=null?mHttpServer.getBitrate():0;
+				mTextBitrate.setText(""+bitrate/1000+" kbps");
+				mHandler.postDelayed(mUpdateBitrate, 1000);
+			} else {
+				mTextBitrate.setText("0 kbps");
+			}
+		}
+	};
 	
 }

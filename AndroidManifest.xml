@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="net.majorkernelpanic.spydroid"
-    android:versionCode="810"
-    android:versionName="8.1" >
+    android:versionCode="900"
+    android:versionName="9.0" >
 
     <uses-sdk
         android:minSdkVersion="9"

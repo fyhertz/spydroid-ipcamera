@@ -145,6 +145,16 @@ public class CustomHttpServer extends TinyHttpServer {
 		return false;
 	}
 
+	public long getBitrate() {
+		long bitrate = 0;
+		for ( Session session : mSessions.keySet() ) {
+		    if ( session != null ) {
+		    	if (session.isStreaming()) bitrate += session.getBitrate();
+		    } 
+		}
+		return bitrate;
+	}
+	
 	class CustomRequestHandler implements HttpRequestHandler {
 
 		public CustomRequestHandler() {}

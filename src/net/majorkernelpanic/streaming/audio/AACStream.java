@@ -25,7 +25,6 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.lang.reflect.Field;
 
-import net.majorkernelpanic.streaming.exceptions.AACNotSupportedException;
 import net.majorkernelpanic.streaming.rtp.AACADTSPacketizer;
 import android.annotation.SuppressLint;
 import android.content.SharedPreferences;
@@ -119,10 +118,10 @@ public class AACStream extends AudioStream {
 		mSettings = prefs;
 	}
 
-	public void prepare() throws IllegalStateException, IOException {
+	public void start() throws IllegalStateException, IOException {
 		testADTS();
 		((AACADTSPacketizer)mPacketizer).setSamplingRate(mActualSamplingRate);
-		super.prepare();
+		super.start();
 
 	}
 
@@ -159,7 +158,7 @@ public class AACStream extends AudioStream {
 				mActualSamplingRate = Integer.valueOf(s[0]);
 				mConfig = Integer.valueOf(s[1]);
 				mChannel = Integer.valueOf(s[2]);
-				return;
+				//return;
 			}
 		}
 
@@ -173,14 +172,16 @@ public class AACStream extends AudioStream {
 		
 		// ADTS header is 7 or 9 bytes long
 		byte[] buffer = new byte[9];
-
-		// That means the H264Stream will behave as a regular MediaRecorder object
-		// it will not start the packetizer thread and can be used to save video in a file
-		setMode(MODE_DEFAULT);
+		
+		mMediaRecorder = new MediaRecorder();
+		mMediaRecorder.setAudioSource(mAudioSource);
+		mMediaRecorder.setOutputFormat(mOutputFormat);
+		mMediaRecorder.setAudioEncoder(mAudioEncoder);
+		mMediaRecorder.setAudioChannels(1);
+		mMediaRecorder.setAudioSamplingRate(mSamplingRate);
 		mMediaRecorder.setOutputFile(TESTFILE);
-
-		super.prepare();
-		start();
+		mMediaRecorder.prepare();
+		mMediaRecorder.start();
 
 		// We record for 1 sec
 		// TODO: use the MediaRecorder.OnInfoListener
@@ -188,8 +189,9 @@ public class AACStream extends AudioStream {
 			Thread.sleep(1000);
 		} catch (InterruptedException e) {}
 
-		stop();
-		setMode(MODE_STREAMING);
+		mMediaRecorder.stop();
+		mMediaRecorder.release();
+		mMediaRecorder = null;
 
 		File file = new File(TESTFILE);
 		RandomAccessFile raf = new RandomAccessFile(file, "r");
