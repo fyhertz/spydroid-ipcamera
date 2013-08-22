@@ -82,13 +82,13 @@ public class OptionsActivity extends PreferenceActivity {
 		videoBitrate.setSummary(getString(R.string.settings2)+" "+videoBitrate.getValue()+"kbps");
 
 		audioEncoder.setEnabled(settings.getBoolean("stream_audio", false));
-		
+
 		httpEnabled.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
 			public boolean onPreferenceChange(Preference preference, Object newValue) {
 				boolean state = (Boolean)newValue;
-				//httpsEnabled.setEnabled(state);
+				if (httpsEnabled != null) httpsEnabled.setEnabled(state);
 				httpPort.setEnabled(state);
-				//httpsPort.setEnabled(state);
+				if (httpsPort != null) httpsPort.setEnabled(state);
 				Editor editor = settings.edit();
 				// Updates the HTTP server
 				if (!state) {
@@ -96,7 +96,7 @@ public class OptionsActivity extends PreferenceActivity {
 					editor.putBoolean(KEY_HTTPS_ENABLED, false);
 				} else {
 					// HTTP/HTTPS, it's one or the other
-					if (httpsEnabled.isChecked()) {
+					if (httpsEnabled != null && httpsEnabled.isChecked()) {
 						editor.putBoolean(KEY_HTTPS_ENABLED, true);
 						editor.putBoolean(KEY_HTTP_ENABLED, false);
 					} else {
@@ -109,28 +109,30 @@ public class OptionsActivity extends PreferenceActivity {
 			}
 		});
 
-		httpsEnabled.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
-			public boolean onPreferenceChange(Preference preference, Object newValue) {
-				boolean state = (Boolean)newValue;
-				Editor editor = settings.edit();
-				// Updates the HTTP server
-				if (!httpEnabled.isChecked()) {
-					editor.putBoolean(KEY_HTTP_ENABLED, false);
-					editor.putBoolean(KEY_HTTPS_ENABLED, false);
-				} else {
-					// HTTP/HTTPS, it's one or the other
-					if (state) {
-						editor.putBoolean(KEY_HTTPS_ENABLED, true);
+		if (httpsEnabled != null) { 
+			httpsEnabled.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
+				public boolean onPreferenceChange(Preference preference, Object newValue) {
+					boolean state = (Boolean)newValue;
+					Editor editor = settings.edit();
+					// Updates the HTTP server
+					if (!httpEnabled.isChecked()) {
 						editor.putBoolean(KEY_HTTP_ENABLED, false);
-					} else {
 						editor.putBoolean(KEY_HTTPS_ENABLED, false);
-						editor.putBoolean(KEY_HTTP_ENABLED, true);
+					} else {
+						// HTTP/HTTPS, it's one or the other
+						if (state) {
+							editor.putBoolean(KEY_HTTPS_ENABLED, true);
+							editor.putBoolean(KEY_HTTP_ENABLED, false);
+						} else {
+							editor.putBoolean(KEY_HTTPS_ENABLED, false);
+							editor.putBoolean(KEY_HTTP_ENABLED, true);
+						}
 					}
+					editor.commit();
+					return true;
 				}
-				editor.commit();
-				return true;
-			}
-		});
+			});
+		}
 
 		videoResolution.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
 			public boolean onPreferenceChange(Preference preference, Object newValue) {
