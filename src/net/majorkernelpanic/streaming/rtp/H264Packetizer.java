@@ -98,7 +98,7 @@ public class H264Packetizer extends AbstractPacketizer implements Runnable {
 				if (intervalBetweenReports>0) {
 					if (delta>=intervalBetweenReports) {
 						// We send a Sender Report
-						report.send(oldtime+duration,ts*90/1000000);
+						report.send(oldtime+duration,(ts/100)*90/10000);
 					}
 				}
 

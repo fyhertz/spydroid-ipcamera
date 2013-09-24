@@ -204,7 +204,7 @@ public class RtpSocket implements Runnable {
 	 **/
 	public void updateTimestamp(long timestamp) {
 		mTimestamps[mBufferIn] = timestamp;
-		setLong(mBuffers[mBufferIn], timestamp*mClock/1000000000L, 4, 8);
+		setLong(mBuffers[mBufferIn], (timestamp/100L)*(mClock/1000L)/10000L, 4, 8);
 	}
 
 	/** Sets the marker in the RTP packet. */
@@ -215,10 +215,11 @@ public class RtpSocket implements Runnable {
 	/** The Thread sends the packets in the FIFO one by one at a constant rate. */
 	@Override
 	public void run() {
-		Statistics stats = new Statistics(50,3300);
+		Statistics stats = new Statistics(50,3000);
 		try {
 			// Caches mCacheSize milliseconds of the stream in the FIFO.
 			Thread.sleep(mCacheSize);
+			long delta = 0;
 			while (mBufferCommitted.tryAcquire(4,TimeUnit.SECONDS)) {
 				if (mOldTimestamp != 0) {
 					// We use our knowledge of the clock rate of the stream and the difference between to timestamp to
@@ -230,11 +231,11 @@ public class RtpSocket implements Runnable {
 						// We ensure that packets are sent at a constant and suitable rate no matter how the RtpSocket is used.
 						Thread.sleep(d);
 					}
-					/*delta += mTimestamps[mBufferOut]-mOldTimestamp;
+					delta += mTimestamps[mBufferOut]-mOldTimestamp;
 					if (delta>500000000 || delta<0) {
 						Log.d(TAG,"permits: "+mBufferCommitted.availablePermits());
 						delta = 0;
-					}*/
+					}
 				}
 				mOldTimestamp = mTimestamps[mBufferOut];
 				mSocket.send(mPackets[mBufferOut]);
@@ -284,7 +285,7 @@ public class RtpSocket implements Runnable {
 					initoffset = true;
 				}
 				value -= (now - start) - duration;
-				//Log.d(TAG, "sum1: "+duration/1000000+" sum2: "+(now-start)/1000000+" drift: "+((now-start)-duration)/1000000+" v: "+value/1000000);
+				Log.d(TAG, "sum1: "+duration/1000000+" sum2: "+(now-start)/1000000+" drift: "+((now-start)-duration)/1000000+" v: "+value/1000000);
 			}
 			if (c<40) {
 				// We ignore the first 20 measured values because they may not be accurate
@@ -297,7 +298,7 @@ public class RtpSocket implements Runnable {
 		}
 		
 		public long average() {
-			long l = (long)m;
+			long l = (long)m-2000000;
 			return l>0 ? l : 0;
 		}
 
