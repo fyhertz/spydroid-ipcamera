@@ -360,8 +360,8 @@ public abstract class VideoStream extends MediaStream {
 
 	/**
 	 * Starts the stream.
-	 * This will also open the camera and dispay the preview if {@link #startPreview()}
-	 * has not laready been called.
+	 * This will also open the camera and dispay the preview 
+	 * if {@link #startPreview()} has not aready been called.
 	 */
 	public synchronized void start() throws IllegalStateException, IOException {
 		super.start();

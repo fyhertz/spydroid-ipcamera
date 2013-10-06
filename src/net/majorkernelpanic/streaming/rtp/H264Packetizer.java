@@ -39,11 +39,12 @@ public class H264Packetizer extends AbstractPacketizer implements Runnable {
 	public final static String TAG = "H264Packetizer";
 
 	private final static int MAXPACKETSIZE = 1400;
-
+	
 	private Thread t = null;
 	private int naluLength = 0;
 	private long delay = 0, oldtime = 0;
 	private Statistics stats = new Statistics();
+	private byte[] sps = null, pps = null;
 
 	public H264Packetizer() throws IOException {
 		super();
@@ -67,8 +68,13 @@ public class H264Packetizer extends AbstractPacketizer implements Runnable {
 		}
 	}
 
+	public void setStreamParameters(byte[] pps, byte[] sps) {
+		this.pps = pps;
+		this.sps = sps;
+	}	
+	
 	public void run() {
-		long duration = 0;
+		long duration = 0, delta2 = 0;
 		Log.d(TAG,"H264 packetizer started !");
 		stats.reset();
 		// This will skip the MPEG4 header if this step fails we can't stream anything :(
@@ -102,6 +108,26 @@ public class H264Packetizer extends AbstractPacketizer implements Runnable {
 					}
 				}
 
+				delta2 += duration/1000000;
+				if (delta2>5000) {
+					// Every 5 secondes, we send two packets containing NALU type 7 (sps) and 8 (pps)
+					delta2 = 0;
+					if (sps != null) {
+						buffer = socket.requestBuffer();
+						socket.markNextPacket();
+						socket.updateTimestamp(ts);
+						System.arraycopy(sps, 0, buffer, rtphl, sps.length);
+						super.send(rtphl+sps.length);
+					}
+					if (pps != null) {
+						buffer = socket.requestBuffer();
+						socket.updateTimestamp(ts);
+						socket.markNextPacket();
+						System.arraycopy(pps, 0, buffer, rtphl, pps.length);
+						super.send(rtphl+pps.length);
+					}					
+				}
+				
 				stats.push(duration);
 				// Computes the average duration of a NAL unit
 				delay = stats.average();

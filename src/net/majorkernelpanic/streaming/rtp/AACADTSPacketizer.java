@@ -77,7 +77,7 @@ public class AACADTSPacketizer extends AbstractPacketizer implements Runnable {
 
 	public void run() {
 
-		Log.d(TAG,"AAC packetizer started !");
+		Log.d(TAG,"AAC ADTS packetizer started !");
 
 		// "A packet SHALL carry either one or more complete Access Units, or a
 		// single fragment of an Access Unit.  Fragments of the same Access Unit
@@ -121,7 +121,7 @@ public class AACADTSPacketizer extends AbstractPacketizer implements Runnable {
 				// Read CRS if any
 				if (!protection) is.read(header,0,2);
 
-				samplingRate = AACStream.ADTS_SAMPLING_RATES[(header[2]&0x3C) >> 2];
+				samplingRate = AACStream.AUDIO_SAMPLING_RATES[(header[2]&0x3C) >> 2];
 				profile = ( (header[2]&0xC0) >> 6 ) + 1 ;
 
 				// We update the RTP timestamp
@@ -181,7 +181,7 @@ public class AACADTSPacketizer extends AbstractPacketizer implements Runnable {
 			e.printStackTrace();
 		} catch (InterruptedException ignore) {}
 
-		Log.d(TAG,"AAC packetizer stopped !");
+		Log.d(TAG,"AAC ADTS packetizer stopped !");
 
 	}
 
