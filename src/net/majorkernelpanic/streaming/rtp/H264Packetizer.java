@@ -111,6 +111,7 @@ public class H264Packetizer extends AbstractPacketizer implements Runnable {
 				delta2 += duration/1000000;
 				if (delta2>5000) {
 					// Every 5 secondes, we send two packets containing NALU type 7 (sps) and 8 (pps)
+					// Those should allow the H264 stream to be decoded even if no SDP was sent to the decoder.
 					delta2 = 0;
 					if (sps != null) {
 						buffer = socket.requestBuffer();
@@ -158,6 +159,11 @@ public class H264Packetizer extends AbstractPacketizer implements Runnable {
 
 		// Parses the NAL unit type
 		type = header[4]&0x1F;
+		
+		// The stream already contains NAL unit type 7 or 8, we don't need 
+		// to add them to the stream ourselves
+		if (type == 7) sps = null;
+		if (type == 8) pps = null;
 
 		// Updates the timestamp
 		ts += delay;
