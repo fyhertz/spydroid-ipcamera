@@ -91,15 +91,16 @@ public class H264Packetizer extends AbstractPacketizer implements Runnable {
 			return;
 		}
 
-		// We read a NAL units from the input stream and we send them
 		try {
 			while (!Thread.interrupted()) {
 
-				// We measure how long it takes to receive the NAL unit from the phone
 				oldtime = System.nanoTime();
+				// We read a NAL units from the input stream and we send them
 				send();
+				// We measure how long it took to receive NAL units from the phone
 				duration = System.nanoTime() - oldtime;
 
+				// We regulary send RTSP Sender Report to the decoder
 				delta += duration/1000000;
 				if (intervalBetweenReports>0) {
 					if (delta>=intervalBetweenReports) {
@@ -108,10 +109,10 @@ public class H264Packetizer extends AbstractPacketizer implements Runnable {
 					}
 				}
 
+				// Every 5 secondes, we send two packets containing NALU type 7 (sps) and 8 (pps)
+				// Those should allow the H264 stream to be decoded even if no SDP was sent to the decoder.				
 				delta2 += duration/1000000;
 				if (delta2>5000) {
-					// Every 5 secondes, we send two packets containing NALU type 7 (sps) and 8 (pps)
-					// Those should allow the H264 stream to be decoded even if no SDP was sent to the decoder.
 					delta2 = 0;
 					if (sps != null) {
 						buffer = socket.requestBuffer();
