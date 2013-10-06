@@ -45,7 +45,9 @@ public class H264Packetizer extends AbstractPacketizer implements Runnable {
 	private long delay = 0, oldtime = 0;
 	private Statistics stats = new Statistics();
 	private byte[] sps = null, pps = null;
-
+	private int count = 0;
+	
+	
 	public H264Packetizer() throws IOException {
 		super();
 		socket.setClockFrequency(90000);
@@ -77,6 +79,8 @@ public class H264Packetizer extends AbstractPacketizer implements Runnable {
 		long duration = 0, delta2 = 0;
 		Log.d(TAG,"H264 packetizer started !");
 		stats.reset();
+		count = 0;
+		
 		// This will skip the MPEG4 header if this step fails we can't stream anything :(
 		try {
 			byte buffer[] = new byte[4];
@@ -163,8 +167,13 @@ public class H264Packetizer extends AbstractPacketizer implements Runnable {
 		
 		// The stream already contains NAL unit type 7 or 8, we don't need 
 		// to add them to the stream ourselves
-		if (type == 7) sps = null;
-		if (type == 8) pps = null;
+		if (type == 7 || type == 8) {
+			count++;
+			if (count>4) {
+				sps = null;
+				pps = null;
+			}
+		}
 
 		// Updates the timestamp
 		ts += delay;

@@ -227,7 +227,7 @@ public class RtpSocket implements Runnable {
 					if ((mTimestamps[mBufferOut]-mOldTimestamp)>0) {
 						stats.push(mTimestamps[mBufferOut]-mOldTimestamp);
 						long d = stats.average()/1000000;
-						Log.d(TAG,"delay: "+d+" d: "+(mTimestamps[mBufferOut]-mOldTimestamp)/1000000);
+						//Log.d(TAG,"delay: "+d+" d: "+(mTimestamps[mBufferOut]-mOldTimestamp)/1000000);
 						// We ensure that packets are sent at a constant and suitable rate no matter how the RtpSocket is used.
 						Thread.sleep(d);
 					}
