@@ -97,7 +97,6 @@ public class AACStream extends AudioStream {
 		}
 
 		if (mMode == MODE_MEDIARECORDER_API) {
-			mQuality = new AudioQuality(16000,32000);
 			mPacketizer = new AACADTSPacketizer();
 		} else { 
 			mPacketizer = new AACLATMPacketizer();
