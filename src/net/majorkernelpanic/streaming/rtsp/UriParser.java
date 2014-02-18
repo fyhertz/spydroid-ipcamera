@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2011-2013 GUIGUI Simon, fyhertz@gmail.com
+ * Copyright (C) 2011-2014 GUIGUI Simon, fyhertz@gmail.com
  * 
- * This file is part of Spydroid (http://code.google.com/p/spydroid-ipcamera/)
+ * This file is part of libstreaming (https://github.com/fyhertz/libstreaming)
  * 
  * Spydroid is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -34,6 +34,7 @@ import java.net.UnknownHostException;
 import java.util.Iterator;
 import java.util.List;
 
+import net.majorkernelpanic.streaming.MediaStream;
 import net.majorkernelpanic.streaming.Session;
 import net.majorkernelpanic.streaming.SessionBuilder;
 import net.majorkernelpanic.streaming.audio.AudioQuality;
@@ -43,7 +44,6 @@ import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URLEncodedUtils;
 
 import android.hardware.Camera.CameraInfo;
-import android.util.Log;
 
 /**
  * This class parses URIs received by the RTSP server and configures a Session accordingly.
@@ -66,6 +66,7 @@ public class UriParser {
 	 */
 	public static Session parse(String uri) throws IllegalStateException, IOException {		
 		SessionBuilder builder = SessionBuilder.getInstance().clone();
+		byte audioApi = 0, videoApi = 0;
 
 		List<NameValuePair> params = URLEncodedUtils.parse(URI.create(uri),"UTF-8");
 		if (params.size()>0) {
@@ -101,28 +102,45 @@ public class UriParser {
 							if (!addr.isMulticastAddress()) {
 								throw new IllegalStateException("Invalid multicast address !");
 							}
-							builder.setDestination(addr);
+							builder.setDestination(param.getValue());
 						} catch (UnknownHostException e) {
 							throw new IllegalStateException("Invalid multicast address !");
 						}
 					}
 					else {
 						// Default multicast address
-						builder.setDestination(InetAddress.getByName("228.5.6.7"));
+						builder.setDestination("228.5.6.7");
 					}
 				}
 
 				// UNICAST -> the client can use this to specify where he wants the stream to be sent
 				else if (param.getName().equalsIgnoreCase("unicast")) {
 					if (param.getValue()!=null) {
-						try {
-							InetAddress addr = InetAddress.getByName(param.getValue());
-							builder.setDestination(addr);
-						} catch (UnknownHostException e) {
-							throw new IllegalStateException("Invalid destination address !");
+						builder.setDestination(param.getValue());
+					}					
+				}
+				
+				// VIDEOAPI -> can be used to specify what api will be used to encode video (the MediaRecorder API or the MediaCodec API)
+				else if (param.getName().equalsIgnoreCase("videoapi")) {
+					if (param.getValue()!=null) {
+						if (param.getValue().equalsIgnoreCase("mr")) {
+							videoApi = MediaStream.MODE_MEDIARECORDER_API;
+						} else if (param.getValue().equalsIgnoreCase("mc")) {
+							videoApi = MediaStream.MODE_MEDIACODEC_API;
 						}
 					}					
 				}
+				
+				// AUDIOAPI -> can be used to specify what api will be used to encode audio (the MediaRecorder API or the MediaCodec API)
+				else if (param.getName().equalsIgnoreCase("audioapi")) {
+					if (param.getValue()!=null) {
+						if (param.getValue().equalsIgnoreCase("mr")) {
+							audioApi = MediaStream.MODE_MEDIARECORDER_API;
+						} else if (param.getValue().equalsIgnoreCase("mc")) {
+							audioApi = MediaStream.MODE_MEDIACODEC_API;
+						}
+					}					
+				}		
 
 				// TTL -> the client can modify the time to live of packets
 				// By default ttl=64
@@ -172,7 +190,17 @@ public class UriParser {
 			builder.setAudioEncoder(b.getAudioEncoder());
 		}
 
-		return builder.build();
+		Session session = builder.build();
+		
+		if (videoApi>0 && session.getVideoTrack() != null) {
+			session.getVideoTrack().setStreamingMethod(videoApi);
+		}
+		
+		if (audioApi>0 && session.getAudioTrack() != null) {
+			session.getAudioTrack().setStreamingMethod(audioApi);
+		}
+		
+		return session;
 
 	}
 

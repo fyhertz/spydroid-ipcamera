@@ -1,8 +1,7 @@
 /*
- * Copyright (C) 2011-2013 GUIGUI Simon, fyhertz@gmail.com
- * With the help of Havlena Petr, havlenapetr@gmail.com
+ * Copyright (C) 2011-2014 GUIGUI Simon, fyhertz@gmail.com
  * 
- * This file is part of Spydroid (http://code.google.com/p/spydroid-ipcamera/)
+ * This file is part of libstreaming (https://github.com/fyhertz/libstreaming)
  * 
  * Spydroid is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -46,7 +45,7 @@ public class AMRNBPacketizer extends AbstractPacketizer implements Runnable {
 
 	private Thread t;
 
-	public AMRNBPacketizer() throws IOException {
+	public AMRNBPacketizer() {
 		super();
 		socket.setClockFrequency(samplingRate);
 	}
@@ -59,11 +58,16 @@ public class AMRNBPacketizer extends AbstractPacketizer implements Runnable {
 	}
 
 	public void stop() {
-		try {
-			is.close();
-		} catch (IOException ignore) {}
-		t.interrupt();
-		t = null;
+		if (t != null) {
+			try {
+				is.close();
+			} catch (IOException ignore) {}
+			t.interrupt();
+			try {
+				t.join();
+			} catch (InterruptedException e) {}
+			t = null;
+		}
 	}
 
 	public void run() {
@@ -105,18 +109,7 @@ public class AMRNBPacketizer extends AbstractPacketizer implements Runnable {
 				socket.updateTimestamp(ts);
 				socket.markNextPacket();
 
-				// We wait a little to avoid sending to many packets too quickly
-				now = System.nanoTime();
-				delta += (now-oldtime)/1000000;
-				oldtime = now;
 				//Log.d(TAG,"expected: "+ expected + " measured: "+measured);
-				
-				if (intervalBetweenReports>0) {
-					if (delta>=intervalBetweenReports) {
-						delta = 0;
-						report.send(now,ts*samplingRate/1000000000L);
-					}
-				}
 				
 				send(rtphl+1+AMR_FRAME_HEADER_LENGTH+frameLength);
 				

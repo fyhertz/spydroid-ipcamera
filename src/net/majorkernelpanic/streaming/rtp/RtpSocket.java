@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2011-2013 GUIGUI Simon, fyhertz@gmail.com
+ * Copyright (C) 2011-2014 GUIGUI Simon, fyhertz@gmail.com
  * 
- * This file is part of Spydroid (http://code.google.com/p/spydroid-ipcamera/)
+ * This file is part of libstreaming (https://github.com/fyhertz/libstreaming)
  * 
  * Spydroid is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -27,6 +27,7 @@ import java.net.MulticastSocket;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
+import net.majorkernelpanic.streaming.rtcp.SenderReport;
 import android.os.SystemClock;
 import android.util.Log;
 
@@ -41,39 +42,41 @@ public class RtpSocket implements Runnable {
 	public static final String TAG = "RtpSocket";
 
 	public static final int RTP_HEADER_LENGTH = 12;
-	public static final int MTU = 1500;
+	public static final int MTU = 1300;
 
 	private MulticastSocket mSocket;
 	private DatagramPacket[] mPackets;
 	private byte[][] mBuffers;
 	private long[] mTimestamps;
 
+	private SenderReport mReport;
+	
 	private Semaphore mBufferRequested, mBufferCommitted;
 	private Thread mThread;
 
 	private long mCacheSize;
 	private long mClock = 0;
 	private long mOldTimestamp = 0;
-	private long mTime = 0, mOldTime = 0;
-	private long mBitRate = 0, mOctetCount = 0;
 	private int mSsrc, mSeq = 0, mPort = -1;
 	private int mBufferCount, mBufferIn, mBufferOut;
+	private int mCount = 0;
+	
+	private AverageBitrate mAverageBitrate;
 
 	/**
 	 * This RTP socket implements a buffering mechanism relying on a FIFO of buffers and a Thread.
 	 * @throws IOException
 	 */
-	public RtpSocket() throws IOException {
-
-		mCacheSize = 400;
+	public RtpSocket() {
+		
+		mCacheSize = 00;
 		mBufferCount = 300; // TODO: reajust that when the FIFO is full 
-		mBufferIn = 0;
-		mBufferOut = 0;
 		mBuffers = new byte[mBufferCount][];
 		mPackets = new DatagramPacket[mBufferCount];
-		mTimestamps = new long[mBufferCount];
-		mBufferRequested = new Semaphore(mBufferCount);
-		mBufferCommitted = new Semaphore(0);
+		mReport = new SenderReport();
+		mAverageBitrate = new AverageBitrate();
+		
+		resetFifo();
 
 		for (int i=0; i<mBufferCount; i++) {
 
@@ -98,11 +101,25 @@ public class RtpSocket implements Runnable {
 
 		}
 
+		try {
 		mSocket = new MulticastSocket();
-		mTime = mOldTime = SystemClock.elapsedRealtime();
-
+		} catch (Exception e) {
+			throw new RuntimeException(e.getMessage());
+		}
+		
 	}
 
+	private void resetFifo() {
+		mCount = 0;
+		mBufferIn = 0;
+		mBufferOut = 0;
+		mTimestamps = new long[mBufferCount];
+		mBufferRequested = new Semaphore(mBufferCount);
+		mBufferCommitted = new Semaphore(0);
+		mReport.reset();
+		mAverageBitrate.reset();
+	}
+	
 	/** Closes the underlying socket. */
 	public void close() {
 		mSocket.close();
@@ -114,6 +131,7 @@ public class RtpSocket implements Runnable {
 		for (int i=0;i<mBufferCount;i++) {
 			setLong(mBuffers[i], ssrc,8,12);
 		}
+		mReport.setSSRC(mSsrc);
 	}
 
 	/** Returns the SSRC of the stream. */
@@ -137,12 +155,13 @@ public class RtpSocket implements Runnable {
 	}
 
 	/** Sets the destination address and to which the packets will be sent. */
-	public void setDestination(InetAddress dest, int dport) {
+	public void setDestination(InetAddress dest, int dport, int rtcpPort) {
 		mPort = dport;
 		for (int i=0;i<mBufferCount;i++) {
 			mPackets[i].setPort(dport);
 			mPackets[i].setAddress(dest);
 		}
+		mReport.setDestination(dest, rtcpPort);
 	}
 
 	public int getPort() {
@@ -153,8 +172,12 @@ public class RtpSocket implements Runnable {
 		return mSocket.getLocalPort();
 	}
 
+	public SenderReport getRtcpSocket() {
+		return mReport;
+	}
+	
 	/** 
-	 * Returns an available buffer from the FIFO, it can then directly be modified. 
+	 * Returns an available buffer from the FIFO, it can then be modified. 
 	 * Call {@link #commitBuffer(int)} to send it over the network. 
 	 * @throws InterruptedException 
 	 **/
@@ -164,33 +187,39 @@ public class RtpSocket implements Runnable {
 		return mBuffers[mBufferIn];
 	}
 
-	/** Sends the RTP packet over the network. */
-	public void commitBuffer(int length) throws IOException {
-
-		updateSequence();
-		mPackets[mBufferIn].setLength(length);
-
-		mOctetCount += length;
-		mTime = SystemClock.elapsedRealtime();
-		if (mTime - mOldTime > 1500) {
-			mBitRate = mOctetCount*8000/(mTime-mOldTime);
-			mOctetCount = 0;
-			mOldTime = mTime;
-		}
-
-		mBufferCommitted.release();
-		if (++mBufferIn>=mBufferCount) mBufferIn = 0;
+	/** Puts the buffer back into the FIFO without sending the packet. */
+	public void commitBuffer() throws IOException {
 
 		if (mThread == null) {
 			mThread = new Thread(this);
 			mThread.start();
 		}
+		
+		if (++mBufferIn>=mBufferCount) mBufferIn = 0;
+		mBufferCommitted.release();
 
+	}	
+	
+	/** Sends the RTP packet over the network. */
+	public void commitBuffer(int length) throws IOException {
+		updateSequence();
+		mPackets[mBufferIn].setLength(length);
+
+		mAverageBitrate.push(length);
+
+		if (++mBufferIn>=mBufferCount) mBufferIn = 0;
+		mBufferCommitted.release();
+
+		if (mThread == null) {
+			mThread = new Thread(this);
+			mThread.start();
+		}		
+		
 	}
 
 	/** Returns an approximation of the bitrate of the RTP stream in bit per seconde. */
 	public long getBitrate() {
-		return mBitRate;
+		return mAverageBitrate.average();
 	}
 
 	/** Increments the sequence number. */
@@ -222,14 +251,16 @@ public class RtpSocket implements Runnable {
 			long delta = 0;
 			while (mBufferCommitted.tryAcquire(4,TimeUnit.SECONDS)) {
 				if (mOldTimestamp != 0) {
-					// We use our knowledge of the clock rate of the stream and the difference between two timestamp to
-					// compute the temporal length of the packet.
+					// We use our knowledge of the clock rate of the stream and the difference between two timestamps to
+					// compute the time lapse that the packet represents.
 					if ((mTimestamps[mBufferOut]-mOldTimestamp)>0) {
 						stats.push(mTimestamps[mBufferOut]-mOldTimestamp);
 						long d = stats.average()/1000000;
 						//Log.d(TAG,"delay: "+d+" d: "+(mTimestamps[mBufferOut]-mOldTimestamp)/1000000);
 						// We ensure that packets are sent at a constant and suitable rate no matter how the RtpSocket is used.
-						Thread.sleep(d);
+						if (mCacheSize>0) Thread.sleep(d);
+					} else if ((mTimestamps[mBufferOut]-mOldTimestamp)<0) {
+						Log.e(TAG, "TS: "+mTimestamps[mBufferOut]+" OLD: "+mOldTimestamp);
 					}
 					delta += mTimestamps[mBufferOut]-mOldTimestamp;
 					if (delta>500000000 || delta<0) {
@@ -237,8 +268,9 @@ public class RtpSocket implements Runnable {
 						delta = 0;
 					}
 				}
+				mReport.update(mPackets[mBufferOut].getLength(), System.nanoTime(),(mTimestamps[mBufferOut]/100L)*(mClock/1000L)/10000L);
 				mOldTimestamp = mTimestamps[mBufferOut];
-				mSocket.send(mPackets[mBufferOut]);
+				if (mCount++>30) mSocket.send(mPackets[mBufferOut]);
 				if (++mBufferOut>=mBufferCount) mBufferOut = 0;
 				mBufferRequested.release();
 			}
@@ -246,6 +278,7 @@ public class RtpSocket implements Runnable {
 			e.printStackTrace();
 		}
 		mThread = null;
+		resetFifo();
 	}
 
 	private void setLong(byte[] buffer, long n, int begin, int end) {
@@ -253,6 +286,69 @@ public class RtpSocket implements Runnable {
 			buffer[end] = (byte) (n % 256);
 			n >>= 8;
 		}
+	}
+
+	/** 
+	 * Computes an average bit rate. 
+	 **/
+	protected static class AverageBitrate {
+
+		private final static long RESOLUTION = 200;
+		
+		private long mOldNow, mNow, mDelta;
+		private long[] mElapsed, mSum;
+		private int mCount, mIndex, mTotal;
+		private int mSize;
+		
+		public AverageBitrate() {
+			mSize = 5000/((int)RESOLUTION);
+			reset();
+		}
+		
+		public AverageBitrate(int delay) {
+			mSize = delay/((int)RESOLUTION);
+			reset();
+		}
+		
+		public void reset() {
+			mSum = new long[mSize];
+			mElapsed = new long[mSize];
+			mNow = SystemClock.elapsedRealtime();
+			mOldNow = mNow;
+			mCount = 0;
+			mDelta = 0;
+			mTotal = 0;
+			mIndex = 0;
+		}
+		
+		public void push(int length) {
+			mNow = SystemClock.elapsedRealtime();
+			if (mCount>0) {
+				mDelta += mNow - mOldNow;
+				mTotal += length;
+				if (mDelta>RESOLUTION) {
+					mSum[mIndex] = mTotal;
+					mTotal = 0;
+					mElapsed[mIndex] = mDelta;
+					mDelta = 0;
+					mIndex++;
+					if (mIndex>=mSize) mIndex = 0;
+				}
+			}
+			mOldNow = mNow;
+			mCount++;
+		}
+		
+		public int average() {
+			long delta = 0, sum = 0;
+			for (int i=0;i<mSize;i++) {
+				sum += mSum[i];
+				delta += mElapsed[i];
+			}
+			//Log.d(TAG, "Time elapsed: "+delta);
+			return (int) (delta>0?8000*sum/delta:0);
+		}
+		
 	}
 	
 	/** Computes the proper rate at which packets are sent. */
@@ -288,7 +384,7 @@ public class RtpSocket implements Runnable {
 				//Log.d(TAG, "sum1: "+duration/1000000+" sum2: "+(now-start)/1000000+" drift: "+((now-start)-duration)/1000000+" v: "+value/1000000);
 			}
 			if (c<40) {
-				// We ignore the first 20 measured values because they may not be accurate
+				// We ignore the first 40 measured values because they may not be accurate
 				c++;
 				m = value;
 			} else {

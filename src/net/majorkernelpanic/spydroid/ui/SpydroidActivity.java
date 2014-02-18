@@ -26,6 +26,7 @@ import net.majorkernelpanic.spydroid.SpydroidApplication;
 import net.majorkernelpanic.spydroid.api.CustomHttpServer;
 import net.majorkernelpanic.spydroid.api.CustomRtspServer;
 import net.majorkernelpanic.streaming.SessionBuilder;
+import net.majorkernelpanic.streaming.gl.SurfaceView;
 import net.majorkernelpanic.streaming.rtsp.RtspServer;
 import android.app.AlertDialog;
 import android.app.Notification;
@@ -52,7 +53,6 @@ import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.SurfaceHolder;
-import android.view.SurfaceView;
 import android.widget.LinearLayout;
 import android.widget.Toast;
 
@@ -74,7 +74,6 @@ public class SpydroidActivity extends FragmentActivity {
 	private PowerManager.WakeLock mWakeLock;
 	private SectionsPagerAdapter mAdapter;
 	private SurfaceView mSurfaceView;
-	private SurfaceHolder mSurfaceHolder;
 	private SpydroidApplication mApplication;
 	private CustomHttpServer mHttpServer;
 	private RtspServer mRtspServer;
@@ -89,26 +88,22 @@ public class SpydroidActivity extends FragmentActivity {
 		if (findViewById(R.id.handset_pager) != null) {
 
 			// Handset detected !
-
 			mAdapter = new SectionsPagerAdapter(getSupportFragmentManager());
 			mViewPager = (ViewPager) findViewById(R.id.handset_pager);
 			setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
 			mSurfaceView = (SurfaceView)findViewById(R.id.handset_camera_view);
-			mSurfaceHolder = mSurfaceView.getHolder();
-			// We still need this line for backward compatibility reasons with android 2
-			mSurfaceHolder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
-			SessionBuilder.getInstance().setSurfaceHolder(mSurfaceHolder);
-
+			SessionBuilder.getInstance().setSurfaceView(mSurfaceView);
+			SessionBuilder.getInstance().setPreviewOrientation(90);
+			
 		} else {
 
 			// Tablet detected !
-
 			device = TABLET;
 			mAdapter = new SectionsPagerAdapter(getSupportFragmentManager());
 			mViewPager = (ViewPager) findViewById(R.id.tablet_pager);
 			setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
-			mApplication.videoQuality.orientation = 0;
-
+			SessionBuilder.getInstance().setPreviewOrientation(0);
+			
 		}
 
 		mViewPager.setAdapter(mAdapter);

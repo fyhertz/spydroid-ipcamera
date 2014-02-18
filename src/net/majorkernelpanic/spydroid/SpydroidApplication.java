@@ -50,13 +50,13 @@ public class SpydroidApplication extends android.app.Application {
 	public final static String TAG = "SpydroidApplication";
 	
 	/** Default quality of video streams. */
-	public VideoQuality videoQuality = new VideoQuality(640,480,15,500000);
+	public VideoQuality videoQuality = new VideoQuality(320,240,20,500000);
 
 	/** By default AMR is the audio encoder. */
-	public int audioEncoder = SessionBuilder.AUDIO_AMRNB;
+	public int audioEncoder = SessionBuilder.AUDIO_AAC;
 
 	/** By default H.263 is the video encoder. */
-	public int videoEncoder = SessionBuilder.VIDEO_H263;
+	public int videoEncoder = SessionBuilder.VIDEO_H264;
 
 	/** Set this flag to true to disable the ads. */
 	public final boolean DONATE_VERSION = false;
@@ -94,13 +94,11 @@ public class SpydroidApplication extends android.app.Application {
 		videoEncoder = Integer.parseInt(settings.getString("video_encoder", String.valueOf(videoEncoder)));
 
 		// Read video quality settings from the preferences 
-		videoQuality = VideoQuality.merge(
-				new VideoQuality(
-						settings.getInt("video_resX", 0),
-						settings.getInt("video_resY", 0), 
-						Integer.parseInt(settings.getString("video_framerate", "0")), 
-						Integer.parseInt(settings.getString("video_bitrate", "0"))*1000),
-						videoQuality);
+		videoQuality = new VideoQuality(
+						settings.getInt("video_resX", videoQuality.resX),
+						settings.getInt("video_resY", videoQuality.resY), 
+						Integer.parseInt(settings.getString("video_framerate", String.valueOf(videoQuality.framerate))), 
+						Integer.parseInt(settings.getString("video_bitrate", String.valueOf(videoQuality.bitrate/1000)))*1000);
 
 		SessionBuilder.getInstance() 
 		.setContext(getApplicationContext())

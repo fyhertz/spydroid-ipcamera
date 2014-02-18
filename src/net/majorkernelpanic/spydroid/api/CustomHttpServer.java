@@ -26,6 +26,7 @@ import static net.majorkernelpanic.streaming.SessionBuilder.VIDEO_NONE;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.net.InetAddress;
 import java.net.Socket;
 import java.net.URI;
 import java.nio.charset.Charset;
@@ -129,7 +130,7 @@ public class CustomHttpServer extends TinyHttpServer {
 				if (streaming && !isStreaming()) {
 					postMessage(MESSAGE_STREAMING_STOPPED);
 				}
-				mDescriptionRequestHandler.mSessionList[i].session.flush();
+				mDescriptionRequestHandler.mSessionList[i].session.release();
 				mDescriptionRequestHandler.mSessionList[i].session = null;
 			}
 		}
@@ -242,37 +243,44 @@ public class CustomHttpServer extends TinyHttpServer {
 					// Stops all streams if a Session already exists
 					if (mSessionList[id].session != null) {
 						boolean streaming = isStreaming();
-						mSessionList[id].session.stop();
+						mSessionList[id].session.syncStop();
 						if (streaming && !isStreaming()) {
 							postMessage(MESSAGE_STREAMING_STOPPED);
 						}
-						mSessionList[id].session.flush();
+						mSessionList[id].session.release();
 						mSessionList[id].session = null;
 					}
 
 					if (!stop) {
-						if (mSessionList[id].session == null || 
-								(mSessionList[id].session != null && !mSessionList[id].session.getDestination().isMulticastAddress())) 
-						{
+						
+						boolean b = false;
+						if (mSessionList[id].session != null) {
+							InetAddress dest = InetAddress.getByName(mSessionList[id].session.getDestination());
+							if (!dest.isMulticastAddress()) {
+								b = true;
+							}
+						}
+						if (mSessionList[id].session == null || b) {
 							// Parses URI and creates the Session
 							mSessionList[id].session = UriParser.parse(uri);
 							mSessions.put(mSessionList[id].session, null);
 						} 
 
 						// Sets proper origin & dest
-						mSessionList[id].session.setOrigin(socket.getLocalAddress());
+						mSessionList[id].session.setOrigin(socket.getLocalAddress().getHostAddress());
 						if (mSessionList[id].session.getDestination()==null) {
-							mSessionList[id].session.setDestination(socket.getInetAddress());
+							mSessionList[id].session.setDestination(socket.getInetAddress().getHostAddress());
 						}
-
-						mSessionList[id].description = mSessionList[id].session.getSessionDescription().replace("Unnamed", "Stream-"+id);
 						
 						// Starts all streams associated to the Session
 						boolean streaming = isStreaming();
-						mSessionList[id].session.start();
+						mSessionList[id].session.syncStart();
 						if (!streaming && isStreaming()) {
 							postMessage(MESSAGE_STREAMING_STARTED);
 						}
+
+						mSessionList[id].description = mSessionList[id].session.getSessionDescription().replace("Unnamed", "Stream-"+id);
+						Log.v(TAG, mSessionList[id].description);
 						
 					}
 				}

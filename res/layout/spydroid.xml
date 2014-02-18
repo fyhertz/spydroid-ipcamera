@@ -3,7 +3,7 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content" >
 
-    <SurfaceView
+    <net.majorkernelpanic.streaming.gl.SurfaceView
         android:id="@+id/handset_camera_view"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
@@ -42,8 +42,6 @@
         </android.support.v4.view.ViewPager>
 
         <LinearLayout
-            xmlns:ads="http://schemas.android.com/apk/lib/com.google.ads"
-            xmlns:android="http://schemas.android.com/apk/res/android"
             android:id="@+id/adcontainer"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -52,6 +50,7 @@
             android:orientation="vertical" >
 
             <com.google.ads.AdView
+                xmlns:ads="http://schemas.android.com/apk/lib/com.google.ads"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 ads:adSize="SMART_BANNER"

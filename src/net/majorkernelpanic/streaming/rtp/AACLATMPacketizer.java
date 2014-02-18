@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2011-2013 GUIGUI Simon, fyhertz@gmail.com
+ * Copyright (C) 2011-2014 GUIGUI Simon, fyhertz@gmail.com
  * 
- * This file is part of Spydroid (http://code.google.com/p/spydroid-ipcamera/)
+ * This file is part of libstreaming (https://github.com/fyhertz/libstreaming)
  * 
  * Spydroid is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -40,14 +40,11 @@ public class AACLATMPacketizer extends AbstractPacketizer implements Runnable {
 
 	private final static String TAG = "AACLATMPacketizer";
 
-	// Maximum size of RTP packets
-	private final static int MAXPACKETSIZE = 1400;
-
 	private Thread t;
-	private int samplingRate = 8000;
 
-	public AACLATMPacketizer() throws IOException {
+	public AACLATMPacketizer() {
 		super();
+		socket.setCacheSize(0);
 	}
 
 	public void start() {
@@ -71,7 +68,6 @@ public class AACLATMPacketizer extends AbstractPacketizer implements Runnable {
 	}
 
 	public void setSamplingRate(int samplingRate) {
-		this.samplingRate = samplingRate;
 		socket.setClockFrequency(samplingRate);
 	}
 
@@ -81,7 +77,7 @@ public class AACLATMPacketizer extends AbstractPacketizer implements Runnable {
 		Log.d(TAG,"AAC LATM packetizer started !");
 
 		int length = 0;
-		long oldtime = SystemClock.elapsedRealtime(), now = oldtime;
+		long oldts;
 		BufferInfo bufferInfo;
 
 		try {
@@ -93,7 +89,15 @@ public class AACLATMPacketizer extends AbstractPacketizer implements Runnable {
 					
 					bufferInfo = ((MediaCodecInputStream)is).getLastBufferInfo();
 					//Log.d(TAG,"length: "+length+" ts: "+bufferInfo.presentationTimeUs);
+					oldts = ts;
 					ts = bufferInfo.presentationTimeUs*1000;
+					
+					// Seems to happen sometimes
+					if (oldts>ts) {
+						socket.commitBuffer();
+						continue;
+					}
+					
 					socket.markNextPacket();
 					socket.updateTimestamp(ts);
 					
@@ -112,20 +116,13 @@ public class AACLATMPacketizer extends AbstractPacketizer implements Runnable {
 					buffer[rtphl+3] |= 0x00;
 					
 					send(rtphl+length+4);
-				}
-				
-				// We send one RTCP Sender Report every 5 secs
-				now = SystemClock.elapsedRealtime();
-				if (intervalBetweenReports>0) {
-					if (now-oldtime>=intervalBetweenReports) {
-						oldtime = now;
-						report.send(System.nanoTime(),ts*samplingRate/1000000000L);
-					}
-				}			
+					
+				} else {
+					socket.commitBuffer();
+				}		
 				
 			}
 		} catch (IOException e) {
-			e.printStackTrace();
 		} catch (ArrayIndexOutOfBoundsException e) {
 			Log.e(TAG,"ArrayIndexOutOfBoundsException: "+(e.getMessage()!=null?e.getMessage():"unknown error"));
 			e.printStackTrace();

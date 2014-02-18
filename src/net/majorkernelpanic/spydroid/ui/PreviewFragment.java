@@ -25,6 +25,7 @@ import net.majorkernelpanic.spydroid.R;
 import net.majorkernelpanic.spydroid.api.CustomHttpServer;
 import net.majorkernelpanic.spydroid.api.CustomRtspServer;
 import net.majorkernelpanic.streaming.SessionBuilder;
+import net.majorkernelpanic.streaming.gl.SurfaceView;
 import net.majorkernelpanic.streaming.rtsp.RtspServer;
 import android.content.ComponentName;
 import android.content.Context;
@@ -35,7 +36,6 @@ import android.os.IBinder;
 import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.SurfaceHolder;
-import android.view.SurfaceView;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
@@ -45,7 +45,6 @@ public class PreviewFragment extends Fragment {
 	public final static String TAG = "PreviewFragment";
 
 	private SurfaceView mSurfaceView;
-	private SurfaceHolder mSurfaceHolder;
 	private TextView mTextView;
     private CustomHttpServer mHttpServer;
     private RtspServer mRtspServer;
@@ -78,12 +77,7 @@ public class PreviewFragment extends Fragment {
 		if (((SpydroidActivity)getActivity()).device == ((SpydroidActivity)getActivity()).TABLET) {
 
 			mSurfaceView = (SurfaceView)rootView.findViewById(R.id.tablet_camera_view);
-			mSurfaceHolder = mSurfaceView.getHolder();
-
-			// We still need this line for backward compatibility reasons with android 2
-			mSurfaceHolder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
-
-			SessionBuilder.getInstance().setSurfaceHolder(mSurfaceHolder);
+			SessionBuilder.getInstance().setSurfaceView(mSurfaceView);
 
 		} 
 		
