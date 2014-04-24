@@ -8,7 +8,7 @@
 
 * Check out the feature list to see what Spydroid is capable of :) And If you have questions, check out the [FAQ FAQ].
 
-* If you enjoyed Spydroid, or its source code (that I've tried to make as clear as possible), [https://market.android.com/details?id=net.majorkernelpanic.spydroid please rate the app on Google Play], I would reallllly realllly appreciate :) And if you go and like [http://www.facebook.com/spydroidipcamera the facebook page], you will be rewarded with all my gratitude :p
+* If you enjoyed Spydroid, or its source code, [please rate the app on Google Play](https://market.android.com/details?id=net.majorkernelpanic.spydroid), I would really appreciate :) And if you go and like [the facebook page](http://www.facebook.com/spydroidipcamera), you will be rewarded with all my gratitude :p
 
 # Features
 
@@ -20,7 +20,6 @@
  * Funny sounds can be played on the phone from the HTTP interface ! Awesome isn't it ? :p
  * You can make the phone vibrate remotely
  * You can see the battery level of the phone
- * You can like [http://www.facebook.com/spydroidipcamera the facebook page], and yes this is a feature !
 
 # Requirements
 
@@ -36,7 +35,7 @@ There may be some glitches on some phones. Some resolution, frame rate, bit rate
 
 # Dear developers
 
-**The streaming stack used in Spydroid is available as a standalone library [https://github.com/fyhertz/libstreaming here] with its Javadoc and explanations about how it works and how to use it. It is available under two licenses, the GPL, and a commercial licence.**
+**The streaming stack used in Spydroid is available as a standalone library [here](https://github.com/fyhertz/libstreaming) with its Javadoc and explanations about how it works and how to use it. It is available under two licenses, the GPL, and a commercial licence.**
 
 # Licensing
 
@@ -46,4 +45,4 @@ _Folks, please note that i'm a french dude, so if you see something that doesn't
 
 _Enjoy_
 
-By <a href="https://simon.guigui.us/">Simon Guigui</a> aka fyhertz 
+By [Simon Guigui](https://simon.guigui.us/) aka fyhertz 
