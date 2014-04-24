@@ -2,14 +2,13 @@
 
 * Spydroid is a little app. that *streams the camera and microphone of your phone to your browser or to VLC !*
 
- * It is the most powerful tool on the market if you are looking for a way to stream audio/video from your smartphone to your PC: *H.264 is supported with resolutions up to 1080p and AAC is supported on phones running ICS or JB*.
+* It is *a fun app for pulling off pranks*: you can remotly trigger funny sounds on your phone or toggle its flash.
 
- * It also is *an awesome app for pulling off pranks*: you can remotly trigger funny sounds on your phone or toggle its flash.
+* **Developers, start [https://github.com/fyhertz/libstreaming by reading this] to find out how streaming is achieved in Spydroid.**
 
- * *Developers, start [https://github.com/fyhertz/libstreaming by reading this] to find out how streaming is achieved in Spydroid !!*
+* Check out the feature list to see what Spydroid is capable of :) And If you have questions, check out the [FAQ FAQ].
 
-   If you're still not convinced, check out the [https://code.google.com/p/spydroid-ipcamera/#Features feature list] to see what Spydroid is capable of :) And If you have questions, check out the [FAQ FAQ].
-   If you enjoyed Spydroid, or its source code (that I've tried to make as clear as possible), [https://market.android.com/details?id=net.majorkernelpanic.spydroid please rate the app on Google Play], I would reallllly realllly appreciate :) And if you go and like [http://www.facebook.com/spydroidipcamera the facebook page], you will be rewarded with all my gratitude :p
+* If you enjoyed Spydroid, or its source code (that I've tried to make as clear as possible), [https://market.android.com/details?id=net.majorkernelpanic.spydroid please rate the app on Google Play], I would reallllly realllly appreciate :) And if you go and like [http://www.facebook.com/spydroidipcamera the facebook page], you will be rewarded with all my gratitude :p
 
 # Features
 
