@@ -6,7 +6,7 @@
 
 * **Developers, start [https://github.com/fyhertz/libstreaming by reading this] to find out how streaming is achieved in Spydroid.**
 
-* Check out the feature list to see what Spydroid is capable of :) And If you have questions, check out the [FAQ FAQ].
+* Check out the feature list to see what Spydroid is capable of :) And If you have questions, check out the (FAQ)[https://github.com/fyhertz/spydroid-ipcamera/wiki/FAQ].
 
 * If you enjoyed Spydroid, or its source code, [please rate the app on Google Play](https://market.android.com/details?id=net.majorkernelpanic.spydroid), I would really appreciate :) And if you go and like [the facebook page](http://www.facebook.com/spydroidipcamera), you will be rewarded with all my gratitude :p
 
@@ -20,6 +20,7 @@
  * Funny sounds can be played on the phone from the HTTP interface ! Awesome isn't it ? :p
  * You can make the phone vibrate remotely
  * You can see the battery level of the phone
+ * Some more advanced features are shown (here)[https://github.com/fyhertz/spydroid-ipcamera/wiki/Advanced-Use-of-Spydroid]
 
 # Requirements
 
