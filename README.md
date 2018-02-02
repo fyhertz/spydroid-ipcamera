@@ -36,11 +36,7 @@ There may be some glitches on some phones. Some resolution, frame rate, bit rate
 
 # Dear developers
 
-**The streaming stack used in Spydroid is available as a standalone library [here](https://github.com/fyhertz/libstreaming) with its Javadoc and explanations about how it works and how to use it. It is available under two licenses, the GPL, and a commercial licence.**
-
-# Licensing
-
-**If you are interested in using the libstreaming or parts of Spydroid in a close source commercial application, you can contact me at the mail address specified below.**
+**The streaming stack used in Spydroid is available as a standalone library [here](https://github.com/fyhertz/libstreaming) with its Javadoc and explanations about how it works and how to use it. It is available under the Apache 2.0 license and I no longer maintain it.**
 
 _Folks, please note that i'm a french dude, so if you see something that doesn't make any sense do not hesitate to correct me :) (fyhertz at gmail dot com)._
 
