@@ -42,4 +42,4 @@ _Folks, please note that i'm a french dude, so if you see something that doesn't
 
 _Enjoy_
 
-By [Simon Guigui](https://simon.guigui.us/) aka fyhertz 
+By [Simon Guigui](http://guigui.us/) aka fyhertz 
