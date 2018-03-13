@@ -4,7 +4,7 @@
     android:background="#001629"
     android:layout_height="match_parent" >    
     
-   <SurfaceView
+   <net.majorkernelpanic.streaming.gl.SurfaceView
         android:id="@+id/tablet_camera_view"
         android:background="@drawable/preview"
         android:layout_margin="20dp"
