@@ -47,13 +47,13 @@
     <string name="settings27">Port used by the HTTPS server</string>
     <string name="settings28">RTSP server</string>
     <string name="settings29">Enabled</string>
-    <string name="settings30">Useful to use Spydroid directly with VLC</string>    
+    <string name="settings30">Useful to use Spydroid directly with VLC</string>
     <string name="settings31">RTSP server port</string>
-    <string name="settings32">Port used by the RTSP server</string>    
+    <string name="settings32">Port used by the RTSP server</string>
     <string name="bind_failed">You need to choose another port for the %s server !</string>
-    <string name="port_used">Port already in use !</string>    
+    <string name="port_used">Port already in use !</string>
     <string name="page0">Main</string>
     <string name="page1">Preview</string>
     <string name="page2">About</string>
-    
+
 </resources>

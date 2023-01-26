@@ -11,8 +11,8 @@
         <item>2</item>
         <item>1</item>
     </string-array>
-    
-    
+
+
     <string-array name="audioEncoderArray">
         <item>AMR-NB</item>
         <item>AAC</item>
@@ -22,7 +22,7 @@
         <item>3</item>
         <item>5</item>
     </string-array>
-    
+
     <!-- RESOLUTION -->
     <string-array name="videoResolutionArray">
         <item>1280x720</item>
@@ -30,7 +30,7 @@
         <item>320x240</item>
         <item>176x144</item>
     </string-array>
-    
+
     <!-- FRAMERATE -->
     <string-array name="videoFramerateArray">
         <item>20 fps</item>
@@ -45,7 +45,7 @@
         <item>10</item>
         <item>8</item>
     </string-array>
-    
+
     <!-- BITRATE -->
     <string-array name="videoBitrateArray">
         <item>5000 kbps</item>
@@ -72,5 +72,5 @@
         <item>100</item>
         <item>50</item>
     </string-array>
-    
+
 </resources>

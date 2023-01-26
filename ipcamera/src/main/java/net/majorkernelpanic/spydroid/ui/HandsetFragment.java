@@ -219,7 +219,7 @@ public class HandsetFragment extends Fragment {
 
     private final Handler mHandler = new Handler();
 
-    private Runnable mUpdateBitrate = new Runnable() {
+    private final Runnable mUpdateBitrate = new Runnable() {
         @Override
         public void run() {
             if ((mRtspServer != null && mRtspServer.isStreaming()) || (mHttpServer != null && mHttpServer.isStreaming())) {

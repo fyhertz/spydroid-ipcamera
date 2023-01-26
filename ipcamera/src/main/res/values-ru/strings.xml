@@ -34,7 +34,7 @@
     <string name="settings13">Скорость передачи</string>
     <string name="settings14">Дополнительные опции</string>
     <string name="settings15">Уведомления</string>
-    <string name="settings16">Включить/Выключить уведомления</string> 
+    <string name="settings16">Включить/Выключить уведомления</string>
     <string name="settings19">HTTP server</string>
     <string name="settings20">HTTP server port</string>
     <string name="settings21">Port used by the HTTP server</string>
@@ -46,12 +46,12 @@
     <string name="settings27">Port used by the HTTPS server</string>
     <string name="settings28">RTSP server</string>
     <string name="settings29">Enabled</string>
-    <string name="settings30">Useful to use Spydroid directly with VLC</string>    
+    <string name="settings30">Useful to use Spydroid directly with VLC</string>
     <string name="settings31">RTSP server port</string>
-    <string name="settings32">Port used by the RTSP server</string>    
+    <string name="settings32">Port used by the RTSP server</string>
     <string name="bind_failed">You need to choose another port for the %s server !</string>
-    <string name="port_used">Port already in use !</string>    
+    <string name="port_used">Port already in use !</string>
     <string name="page0">Main</string>
     <string name="page1">Preview</string>
-    <string name="page2">About</string>    
+    <string name="page2">About</string>
 </resources>
