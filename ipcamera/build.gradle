@@ -3,12 +3,12 @@ apply plugin: 'kotlin-android'
 
 
 android {
-    compileSdkVersion 32
+    compileSdkVersion 33
 
     defaultConfig {
         applicationId "net.majorkernelpanic.spydroid"
         minSdkVersion 28
-        targetSdkVersion 32
+        targetSdkVersion 33
     }
 
     useLibrary 'org.apache.http.legacy'

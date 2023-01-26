@@ -23,6 +23,7 @@ package net.majorkernelpanic.spydroid;
 import net.majorkernelpanic.streaming.SessionBuilder;
 import net.majorkernelpanic.streaming.video.VideoQuality;
 
+import android.app.Application;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -31,7 +32,7 @@ import android.content.SharedPreferences;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.preference.PreferenceManager;
 
-public class SpydroidApplication extends android.app.Application {
+public class SpydroidApplication extends Application {
 
     public final static String TAG = "SpydroidApplication";
 
@@ -76,9 +77,7 @@ public class SpydroidApplication extends android.app.Application {
     @Override
     public void onCreate() {
 
-        // The following line triggers the initialization of ACRA
-        // Please do not uncomment this line unless you change the form id or I will receive your crash reports !
-        //ACRA.init(this);
+
 
         sApplication = this;
 
@@ -89,7 +88,7 @@ public class SpydroidApplication extends android.app.Application {
         notificationEnabled = settings.getBoolean("notification_enabled", true);
 
         // On android 3.* AAC ADTS is not supported so we set the default encoder to AMR-NB, on android 4.* AAC is the default encoder
-        audioEncoder = (Integer.parseInt(android.os.Build.VERSION.SDK) < 14) ? SessionBuilder.AUDIO_AMRNB : SessionBuilder.AUDIO_AAC;
+        audioEncoder = SessionBuilder.AUDIO_AAC;
         audioEncoder = Integer.parseInt(settings.getString("audio_encoder", String.valueOf(audioEncoder)));
         videoEncoder = Integer.parseInt(settings.getString("video_encoder", String.valueOf(videoEncoder)));
 
